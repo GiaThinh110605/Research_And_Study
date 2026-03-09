@@ -26,3 +26,13 @@
 ## Documentation: 
 - https://docs.google.com/document/d/1LkhnjzN_mmDqaUTBHCFEWkGqwIwrBkFJ6_aK33HSfuw/edit?usp=sharing
 - https://docs.google.com/document/d/1OJcgUKaQy-MyRZJ03KKA_HniUWSYaatJVzldgQS7JdA/edit?usp=sharing
+
+## Run frontend
+- docker compose -f docker-compose.dev.yml restart frontend
+
+## Run backend
+- docker compose -f docker-compose.dev.yml restart backend
+
+## Run database
+- docker compose -f docker-compose.dev.yml restart postgres
+

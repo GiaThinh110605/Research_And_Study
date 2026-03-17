@@ -22,6 +22,9 @@
 ## 📊 Statistic contribute in this project: 
 ![Contributors](https://contrib.rocks/image?repo=GiaThinh110605/AI_Research)
 
+# Plan for team 
+- File: Ke_Hoach_PTUD.pdf
+
 
 ## Documentation: 
 - https://docs.google.com/document/d/1LkhnjzN_mmDqaUTBHCFEWkGqwIwrBkFJ6_aK33HSfuw/edit?usp=sharing

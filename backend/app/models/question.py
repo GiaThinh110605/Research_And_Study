@@ -7,10 +7,10 @@ class Question(Base):
     __tablename__ = "questions"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
-    question_text = Column(Text, nullable=False)
-    answer_text = Column(Text, nullable=False)
+    asked_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    content = Column(Text, nullable=False)
+    answer = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships

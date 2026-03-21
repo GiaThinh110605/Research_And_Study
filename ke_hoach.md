@@ -1,17 +1,21 @@
-LÂM GIA THỊNH (Nhóm trưởng)
-Frontend: Dashboard (Student + Lecturer), Layout chung (Navbar, Sidebar, Responsive)
-Backend: Authentication (JWT full), Activity Logs, CI/CD Docker + GitHub Actions
+# LÂM GIA THỊNH (Nhóm trưởng)
+- Frontend: Dashboard (Student + Lecturer), Layout chung (Navbar, Sidebar, Responsive)
+- Backend: Authentication (JWT full), Activity Logs, CI/CD Docker + GitHub Actions
 Trách nhiệm thêm: Review toàn bộ PR, Integration test cuối, quản lý Docker, GitHub repo chính
-KHƯU MINH NHẬT
-Frontend: Login/Register page, Upload Document page
-Backend: Users (CRUD + role), Documents (CRUD + file upload PDF)
-NGUYỄN HÀ MẠNH KHANG
-Frontend: Quiz/Test page (làm bài + xem kết quả), Flashcard page (tạo & học)
-Backend: Tests + Test_Results, Flashcards, Plagiarism basic (string compare)
-NGUYỄN TUẤN ANH
-Frontend: Document Detail (PDF viewer + Highlight + Question), GPA Calculator page, Share Document modal
-Backend: Highlights, Discussions + Comments, Document_Shares, GPA calculation logic + History
-3. LỊCH TRÌNH CHI TIẾT THEO TUẦN (DEADLINE CỨNG)
+
+### KHƯU MINH NHẬT
+- Frontend: Login/Register page, Upload Document page
+- Backend: Users (CRUD + role), Documents (CRUD + file upload PDF)
+
+### NGUYỄN HÀ MẠNH KHANG
+- Frontend: Quiz/Test page (làm bài + xem kết quả), Flashcard page (tạo & học)
+- Backend: Tests + Test_Results, Flashcards, Plagiarism basic (string compare)
+
+### NGUYỄN TUẤN ANH
+- Frontend: Document Detail (PDF viewer + Highlight + Question), GPA Calculator page, Share Document modal
+- Backend: Highlights, Discussions + Comments, Document_Shares, GPA calculation logic + History
+
+### 3. LỊCH TRÌNH CHI TIẾT THEO TUẦN (DEADLINE CỨNG)
 Tuần 1: 17/03 – 23/03/2026 – Setup & Authentication
 
 Thịnh: Docker Compose + GitHub Actions + Layout FE + Auth BE

@@ -1,277 +1,76 @@
-# 📌 TEAM PLAN – Research And Study
+# KẾ HOẠCH PHÁT TRIỂN FRONTEND & BACKEND CHO MVP
+**Thời hạn hoàn thành MVP: 12/04/2026**
 
-## 👥 Team Members
-- Thịnh (Leader - Fullstack + Architecture)
-- Nhật (Frontend + UI/UX)
-- Khang (Backend + Database)
-- Anh (Testing + Integration + Support FE/BE)
+## 1. Thông tin chung
+- **Thành viên**: 4 người (Thịnh - Nhóm trưởng, Anh, Nhật, Khang)
+- **Tech stack dự kiến**:
+  - **Frontend**: React.js + Vite + Tailwind CSS + React Router + Axios + Zustand + react-pdf
+  - **Backend**: Node.js/Express (base đã có) + Multer (upload file) + JWT + PostgreSQL/MySQL
+- Mỗi thành viên chịu trách nhiệm **toàn bộ một module** (Frontend pages + Backend APIs tương ứng)
+- Thịnh đã làm base backend → sẽ tập trung review, tích hợp và module Auth + Dashboard
 
----
+## 2. Phân công công việc chi tiết
 
-# 🎯 MỤC TIÊU
-- Hoàn thành MVP trước: 12/04/2026
-- Đảm bảo:
-  - Code chạy ổn định
-  - Có test
-  - Có UI đầy đủ (16 pages)
-  - Có API đầy đủ theo schema
+| STT | Thành viên       | Module                              | Frontend Pages                                                                 | Backend APIs & Logic                                      | Deadline nội bộ |
+|-----|------------------|-------------------------------------|--------------------------------------------------------------------------------|-----------------------------------------------------------|-----------------|
+| 1   | **Thịnh**        | **Auth + Dashboard + Core**         | - Login<br>- Register<br>- Dashboard (Student & Lecturer)                      | - Auth (login/register/role)<br>- User profile<br>- Dashboard APIs (recent documents, ongoing tests, lecturer stats)<br>- Role-based middleware | 05/04/2026     |
+| 2   | **Anh**          | **Document Management**             | - Documents List (Library + Search/Filter)<br>- Upload Document<br>- Document Detail (tab Info + PDF Viewer) | - Documents CRUD<br>- Upload file (Multer + lưu file_url)<br>- Document metadata<br>- Document_Shares (chia sẻ + permission) | 08/04/2026     |
+| 3   | **Nhật**         | **Interactive Study**               | - Document Detail (tab Q&A, Comments, Highlights)<br>- Highlight component trong PDF | - Questions (hỏi đáp cơ bản)<br>- Discussions (comment + reply)<br>- Highlights (lưu theo page, color, note) | 08/04/2026     |
+| 4   | **Khang**        | **Assessment & Tools**              | - Tests (List Tests + Take Test + Result)<br>- Flashcards (Create + Study Mode)<br>- GPA Calculator | - Tests + Test_Results<br>- Flashcards (CRUD + study)<br>- GPA logic (tính điểm hệ 10 ↔ 4.0 + lưu lịch sử) | 08/04/2026     |
 
----
+### Ghi chú phân công:
+- Mỗi người làm **đều** về số lượng pages và bảng database.
+- Các component chung (Navbar, Sidebar, ProtectedRoute, Toast notification, Loading spinner) → **Thịnh** làm trước và share cho cả nhóm.
+- Tất cả code phát triển trên **branch riêng** (`feature/module-tên-thành-viên`), sau đó tạo Pull Request merge vào `dev`.
 
-# 🧠 NGUYÊN TẮC CHIA VIỆC
-- Mỗi người đều:
-  - Có frontend
-  - Có backend
-  - Có testing
-- Không ai chỉ làm 1 phần
-- Chia theo **feature**, không chia theo tech
+## 3. Lịch trình thực hiện (2 tuần)
 
----
+### Tuần 1 (29/03/2026 – 05/04/2026)
+- Hoàn thiện Auth + Dashboard
+- Xây dựng Documents List + Upload Document
+- Setup PDF Viewer + Highlight component cơ bản
+- Daily meeting: 14:00 (Discord/Telegram)
 
-# 🧩 CHIA THEO MODULE (MVP)
+### Tuần 2 (06/04/2026 – 12/04/2026)
+- Hoàn thiện Document Detail (Q&A, Comments, Highlights)
+- Làm Tests, Flashcards, GPA Calculator
+- Testing + Fix bug
+- Deploy lên Staging (Vercel / Render / Railway)
+- Hoàn thiện MVP & chạy test case
 
-## 1. AUTH + USER + DASHBOARD
-👤 Thịnh
+## 4. Testing Plan cho MVP (tóm tắt)
+- **Unit Testing**: Jest (Frontend), Jest/Pytest (Backend)
+- **Integration Testing**: Upload → lưu DB → hiển thị
+- **System Testing**: Theo Use Case
+  - TC01: Đăng ký → Đăng nhập → Upload → Xem chi tiết → Highlight → Đặt câu hỏi
+  - TC02: Làm test → Submit → Xem kết quả
+  - TC03: Tính GPA (hệ 10 → hệ 4.0) → Lưu lịch sử
+- **Usability Testing**: Mời 5–10 sinh viên/giảng viên thử (từ Singapore)
+- **Tiêu chí hoàn thành**: ≥ 95% test case pass, không bug critical/high, ≥ 80% feedback tích cực
 
-### Backend
-- Auth API (register, login)
-- JWT / session
-- User profile
-- Role (student, lecturer)
-
-### Frontend
-- Login page
-- Register page
-- Dashboard (basic)
-
-### Testing
-- Unit test auth
-- Test login flow
-- Security basic (JWT, invalid login)
-
----
-
-## 2. DOCUMENT MODULE
-👤 Khang
-
-### Backend
-- Upload document
-- Get document
-- Document detail
-- Share document
-
-### DB liên quan
-- documents
-- document_shares
-
-### Frontend
-- Upload UI
-- Document list
-- Document detail view
-
-### Testing
-- Upload file test
-- Permission test
-- API test
+## 5. Chức năng MVP (nhắc lại)
+- Đăng ký / Đăng nhập (Student, Lecturer; Admin dùng tài khoản mặc định)
+- Upload tài liệu (PDF)
+- Xem chi tiết tài liệu (PDF viewer + hỏi đáp cơ bản + comment)
+- Làm bài test trắc nghiệm + xem kết quả
+- Tạo & học Flashcard (thủ công)
+- Highlight trong PDF
+- Tính điểm GPA cá nhân (hệ 10 và 4.0)
+- Chia sẻ tài liệu
+- Dashboard cơ bản theo role
 
 ---
 
-## 3. STUDY FEATURES (FLASHCARD + HIGHLIGHT + GPA)
-👤 Nhật
+**Hướng dẫn sử dụng file này:**
+1. Copy toàn bộ nội dung trên
+2. Tạo file mới `PLAN_MVP.md`
+3. Paste và lưu
+4. Có thể mở bằng VS Code hoặc Typora để xem đẹp hơn
 
-### Backend
-- Flashcard CRUD
-- Highlight
-- GPA calculator
+Bạn muốn tôi bổ sung thêm phần nào không?
+- Danh sách API endpoints chi tiết theo module?
+- Template Git branch & commit message?
+- Checklist task chi tiết hơn cho từng người?
+- Hoặc bảng tiến độ hàng ngày?
 
-### DB
-- flashcards
-- highlights
-- users (gpa)
-
-### Frontend
-- Flashcard UI (flip card)
-- Highlight UI (PDF)
-- GPA calculator page
-
-### Testing
-- Logic GPA
-- Flashcard CRUD
-- Highlight lưu đúng
-
----
-
-## 4. TEST + DISCUSSION + RESULT
-👤 Anh
-
-### Backend
-- Create test
-- Submit test
-- Result
-- Discussion
-
-### DB
-- tests
-- test_results
-- discussions
-
-### Frontend
-- Test UI
-- Submit bài
-- Result view
-- Comment section
-
-### Testing
-- Submit test
-- Score calculation
-- Discussion flow
-
----
-
-# 🎨 FRONTEND (16 PAGES) – CHIA CỤ THỂ
-
-## Thịnh
-- Login
-- Register
-- Dashboard
-- Profile
-
-## Nhật
-- Flashcard page
-- GPA page
-- Highlight UI
-- Study tools
-
-## Khang
-- Upload document
-- Document list
-- Document detail
-
-## Anh
-- Test page
-- Result page
-- Discussion UI
-- Share UI
-
----
-
-# ⚙️ BACKEND – CHIA API
-
-## Thịnh
-- /auth/*
-- /users/*
-- middleware auth
-
-## Khang
-- /documents/*
-- /shares/*
-
-## Nhật
-- /flashcards/*
-- /highlights/*
-- /gpa
-
-## Anh
-- /tests/*
-- /results/*
-- /discussions/*
-
----
-
-# 🧪 TESTING PLAN (PHÂN CÔNG)
-
-## Thịnh
-- Auth test
-- Security test
-
-## Nhật
-- UI test (UX)
-- Flashcard test
-
-## Khang
-- API test document
-- DB consistency
-
-## Anh
-- End-to-end test
-- Integration test
-
----
-
-# 🔄 WORKFLOW
-
-## Git Branch
-- main
-- dev
-- feature/*
-
-## Rule
-- Mỗi feature = 1 branch
-- Pull request phải có:
-  - code
-  - test
-  - demo
-
----
-
-# 📅 TIMELINE
-
-## Week 1
-- Setup project
-- Auth + DB
-
-## Week 2
-- Document + Flashcard
-
-## Week 3
-- Test + GPA + Highlight
-
-## Week 4
-- Fix bug + Testing + Deploy
-
----
-
-# 🚀 MVP CHECKLIST
-
-- [ ] Login/Register
-- [ ] Upload document
-- [ ] View document
-- [ ] Flashcard
-- [ ] Highlight
-- [ ] Test system
-- [ ] GPA calculator
-- [ ] Basic dashboard
-
----
-
-# 📌 LƯU Ý QUAN TRỌNG
-
-- Không làm AI ở MVP
-- Không làm feature thừa
-- Ưu tiên chạy được end-to-end
-
----
-
-# 🔥 STRATEGY
-
-- Làm nhanh → chạy được → fix sau
-- Luôn test ngay khi code xong
-- Mỗi ngày phải có progress
-
----
-
-# 📊 BONUS (NÊN CÓ)
-
-- Docker (Thịnh)
-- CI/CD Github Action (Thịnh + Anh)
-- Logging (Khang)
-- UI đẹp (Nhật)
-
----
-
-# ✅ DONE CRITERIA
-
-- 95% test pass
-- Không crash
-- Demo được full flow:
-  - Login → Upload → Study → Test → Result
+Cứ nói tôi sẽ chỉnh và đưa phiên bản mới ngay.

@@ -5,7 +5,7 @@
 - **Thành viên**: 4 người (Thịnh - Nhóm trưởng, Anh, Nhật, Khang)
 - **Tech stack dự kiến**:
   - **Frontend**: React.js + Vite + Tailwind CSS + React Router + Axios + Zustand + react-pdf
-  - **Backend**: Node.js/Express (base đã có) + Multer (upload file) + JWT + PostgreSQL/MySQL
+  - **Backend**: Fastapi (base đã có) + JWT + PostgreSQL
 - Mỗi thành viên chịu trách nhiệm **toàn bộ một module** (Frontend pages + Backend APIs tương ứng)
 - Thịnh đã làm base backend → sẽ tập trung review, tích hợp và module Auth + Dashboard
 

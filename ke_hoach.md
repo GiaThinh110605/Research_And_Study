@@ -1,76 +1,90 @@
-# KẾ HOẠCH PHÁT TRIỂN FRONTEND & BACKEND CHO MVP
-**Thời hạn hoàn thành MVP: 12/04/2026**
+# KẾ HOẠCH PHÁT TRIỂN FULL MVP
+**Hệ thống UniStudy - Hỗ trợ Học tập Thông minh IUH**
+
+**Thời hạn hoàn thành MVP:** 12/04/2026  
+**Tech Stack:**
+- **Frontend:** React + Vite + Tailwind CSS + React Router + Axios + Zustand + react-pdf
+- **Backend:** FastAPI + SQLAlchemy + Alembic + PostgreSQL + JWT
+- **Database:** PostgreSQL
 
 ## 1. Thông tin chung
-- **Thành viên**: 4 người (Thịnh - Nhóm trưởng, Anh, Nhật, Khang)
-- **Tech stack dự kiến**:
-  - **Frontend**: React.js + Axios + Zustand + react-pdf
-  - **Backend**: FastApi (base đã có) + Multer (upload file) + JWT + PostgreSQL
-- Mỗi thành viên chịu trách nhiệm **toàn bộ một module** (Frontend pages + Backend APIs tương ứng).  
-  **Tất cả tên trang và component trên Frontend đều phải dùng tiếng Việt** (theo thiết kế UI đã cung cấp).
-- Thịnh đã làm base backend → tập trung review, tích hợp và module Auth + Trang chủ.
+- Thành viên: 4 người (Thịnh - Nhóm trưởng, Anh, Nhật, Khang)
+- Tất cả giao diện (text, button, label, menu…) **phải bằng tiếng Việt**.
+- Thịnh đã có base backend → chịu trách nhiệm phần chung, review code và merge.
+- Mỗi thành viên chịu trách nhiệm cả **Frontend pages** và **Backend APIs** của module mình.
 
-## 2. Phân công công việc chi tiết (đã chuyển hết sang tiếng Việt)
+## 2. Phân công nhiệm vụ chi tiết
 
-| STT | Thành viên       | Module                              | Frontend Pages (tiếng Việt)                                                                 | Backend APIs & Logic                                      | Deadline nội bộ |
-|-----|------------------|-------------------------------------|---------------------------------------------------------------------------------------------|-----------------------------------------------------------|-----------------|
-| 1   | **Thịnh**        | **Xác thực + Trang chủ + Core**     | - Đăng nhập<br>- Đăng ký<br>- Trang chủ Sinh viên<br>- Trang chủ Giảng viên                | - Auth (đăng nhập/đăng ký/vai trò)<br>- Thông tin người dùng<br>- Dashboard APIs (tài liệu gần đây, bài test đang làm, thống kê giảng viên)<br>- Middleware kiểm tra vai trò | 05/04/2026     |
-| 2   | **Anh**          | **Quản lý Tài liệu**                | - Danh sách Tài liệu (Thư viện + Tìm kiếm/Lọc)<br>- Tải tài liệu lên<br>- Chi tiết Tài liệu (tab Thông tin + Trình xem PDF) | - Documents CRUD<br>- Upload file (Multer + lưu file_url)<br>- Metadata tài liệu<br>- Chia sẻ tài liệu (Document_Shares + quyền) | 08/04/2026     |
-| 3   | **Nhật**         | **Tương tác Học tập**               | - Chi tiết Tài liệu (tab Đặt câu hỏi, Thảo luận, Highlight)<br>- Component Highlight trong PDF | - Questions (đặt câu hỏi cơ bản)<br>- Discussions (bình luận + trả lời)<br>- Highlights (lưu theo trang, màu, ghi chú) | 08/04/2026     |
-| 4   | **Khang**        | **Kiểm tra & Công cụ**              | - Danh sách Bài kiểm tra + Làm bài kiểm tra + Kết quả bài kiểm tra<br>- Học Flashcard (Tạo + Chế độ học)<br>- Tính GPA cá nhân | - Tests + Test_Results<br>- Flashcards (CRUD + chế độ học)<br>- Logic tính GPA (hệ 10 ↔ 4.0 + lịch sử) | 08/04/2026     |
+| STT | Thành viên       | Module                              | Frontend Pages / Components (tiếng Việt)                                                                 | Backend (FastAPI)                                                                 | Deadline nội bộ |
+|-----|------------------|-------------------------------------|----------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|-----------------|
+| 1   | **Thịnh** (Nhóm trưởng) | **Auth + Layout + Landing + Dashboard** | - Trang chủ công khai (Landing Page)<br>- Đăng nhập<br>- Đăng ký<br>- Layout chung (Sidebar + Header)<br>- Trang chủ Sinh viên<br>- Trang chủ Giảng viên | - Auth (login, register, JWT, role)<br>- User management<br>- Dashboard APIs (recent documents, stats theo role)<br>- Protected middleware | 05/04/2026     |
+| 2   | **Anh**          | **Quản lý Tài liệu**                | - Danh sách Tài liệu (Thư viện + Search/Filter)<br>- Tải tài liệu lên<br>- Chi tiết Tài liệu (tab Thông tin + PDF Viewer)<br>- Modal Chia sẻ Tài liệu | - Documents (CRUD, upload file)<br>- Document metadata<br>- Document_Shares (chia sẻ + permission)<br>- File handling | 08/04/2026     |
+| 3   | **Nhật**         | **Tương tác & Thảo luận**           | - Chi tiết Tài liệu (tab Đặt câu hỏi, Thảo luận, Highlight)<br>- Thảo luận (Comments + Reply)<br>- Component Highlight trong PDF | - Questions (đặt câu hỏi về tài liệu)<br>- Discussions (comment + reply)<br>- Highlights (lưu theo trang, màu, ghi chú) | 08/04/2026     |
+| 4   | **Khang**        | **Kiểm tra, Flashcard & GPA**       | - Danh sách Bài kiểm tra<br>- Làm bài kiểm tra<br>- Kết quả bài kiểm tra<br>- Học Flashcard<br>- Modal Tạo Flashcard<br>- Tính GPA cá nhân | - Tests + Test_Results<br>- Flashcards (CRUD + chế độ học)<br>- GPA logic (tính điểm hệ 10/4.0 + lịch sử)<br>- Test submission & scoring | 08/04/2026     |
 
-### Ghi chú phân công:
-- Tất cả giao diện (button, label, modal, toast…) **phải ghi bằng tiếng Việt** theo đúng thiết kế screenshot (không dùng tiếng Anh).
-- Các component chung (Thanh điều hướng, Sidebar, Protected Route, Toast thông báo, Loading spinner) → **Thịnh** làm trước và share cho cả nhóm.
-- Code phát triển trên **branch riêng** (`feature/module-tên-thành-viên`), sau đó tạo Pull Request merge vào `dev`.
+### Component chung (Thịnh chịu trách nhiệm chính)
+- Sidebar role-based (Sinh viên / Giảng viên)
+- Header (tìm kiếm, thông báo, avatar)
+- ProtectedRoute
+- Loading spinner & Toast notification
+- PDF Viewer component
 
-## 3. Lịch trình thực hiện (2 tuần)
+## 3. Lịch trình thực hiện
 
 ### Tuần 1 (29/03/2026 – 05/04/2026)
-- Hoàn thiện Đăng nhập, Đăng ký, Trang chủ Sinh viên & Trang chủ Giảng viên
-- Xây dựng Danh sách Tài liệu + Tải tài liệu lên
-- Setup Trình xem PDF + Component Highlight
-- Daily meeting: 14:00 (Discord/Telegram)
+- Thịnh: Landing Page + Auth + Layout + Dashboard (Frontend + Backend)
+- Anh: Danh sách Tài liệu + Tải tài liệu lên (Frontend + Backend)
+- Toàn nhóm: Setup project React + FastAPI + kết nối PostgreSQL
 
 ### Tuần 2 (06/04/2026 – 12/04/2026)
-- Hoàn thiện Chi tiết Tài liệu (tab Đặt câu hỏi, Thảo luận, Highlight)
-- Làm Bài kiểm tra, Kết quả bài kiểm tra, Học Flashcard, Tính GPA cá nhân
-- Testing + Sửa lỗi
-- Deploy lên Staging (Vercel / Render / Railway)
-- Hoàn thiện MVP & chạy đầy đủ test case
+- Hoàn thiện Chi tiết Tài liệu (tất cả các tab)
+- Hoàn thiện Bài kiểm tra, Flashcard, GPA
+- Tích hợp Frontend ↔ Backend
+- Testing (Unit + Integration + System)
+- Deploy staging (Frontend: Vercel, Backend: Railway/Render)
 
-## 4. Testing Plan cho MVP (tóm tắt)
-- **Unit Testing**: Jest (Frontend), Jest/Pytest (Backend)
-- **Integration Testing**: Upload → lưu DB → hiển thị Trang chủ
-- **System Testing**: Theo Use Case
-  - TC01: Đăng ký → Đăng nhập → Tải tài liệu lên → Xem Chi tiết Tài liệu → Highlight → Đặt câu hỏi
-  - TC02: Làm bài kiểm tra → Nộp bài → Xem Kết quả bài kiểm tra
+## 4. Testing Plan (tóm tắt)
+- Unit Testing: Jest (Frontend), Pytest (Backend)
+- Integration Testing: Upload → lưu DB → hiển thị
+- System Testing theo Use Case:
+  - TC01: Landing → Đăng ký → Đăng nhập → Tải tài liệu → Chi tiết Tài liệu → Highlight → Đặt câu hỏi
+  - TC02: Làm bài kiểm tra → Nộp bài → Xem kết quả
   - TC03: Tính GPA (hệ 10 → hệ 4.0) → Lưu lịch sử
-- **Usability Testing**: Mời 5–10 sinh viên/giảng viên thực tế (từ Singapore) thử nghiệm
-- **Tiêu chí hoàn thành**: ≥ 95% test case pass, không bug critical/high, ≥ 80% feedback tích cực
+- Usability Testing: Mời 5–10 sinh viên/giảng viên thử nghiệm
+- Tiêu chí hoàn thành: ≥ 95% test case pass, không có bug critical
 
-## 5. Chức năng MVP (nhắc lại – chỉ tập trung MVP)
-- Đăng nhập / Đăng ký (Sinh viên, Giảng viên; Admin dùng tài khoản mặc định)
-- Tải tài liệu lên (PDF)
-- Xem Chi tiết Tài liệu (trình xem PDF + đặt câu hỏi cơ bản + Thảo luận)
-- Làm bài kiểm tra trắc nghiệm + xem kết quả ngay
+## 5. Chức năng MVP (phạm vi triển khai)
+- Trang chủ công khai (Landing Page) + Liên kết IUH
+- Đăng nhập / Đăng ký
+- Trang chủ theo vai trò (Sinh viên & Giảng viên)
+- Quản lý Tài liệu (upload, xem danh sách, chi tiết, chia sẻ)
+- Tương tác với tài liệu (đặt câu hỏi, thảo luận, highlight)
+- Bài kiểm tra trắc nghiệm + xem kết quả
 - Tạo & Học Flashcard (thủ công)
-- Highlight nội dung trong PDF
 - Tính điểm GPA cá nhân (hệ 10 và 4.0)
-- Chia sẻ tài liệu
-- Trang chủ cơ bản theo vai trò
+- Layout và navigation mượt mà
+
+**Lưu ý quan trọng:**
+- Không triển khai tính năng AI nâng cao, phát hiện đạo văn, bảng xếp hạng, Admin đầy đủ (dành cho phase sau).
+- Tất cả text trên giao diện phải bằng tiếng Việt.
 
 ---
 
-**Hướng dẫn sử dụng file này:**
+**Hướng dẫn sử dụng:**
 1. Copy toàn bộ nội dung trên
-2. Tạo file mới `PLAN_MVP.md`
+2. Tạo file mới: `PLAN_MVP_FULL.md`
 3. Paste và lưu
-4. Mở bằng VS Code hoặc Typora để xem đẹp
+4. Mở bằng VS Code hoặc Typora để xem đẹp hơn
 
-File đã được **kiểm tra kỹ**:
-- Tất cả tên trang đều chuyển sang tiếng Việt theo đúng thiết kế screenshot bạn cung cấp.
-- Phân công đều, không thay đổi workload.
-- Giữ nguyên phạm vi MVP (không thêm Bảng xếp hạng, Admin đầy đủ, Tạo đề thi nâng cao… vì thuộc phase sau).
+File này đã bao gồm:
+- Landing Page (trang công khai)
+- Toàn bộ use case trong diagram
+- Phân công cân bằng giữa 4 thành viên
+- Tech stack FastAPI + React + PostgreSQL
 
-Bạn muốn thêm **danh sách API endpoints chi tiết** theo module không? Hoặc template commit message? Cứ nói tôi chỉnh ngay! 🚀
+Bạn muốn tôi bổ sung thêm phần nào không?
+- Danh sách API endpoints chi tiết theo module
+- Cấu trúc thư mục chi tiết cho Frontend và Backend
+- Template commit message & Git workflow
+
+Cứ nói tôi sẽ cập nhật ngay!

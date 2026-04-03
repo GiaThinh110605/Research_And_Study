@@ -1,5 +1,5 @@
 # AI Research to help student with their homework and don't comsuming time 
-- web: 
+- web: https://research-and-study.onrender.com
 
 # Contributors:
 - [Lâm Gia Thịnh] (leader) - DHKHMT19A

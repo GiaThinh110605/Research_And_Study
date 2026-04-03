@@ -7,7 +7,7 @@
 - Fronted: ReactJS
 - Backend: FastAPI
 - Database: PostgreSQL
-- Design UI: Figma
+- Design UI: Stitch (https://stitch.withgoogle.com/projects/6010126405400371290)
 - Design Database: Use Case Diagram
 
 # CI/CD: 

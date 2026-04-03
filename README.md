@@ -1,4 +1,5 @@
 # AI Research to help student with their homework and don't comsuming time 
+- web: 
 
 # Contributors:
 - [Lâm Gia Thịnh] (leader) - DHKHMT19A
@@ -13,6 +14,7 @@
 # CI/CD: 
 - Github Action
 - Docker
+- Deploy: render
 
 # Guild run the project:
 - 1. Clone the project: 

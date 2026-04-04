@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const LandingPage: React.FC = () => {
   return (
@@ -37,9 +38,9 @@ const LandingPage: React.FC = () => {
               </button>
 
               {/* Login button */}
-              <button className="px-4 py-2 text-blue-600 transition-colors border border-blue-600 rounded-lg hover:bg-blue-50">
+              <Link to="/login" className="px-4 py-2 text-blue-600 transition-colors border border-blue-600 rounded-lg hover:bg-blue-50">
                 Đăng nhập
-              </button>
+              </Link>
             </div>
           </div>
         </div>

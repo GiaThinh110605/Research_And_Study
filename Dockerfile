@@ -38,5 +38,5 @@ EOF
 
 EXPOSE 8000 3000
 
-# Start both services
-CMD ["sh", "-c", "nginx && uvicorn main:app --host 0.0.0.0 --port 8000"]
+# Start both services (Nginx, Run DB Migrations, then Uvicorn)
+CMD ["sh", "-c", "nginx && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]

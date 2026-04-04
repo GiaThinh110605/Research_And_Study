@@ -39,7 +39,7 @@ jobs:
         DATABASE_URL: sqlite:///./test.db
         SECRET_KEY: test_secret_key
       run: |
-        pytest --pass-with-no-tests
+        pytest
 
   frontend-ci:
     runs-on: ubuntu-latest
@@ -67,4 +67,4 @@ jobs:
         CI: false # Ignore warnings from react-scripts build that treat them as errors
         
     - name: Run Tests
-      run: npm test -- --watchAll=false --passWithNoTests
+      run: npm test -- --watchAll=false

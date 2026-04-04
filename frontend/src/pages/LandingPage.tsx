@@ -17,10 +17,10 @@ const LandingPage: React.FC = () => {
 
             {/* Navigation */}
             <nav className="hidden space-x-8 md:flex">
-              <a href="#home" className="text-gray-700 transition-colors hover:text-blue-600">Trang chủ</a>
-              <a href="#features" className="text-gray-700 transition-colors hover:text-blue-600">Tính năng</a>
-              <a href="#documents" className="text-gray-700 transition-colors hover:text-blue-600">Tài liệu</a>
-              <a href="#community" className="text-gray-700 transition-colors hover:text-blue-600">Cộng đồng</a>
+              <Link to="/" className="text-gray-700 transition-colors hover:text-blue-600">Trang chủ</Link>
+              <Link to="/tinh-nang" className="text-gray-700 transition-colors hover:text-blue-600">Tính năng</Link>
+              <Link to="/tai-lieu" className="text-gray-700 transition-colors hover:text-blue-600">Tài liệu</Link>
+              <Link to="/cong-dong" className="text-gray-700 transition-colors hover:text-blue-600">Cộng đồng</Link>
             </nav>
 
             {/* Right side */}

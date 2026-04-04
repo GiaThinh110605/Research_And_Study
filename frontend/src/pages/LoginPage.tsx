@@ -15,7 +15,14 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await authService.login(email, password);
-      navigate('/');
+      // Fetch user to check role
+      const user = await authService.getCurrentUser();
+      
+      if (user.role?.toLowerCase() === 'student' || user.role === 'STUDENT') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');
     } finally {

@@ -32,12 +32,18 @@
 - https://docs.google.com/document/d/1LkhnjzN_mmDqaUTBHCFEWkGqwIwrBkFJ6_aK33HSfuw/edit?usp=sharing
 - https://docs.google.com/document/d/1OJcgUKaQy-MyRZJ03KKA_HniUWSYaatJVzldgQS7JdA/edit?usp=sharing
 
-## Run frontend
-- docker compose -f docker-compose.dev.yml restart frontend
+## Start all services (Database, Backend, Frontend)
+```bash
+docker compose -f docker-compose.dev.yml up -d --build
+```
 
-## Run backend
-- docker compose -f docker-compose.dev.yml restart backend
+### Access links:
+- **Frontend App**: [http://localhost:3000](http://localhost:3000)
+- **Backend API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Backend Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
-## Run database
-- docker compose -f docker-compose.dev.yml restart postgres
+## Stop all services
+```bash
+docker compose -f docker-compose.dev.yml down
+```
 

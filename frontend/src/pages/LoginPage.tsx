@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../services/auth';
 
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', { email, password });
+    setError('');
+    setIsLoading(true);
+    try {
+      await authService.login(email, password);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -142,12 +155,19 @@ const LoginPage: React.FC = () => {
                       </a>
                     </div>
 
+                    {error && (
+                      <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg">
+                        {error}
+                      </div>
+                    )}
+
                     {/* Login Button */}
                     <button
                       type="submit"
-                      className="flex items-center justify-center w-full px-4 py-3 font-semibold text-white transition duration-200 bg-blue-600 rounded-lg hover:bg-blue-700"
+                      disabled={isLoading}
+                      className="flex items-center justify-center w-full px-4 py-3 font-semibold text-white transition duration-200 bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
                     >
-                      Đăng nhập
+                      {isLoading ? 'Đang xử lý...' : 'Đăng nhập'}
                       <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>

@@ -20,6 +20,8 @@ const LoginPage: React.FC = () => {
       
       if (user.role?.toLowerCase() === 'student' || user.role === 'STUDENT') {
         navigate('/dashboard');
+      } else if (user.role?.toLowerCase() === 'lecturer' || user.role === 'LECTURER') {
+        navigate('/lecturer-dashboard');
       } else {
         navigate('/');
       }

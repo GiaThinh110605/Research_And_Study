@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
+from typing import Optional
 
 from app.core.config import settings
 from app.core.security import ALGORITHM
@@ -12,6 +13,11 @@ from app.schemas.user import TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login"
+)
+
+optional_oauth2 = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/login",
+    auto_error=False,
 )
 
 def get_current_user(
@@ -30,4 +36,22 @@ def get_current_user(
     user = db.query(User).filter(User.id == token_data.sub).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+def get_current_user_optional(
+    db: Session = Depends(get_db), token: Optional[str] = Depends(optional_oauth2)
+) -> Optional[User]:
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        token_data = TokenPayload(**payload)
+    except (jwt.JWTError, ValidationError):
+        return None
+
+    user = db.query(User).filter(User.id == token_data.sub).first()
     return user

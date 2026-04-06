@@ -1,55 +1,233 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import DetailModal from '../components/documents/DetailModal';
+import DocumentCard from '../components/documents/DocumentCard';
+import ShareModal from '../components/documents/ShareModal';
+import UploadModal from '../components/documents/UploadModal';
+import { authService } from '../services/auth';
+import {
+  documentService,
+  DocumentItem,
+  DocumentQueryParams,
+  ShareItem,
+} from '../services/documents';
+
+const allowedExtensions = new Set(['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt']);
+const maxFileSize = 10 * 1024 * 1024;
+const PAGE_SIZE = 12;
 
 const DocumentsPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-  // Sample data for document cards
-  const documents = [
-    {
-      id: 1,
-      type: 'PDF',
-      category: 'CNTT',
-      size: '1.2 MB',
-      title: 'Cấu trúc dữ liệu và Giải thuật - Đề thi cuối kỳ 2023',
-      author: 'Nguyễn Văn A',
-      avatar: 'https://i.pravatar.cc/150?img=11',
-      image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      id: 2,
-      type: 'DOCX',
-      category: 'TOÁN HỌC',
-      size: '450 KB',
-      title: 'Giáo trình Toán Cao Cấp A1 - IUH (Full bài giải)',
-      author: 'Lê Thị B',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-      image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      id: 3,
-      type: 'PDF',
-      category: 'KINH TẾ',
-      size: '3.5 MB',
-      title: 'Tiểu luận Marketing Căn Bản: Phân tích Vinamilk 2024',
-      author: 'Trần Minh C',
-      avatar: 'https://i.pravatar.cc/150?img=12',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+  const [searchQuery, setSearchQuery] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('Tất cả tài liệu');
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadDescription, setUploadDescription] = useState('');
+  const [uploadSubject, setUploadSubject] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const [selectedDocument, setSelectedDocument] = useState<DocumentItem | null>(null);
+  const [detailError, setDetailError] = useState('');
+
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [shareTargetEmail, setShareTargetEmail] = useState('');
+  const [sharePermission, setSharePermission] = useState<'view' | 'edit' | 'comment'>('view');
+  const [shareItems, setShareItems] = useState<ShareItem[]>([]);
+  const [shareError, setShareError] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
+
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('token')));
+
+  const subjectOptions = useMemo(() => {
+    const values = new Set<string>();
+    documents.forEach((doc) => {
+      if (doc.subject) values.add(doc.subject);
+    });
+    return ['Tất cả tài liệu', ...Array.from(values).sort((a, b) => a.localeCompare(b))];
+  }, [documents]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const visibleStart = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const visibleEnd = Math.min(total, currentPage * PAGE_SIZE);
+
+  const loadDocuments = async (query?: string, subject?: string, page: number = 1) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const params: DocumentQueryParams = {
+        q: query || undefined,
+        subject: subject && subject !== 'Tất cả tài liệu' ? subject : undefined,
+        sort: 'newest',
+        page,
+        page_size: PAGE_SIZE,
+      };
+      const response = await documentService.list(params);
+      setDocuments(response.items);
+      setTotal(response.total);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Khong the tai danh sach tai lieu.');
+      setDocuments([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      loadDocuments(searchQuery, subjectFilter, currentPage);
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, subjectFilter, currentPage]);
+
+  useEffect(() => {
+    setIsLoggedIn(Boolean(localStorage.getItem('token')));
+  }, []);
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      if (!isLoggedIn) {
+        setCurrentUserId(null);
+        return;
+      }
+
+      try {
+        const me = await authService.getCurrentUser();
+        setCurrentUserId(me.id ?? null);
+      } catch {
+        setCurrentUserId(null);
+      }
+    };
+
+    bootstrap();
+  }, [isLoggedIn]);
+
+  const resetUploadForm = () => {
+    setUploadTitle('');
+    setUploadDescription('');
+    setUploadSubject('');
+    setIsPublic(true);
+    setUploadFile(null);
+    setUploadError('');
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile) {
+      setUploadError('Vui long chon tep truoc khi tai len.');
+      return;
+    }
+
+    const extension = uploadFile.name.split('.').pop()?.toLowerCase() || '';
+    if (!allowedExtensions.has(extension)) {
+      setUploadError('Dinh dang tep khong duoc ho tro.');
+      return;
+    }
+
+    if (uploadFile.size > maxFileSize) {
+      setUploadError('Kich thuoc tep vuot qua 10MB.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError('');
+    try {
+      await documentService.upload({
+        title: uploadTitle,
+        description: uploadDescription,
+        subject: uploadSubject,
+        is_public: isPublic,
+        file: uploadFile,
+      });
+
+      setIsUploadOpen(false);
+      resetUploadForm();
+      await loadDocuments(searchQuery, subjectFilter, currentPage);
+    } catch (err: any) {
+      setUploadError(err.response?.data?.detail || 'Tai tai lieu that bai.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const openDetail = async (documentId: number) => {
+    setDetailError('');
+    try {
+      const detail = await documentService.detail(documentId);
+      setSelectedDocument(detail);
+    } catch (err: any) {
+      setDetailError(err.response?.data?.detail || 'Khong the tai chi tiet tai lieu.');
+    }
+  };
+
+  const openShare = async (doc: DocumentItem) => {
+    setShareError('');
+    setShareItems([]);
+    setSelectedDocument(doc);
+    setIsShareOpen(true);
+    try {
+      const shares = await documentService.listShares(doc.id);
+      setShareItems(shares);
+    } catch (err: any) {
+      setShareError(err.response?.data?.detail || 'Khong the tai danh sach chia se.');
+    }
+  };
+
+  const handleShare = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDocument) return;
+
+    if (!shareTargetEmail.trim()) {
+      setShareError('Vui long nhap email nguoi nhan.');
+      return;
+    }
+
+    setIsSharing(true);
+    setShareError('');
+    try {
+      await documentService.share(selectedDocument.id, {
+        shared_with_email: shareTargetEmail.trim(),
+        permission: sharePermission,
+      });
+      setShareTargetEmail('');
+      const shares = await documentService.listShares(selectedDocument.id);
+      setShareItems(shares);
+    } catch (err: any) {
+      setShareError(err.response?.data?.detail || 'Chia se tai lieu that bai.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const closeShareModal = () => {
+    setIsShareOpen(false);
+    setSelectedDocument(null);
+    setShareError('');
+    setShareTargetEmail('');
+    setSharePermission('view');
+    setShareItems([]);
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Header */}
       <header className="bg-white border-b border-gray-100">
         <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-            {/* Logo */}
             <Link to="/" className="flex items-center">
               <div className="text-2xl font-black tracking-tight text-blue-600">UniStudy</div>
             </Link>
 
-            {/* Navigation */}
             <nav className="hidden space-x-10 md:flex">
               <Link to="/" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Trang chủ</Link>
               <Link to="/tinh-nang" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Tính năng</Link>
@@ -57,8 +235,15 @@ const DocumentsPage: React.FC = () => {
               <Link to="/cong-dong" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Cộng đồng</Link>
             </nav>
 
-            {/* Right side */}
             <div className="flex items-center space-x-4">
+              {isLoggedIn && (
+                <button
+                  onClick={() => setIsUploadOpen(true)}
+                  className="px-5 py-2.5 text-sm font-semibold text-white transition-all bg-emerald-600 rounded-lg shadow-md hover:bg-emerald-700"
+                >
+                  Tai tai lieu
+                </button>
+              )}
               <Link to="/login" className="px-5 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:text-blue-600">
                 Đăng nhập
               </Link>
@@ -70,7 +255,6 @@ const DocumentsPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Hero Search Section */}
       <section className="pt-16 pb-12 text-center">
         <div className="px-4 mx-auto max-w-4xl sm:px-6 lg:px-8">
           <h1 className="mb-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
@@ -79,7 +263,7 @@ const DocumentsPage: React.FC = () => {
           <p className="max-w-2xl mx-auto mb-10 text-lg text-slate-600">
             Khám phá hàng ngàn đề thi, bài giảng và tài liệu chuyên ngành được chia sẻ bởi cộng đồng sinh viên Đại học Công nghiệp TP.HCM.
           </p>
-          
+
           <div className="relative max-w-3xl mx-auto">
             <div className="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
               <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,180 +275,138 @@ const DocumentsPage: React.FC = () => {
               className="w-full py-5 pl-14 pr-6 text-lg transition-shadow bg-white border border-slate-200 rounded-full shadow-sm outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 hover:shadow-md"
               placeholder="Tìm kiếm tài liệu, môn học, mã học phần..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
         </div>
       </section>
 
-      {/* Main Content */}
       <section className="pb-24">
         <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8 relative">
           <div className="flex flex-col gap-8 md:flex-row">
-            
-            {/* Left Sidebar - Filters */}
             <div className="w-full md:w-64 shrink-0">
               <div className="bg-white border rounded-2xl border-slate-100 p-6 shadow-sm sticky top-6">
-                
-                {/* Bộ lọc môn học */}
                 <div className="flex items-center gap-3 mb-6">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
                   <h3 className="font-bold text-slate-900">Bộ lọc môn học</h3>
                 </div>
-                
+
                 <ul className="mb-8 space-y-1">
-                  <li>
-                    <button className="w-full px-4 py-2.5 text-left text-sm font-semibold text-blue-700 bg-blue-50 rounded-xl">
-                      Tất cả tài liệu
-                    </button>
-                  </li>
-                  <li>
-                    <button className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-600 transition-colors rounded-xl hover:bg-slate-50 hover:text-slate-900">
-                      Công nghệ thông tin
-                    </button>
-                  </li>
-                  <li>
-                    <button className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-600 transition-colors rounded-xl hover:bg-slate-50 hover:text-slate-900">
-                      Toán học & Thống kê
-                    </button>
-                  </li>
-                  <li>
-                    <button className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-600 transition-colors rounded-xl hover:bg-slate-50 hover:text-slate-900">
-                      Kinh tế & Quản trị
-                    </button>
-                  </li>
-                  <li>
-                    <button className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-600 transition-colors rounded-xl hover:bg-slate-50 hover:text-slate-900">
-                      Cơ khí - Ô tô
-                    </button>
-                  </li>
-                  <li>
-                    <button className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-600 transition-colors rounded-xl hover:bg-slate-50 hover:text-slate-900">
-                      Ngoại ngữ
-                    </button>
-                  </li>
+                  {subjectOptions.map((subjectOption) => (
+                    <li key={subjectOption}>
+                      <button
+                        onClick={() => {
+                          setSubjectFilter(subjectOption);
+                          setCurrentPage(1);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left text-sm rounded-xl transition-colors ${
+                          subjectFilter === subjectOption
+                            ? 'font-semibold text-blue-700 bg-blue-50'
+                            : 'font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                      >
+                        {subjectOption}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
-
-                <hr className="mb-8 border-slate-100" />
-
-                {/* Phân loại tài liệu */}
-                <h3 className="mb-4 text-xs font-bold tracking-widest text-slate-400 uppercase">LOẠI TÀI LIỆU</h3>
-                <div className="space-y-4">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative flex items-center justify-center w-5 h-5 border-2 rounded bg-white border-slate-300 group-hover:border-blue-500">
-                      <input type="checkbox" className="absolute opacity-0 w-full h-full cursor-pointer" />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700 select-none">Đề thi / Kiểm tra</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative flex items-center justify-center w-5 h-5 border-2 rounded bg-white border-slate-300 group-hover:border-blue-500">
-                      <input type="checkbox" className="absolute opacity-0 w-full h-full cursor-pointer" />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700 select-none">Giáo trình / Slide</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative flex items-center justify-center w-5 h-5 border-2 rounded bg-white border-slate-300 group-hover:border-blue-500">
-                      <input type="checkbox" className="absolute opacity-0 w-full h-full cursor-pointer" />
-                    </div>
-                    <span className="text-sm font-medium text-slate-700 select-none">Bài tập lớn (Report)</span>
-                  </label>
-                </div>
               </div>
             </div>
 
-            {/* Right Content */}
             <div className="flex-1">
               <div className="flex items-center justify-between mb-6">
                 <p className="text-sm text-slate-600">
-                  Hiển thị <span className="font-bold text-slate-900">1,248</span> tài liệu
+                  Hien thi <span className="font-bold text-slate-900">{visibleStart}-{visibleEnd}</span> trong <span className="font-bold text-slate-900">{total}</span> tai lieu
                 </p>
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-                  <span className="uppercase tracking-widest text-[11px] font-bold">SẮP XẾP:</span>
-                  <button className="flex items-center gap-1 font-bold text-blue-600">
-                    Mới nhất
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                  </button>
+              </div>
+
+              {error && (
+                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  {error}
                 </div>
-              </div>
+              )}
 
-              {/* Grid of Documents */}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {documents.map((doc) => (
-                  <div key={doc.id} className="flex flex-col overflow-hidden transition-all bg-white border cursor-pointer border-slate-100 rounded-2xl hover:shadow-lg hover:-translate-y-1">
-                    {/* Image Area */}
-                    <div className="relative h-40 bg-slate-100">
-                      <img src={doc.image} alt={doc.title} className="object-cover w-full h-full" />
-                      <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 text-[10px] font-bold bg-white/90 backdrop-blur-sm rounded shadow-sm">
-                        <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
-                        {doc.type}
-                      </div>
-                    </div>
-                    {/* Content Area */}
-                    <div className="flex flex-col flex-1 p-5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded uppercase tracking-wider">{doc.category}</span>
-                        <span className="text-xs font-medium text-slate-400">• {doc.size}</span>
-                      </div>
-                      <h4 className="mb-4 font-bold leading-snug line-clamp-2 text-slate-900 group-hover:text-blue-600">
-                        {doc.title}
-                      </h4>
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-2">
-                          <img src={doc.avatar} alt={doc.author} className="w-6 h-6 rounded-full border border-slate-200" />
-                          <span className="text-xs font-medium text-slate-600">{doc.author}</span>
-                        </div>
-                        <svg className="w-5 h-5 text-slate-300 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                      </div>
-                    </div>
+              {detailError && (
+                <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                  {detailError}
+                </div>
+              )}
+
+              {isLoading ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-white p-5" />
+                  ))}
+                </div>
+              ) : documents.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {documents.map((doc) => (
+                      <DocumentCard
+                        key={doc.id}
+                        document={doc}
+                        currentUserId={currentUserId}
+                        onOpenDetail={openDetail}
+                        onOpenShare={openShare}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              {/* Login Overlay (Paywall effect) */}
-              <div className="mt-6 relative">
-                 {/* Faded dummy cards */}
-                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 opacity-30 pointer-events-none filter blur-[2px]">
-                    <div className="h-64 bg-slate-200 rounded-2xl w-full"></div>
-                    <div className="h-64 bg-slate-200 rounded-2xl w-full hidden sm:block"></div>
-                    <div className="h-64 bg-slate-200 rounded-2xl w-full hidden lg:block"></div>
-                 </div>
-                 
-                 {/* The Wall Modal */}
-                 <div className="absolute inset-0 flex flex-col items-center justify-center pt-10">
-                    <div className="w-full max-w-lg p-10 text-center bg-white border shadow-2xl rounded-3xl border-slate-100 shadow-blue-900/5">
-                       <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-blue-50 rounded-2xl">
-                          <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                          </svg>
-                       </div>
-                       <h3 className="mb-4 text-2xl font-extrabold text-slate-900">Mở khóa toàn bộ thư viện</h3>
-                       <p className="mb-8 text-slate-600">
-                         Bạn đã xem hết các tài liệu công khai. Đăng nhập với email sinh viên IUH để truy cập không giới hạn hơn 50.000+ tài liệu chuyên sâu khác.
-                       </p>
-                       <div className="flex items-center justify-center gap-4">
-                          <Link to="/login" className="px-6 py-3 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700">
-                            Đăng nhập ngay
-                          </Link>
-                          <Link to="/pricing" className="px-6 py-3 font-semibold text-slate-700 transition-colors bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-                            Tìm hiểu thêm
-                          </Link>
-                       </div>
+                  {totalPages > 1 && (
+                    <div className="mt-8 flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Truoc
+                      </button>
+                      <span className="text-sm font-medium text-slate-600">
+                        Trang <span className="font-bold text-slate-900">{currentPage}</span> / {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Sau
+                      </button>
                     </div>
-                 </div>
-              </div>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+                  <h3 className="text-xl font-bold text-slate-800">Khong tim thay tai lieu phu hop</h3>
+                  <p className="mt-2 text-slate-500">Thu doi tu khoa tim kiem hoac bo loc mon hoc.</p>
+                </div>
+              )}
             </div>
           </div>
-          
-          {/* Floating Action Button */}
-          <button className="fixed flex items-center justify-center w-14 h-14 text-white transition-transform bg-blue-600 rounded-full shadow-xl bottom-8 right-8 hover:bg-blue-700 hover:scale-110 shadow-blue-600/30">
-             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-             </svg>
+
+          <button
+            onClick={() => {
+              if (!isLoggedIn) {
+                setError('Vui long dang nhap de tai tai lieu.');
+                return;
+              }
+              setIsUploadOpen(true);
+            }}
+            className="fixed flex items-center justify-center w-14 h-14 text-white transition-transform bg-blue-600 rounded-full shadow-xl bottom-8 right-8 hover:bg-blue-700 hover:scale-110 shadow-blue-600/30"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </button>
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="py-8 bg-white border-t border-slate-200">
         <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between md:flex-row">
@@ -273,14 +415,54 @@ const DocumentsPage: React.FC = () => {
               <p className="mt-1 text-xs text-slate-500">© 2024 UniStudy. Sapphire Logic Design System.</p>
             </div>
             <div className="flex gap-6 text-sm font-medium text-slate-500">
-              <a href="#" className="hover:text-slate-900">Điều khoản</a>
-              <a href="#" className="hover:text-slate-900">Bảo mật</a>
-              <a href="#" className="hover:text-slate-900">Liên hệ</a>
-              <a href="#" className="hover:text-slate-900">Trợ giúp</a>
+              <Link to="/" className="hover:text-slate-900">Dieu khoan</Link>
+              <Link to="/" className="hover:text-slate-900">Bao mat</Link>
+              <Link to="/" className="hover:text-slate-900">Lien he</Link>
+              <Link to="/" className="hover:text-slate-900">Tro giup</Link>
             </div>
           </div>
         </div>
       </footer>
+
+      <UploadModal
+        isOpen={isUploadOpen}
+        uploadTitle={uploadTitle}
+        uploadDescription={uploadDescription}
+        uploadSubject={uploadSubject}
+        isPublic={isPublic}
+        uploadError={uploadError}
+        isUploading={isUploading}
+        onClose={() => {
+          setIsUploadOpen(false);
+          resetUploadForm();
+        }}
+        onSubmit={handleUpload}
+        onChangeUploadTitle={setUploadTitle}
+        onChangeUploadDescription={setUploadDescription}
+        onChangeUploadSubject={setUploadSubject}
+        onChangeIsPublic={setIsPublic}
+        onFileChange={setUploadFile}
+      />
+
+      <DetailModal
+        document={selectedDocument && !isShareOpen ? selectedDocument : null}
+        apiBaseUrl={API_BASE_URL}
+        onClose={() => setSelectedDocument(null)}
+      />
+
+      <ShareModal
+        isOpen={isShareOpen}
+        document={selectedDocument}
+        shareTargetEmail={shareTargetEmail}
+        sharePermission={sharePermission}
+        shareItems={shareItems}
+        shareError={shareError}
+        isSharing={isSharing}
+        onClose={closeShareModal}
+        onSubmit={handleShare}
+        onChangeShareTargetEmail={setShareTargetEmail}
+        onChangeSharePermission={setSharePermission}
+      />
     </div>
   );
 };

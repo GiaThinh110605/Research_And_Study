@@ -20,6 +20,9 @@ class UserUpdate(BaseModel):
     student_id: Optional[str] = None
     gpa: Optional[float] = None
 
+class UserUpdateByAdmin(UserUpdate):
+    role: Optional[UserRole] = None
+
 class UserOut(UserBase):
     id: int
     created_at: datetime

@@ -243,7 +243,7 @@ const RegisterPage: React.FC = () => {
                         className="w-4 h-4 mt-1 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <label htmlFor="agreeTerms" className="ml-3 text-sm text-gray-600">
-                        Tôi đồng ý với các <Link to="/" className="text-blue-600 hover:text-blue-700">điều khoản dịch vụ</Link> và <Link to="/" className="text-blue-600 hover:text-blue-700">chính sách bảo mật</Link> của UniStudy.
+                        Tôi đồng ý với các <a href="#" className="text-blue-600 hover:text-blue-700">điều khoản dịch vụ</a> và <a href="#" className="text-blue-600 hover:text-blue-700">chính sách bảo mật</a> của UniStudy.
                       </label>
                     </div>
 

@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import FeaturesPage from './pages/FeaturesPage';
 import DocumentsPage from './pages/DocumentsPage';
+import DocumentsUploadPage from './pages/DocumentsUploadPage';
+import DocumentDetailPage from './pages/DocumentDetailPage';
 import CommunityPage from './pages/CommunityPage';
 import DiscussionPage from './pages/DiscussionPage';
 import AdminUserManagement from './pages/AdminUserManagement';
@@ -17,16 +19,17 @@ import AdminSettings from './pages/AdminSettings';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
-import TestListPage from './pages/TestListPage';
+
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/tinh-nang" element={<FeaturesPage />} />
+        <Route path="/tai-lieu/tai-len" element={<DocumentsUploadPage />} />
+        <Route path="/tai-lieu/:documentId" element={<DocumentDetailPage />} />
         <Route path="/tai-lieu" element={<DocumentsPage />} />
         <Route path="/cong-dong" element={<CommunityPage />} />
-        <Route path="/thao-luan" element={<DiscussionPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<StudentDashboard />} />
@@ -42,4 +45,5 @@ function App() {
     </Router>
   );
 }
+
 export default App;

@@ -11,6 +11,8 @@ import DiscussionPage from './pages/DiscussionPage';
 import AdminUserManagement from './pages/AdminUserManagement';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminDocumentManagement from './pages/AdminDocumentManagement';
+import AdminModeration from './pages/AdminModeration';
+import AdminLogs from './pages/AdminLogs';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
@@ -31,6 +33,8 @@ function App() {
         <Route path="/test-list" element={<TestListPage />} />
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/admin/docs" element={<AdminDocumentManagement />} />
+        <Route path="/admin/moderation" element={<AdminModeration />} />
+        <Route path="/admin/logs" element={<AdminLogs />} />
         <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </Router>

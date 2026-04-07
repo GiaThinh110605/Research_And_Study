@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
+from typing import Optional
 
 from app.core.config import settings
 from app.core.security import ALGORITHM
@@ -12,6 +13,11 @@ from app.schemas.user import TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login"
+)
+
+optional_oauth2 = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/login",
+    auto_error=False,
 )
 
 def get_current_user(

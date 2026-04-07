@@ -90,7 +90,7 @@ const CommunityPage: React.FC = () => {
                 </span>
                 Thảo luận sôi nổi nhất
               </h2>
-              <a href="#" className="text-sm font-semibold text-blue-600 hover:text-blue-700">Xem tất cả</a>
+              <Link to="/cong-dong" className="text-sm font-semibold text-blue-600 hover:text-blue-700">Xem tất cả</Link>
             </div>
 
             <div className="space-y-5">
@@ -311,10 +311,10 @@ const CommunityPage: React.FC = () => {
               <p className="mt-1 text-xs text-slate-500">© 2024 UniStudy. Sapphire Logic Design System.</p>
             </div>
             <div className="flex gap-6 text-sm font-medium text-slate-500">
-              <a href="#" className="hover:text-slate-900">Điều khoản</a>
-              <a href="#" className="hover:text-slate-900">Bảo mật</a>
-              <a href="#" className="hover:text-slate-900">Liên hệ</a>
-              <a href="#" className="hover:text-slate-900">Trợ giúp</a>
+              <Link to="/" className="hover:text-slate-900">Điều khoản</Link>
+              <Link to="/" className="hover:text-slate-900">Bảo mật</Link>
+              <Link to="/" className="hover:text-slate-900">Liên hệ</Link>
+              <Link to="/" className="hover:text-slate-900">Trợ giúp</Link>
             </div>
           </div>
         </div>

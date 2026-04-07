@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
-
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
-
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
   };
-
   return (
     <div className="flex h-screen bg-[#F4F7FE] font-sans">
       {/* Sidebar */}
@@ -23,7 +20,6 @@ const StudentDashboard: React.FC = () => {
             <p className="text-[10px] font-bold text-gray-500 tracking-wider">IUH STUDENT PORTAL</p>
           </div>
         </div>
-
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {/* Active Item */}
           <Link to="/dashboard" className="flex items-center gap-4 px-4 py-3.5 bg-[#3B66F5] text-white rounded-xl font-medium shadow-md shadow-blue-200">
@@ -46,7 +42,6 @@ const StudentDashboard: React.FC = () => {
             </Link>
           ))}
         </nav>
-
         <div className="p-4 bg-white mt-auto border-t border-gray-50">
           <button className="flex items-center justify-center w-full gap-2 px-4 py-3 mb-6 font-semibold text-white transition-colors bg-[#3B66F5] rounded-xl hover:bg-blue-700 shadow-md shadow-blue-200">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
@@ -65,7 +60,6 @@ const StudentDashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Top Navbar */}
@@ -96,7 +90,6 @@ const StudentDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
         {/* Dashboard Content Scrollable */}
         <div className="flex-1 overflow-y-auto p-8">
           <div className="max-w-7xl mx-auto space-y-8">
@@ -112,7 +105,6 @@ const StudentDashboard: React.FC = () => {
                 Tải lên nhanh
               </button>
             </div>
-
             {/* Top Cards Row */}
             <div className="grid grid-cols-12 gap-6">
               {/* GPA Card */}
@@ -133,7 +125,6 @@ const StudentDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-
               {/* Recent Docs */}
               <div className="col-span-12 lg:col-span-8 bg-transparent">
                 <div className="flex justify-between items-center mb-6 px-1">
@@ -180,7 +171,6 @@ const StudentDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-
             {/* Test Table Row */}
             <div className="bg-white rounded-3xl p-7 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-6">
@@ -232,7 +222,6 @@ const StudentDashboard: React.FC = () => {
                 </table>
               </div>
             </div>
-
             {/* Bottom Cards Row */}
             <div className="grid grid-cols-12 gap-6">
               {/* Total Docs */}
@@ -251,7 +240,6 @@ const StudentDashboard: React.FC = () => {
                   <p className="text-blue-200 text-sm font-medium">+12 tài liệu mới tuần này</p>
                 </div>
               </div>
-
               {/* Flashcards */}
               <div className="col-span-12 lg:col-span-4 bg-white rounded-3xl p-7 shadow-sm border border-gray-100 flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-6">
@@ -266,7 +254,6 @@ const StudentDashboard: React.FC = () => {
                   <button className="w-full bg-gray-50 text-gray-900 font-bold py-3 rounded-xl hover:bg-[#3B66F5] hover:text-white transition shadow-sm border border-gray-100 hover:border-transparent">TIẾP TỤC HỌC</button>
                 </div>
               </div>
-
               {/* Discussions */}
               <div className="col-span-12 lg:col-span-4 bg-white rounded-3xl p-7 shadow-sm border border-gray-100 relative">
                 <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
@@ -303,5 +290,4 @@ const StudentDashboard: React.FC = () => {
     </div>
   );
 };
-
 export default StudentDashboard;

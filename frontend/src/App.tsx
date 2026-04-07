@@ -11,7 +11,7 @@ import DiscussionPage from './pages/DiscussionPage';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
-
+import TestListPage from './pages/TestListPage';
 function App() {
   return (
     <Router>
@@ -25,9 +25,9 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
+        <Route path="/test-list" element={<TestListPage />} />
       </Routes>
     </Router>
   );
 }
-
 export default App;

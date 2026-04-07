@@ -16,16 +16,14 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await authService.login(email, password);
-      // Fetch user to check role
       const user = await authService.getCurrentUser();
-      
       const role = user.role?.toLowerCase();
       if (role === 'student') {
         navigate('/dashboard');
       } else if (role === 'lecturer') {
         navigate('/lecturer-dashboard');
       } else if (role === 'admin') {
-        navigate('/admin/users');
+        navigate('/admin');
       } else {
         navigate('/');
       }

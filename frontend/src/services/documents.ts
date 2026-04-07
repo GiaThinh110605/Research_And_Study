@@ -38,6 +38,13 @@ export interface UploadDocumentPayload {
   file: File;
 }
 
+export interface UpdateDocumentPayload {
+  title?: string;
+  description?: string;
+  subject?: string;
+  is_public?: boolean;
+}
+
 export interface SharePayload {
   shared_with_user_id?: number;
   shared_with_email?: string;
@@ -83,6 +90,16 @@ export const documentService = {
 
   async share(documentId: number, payload: SharePayload): Promise<ShareItem> {
     const response = await api.post(`/api/v1/documents/${documentId}/share`, payload);
+    return response.data;
+  },
+
+  async update(documentId: number, payload: UpdateDocumentPayload): Promise<DocumentItem> {
+    const response = await api.put(`/api/v1/documents/${documentId}`, payload);
+    return response.data;
+  },
+
+  async remove(documentId: number): Promise<{ message: string }> {
+    const response = await api.delete(`/api/v1/documents/${documentId}`);
     return response.data;
   },
 

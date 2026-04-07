@@ -170,9 +170,9 @@ const LoginPage: React.FC = () => {
                         <input id="remember" type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
                         <label htmlFor="remember" className="ml-2 text-sm text-gray-600">Ghi nhớ đăng nhập</label>
                       </div>
-                      <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                      <Link to="/" className="text-sm font-medium text-blue-600 hover:text-blue-700">
                         Quên mật khẩu?
-                      </a>
+                      </Link>
                     </div>
 
                     {error && (

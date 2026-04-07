@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import FeaturesPage from './pages/FeaturesPage';
 import DocumentsPage from './pages/DocumentsPage';
+import DocumentsUploadPage from './pages/DocumentsUploadPage';
+import DocumentDetailPage from './pages/DocumentDetailPage';
 import CommunityPage from './pages/CommunityPage';
 
 import StudentDashboard from './pages/StudentDashboard';
@@ -17,6 +19,8 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/tinh-nang" element={<FeaturesPage />} />
+        <Route path="/tai-lieu/tai-len" element={<DocumentsUploadPage />} />
+        <Route path="/tai-lieu/:documentId" element={<DocumentDetailPage />} />
         <Route path="/tai-lieu" element={<DocumentsPage />} />
         <Route path="/cong-dong" element={<CommunityPage />} />
         <Route path="/login" element={<LoginPage />} />

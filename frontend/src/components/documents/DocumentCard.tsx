@@ -4,6 +4,7 @@ import { DocumentItem } from '../../services/documents';
 interface DocumentCardProps {
   document: DocumentItem;
   currentUserId: number | null;
+  viewMode: 'grid' | 'list';
   onOpenDetail: (documentId: number) => void;
   onOpenShare: (document: DocumentItem) => void;
 }
@@ -11,14 +12,17 @@ interface DocumentCardProps {
 const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
   currentUserId,
+  viewMode,
   onOpenDetail,
   onOpenShare,
 }) => {
+  const isGrid = viewMode === 'grid';
+
   return (
-    <div className="flex flex-col overflow-hidden transition-all bg-white border border-slate-100 rounded-2xl hover:shadow-lg hover:-translate-y-1">
-      <div className="relative h-40 bg-slate-100">
+    <div className={`overflow-hidden rounded-2xl border border-slate-100 bg-white transition-all hover:-translate-y-0.5 hover:shadow-md ${isGrid ? 'flex flex-col' : 'flex items-center p-4 gap-4'}`}>
+      <div className={`relative bg-slate-100 ${isGrid ? 'h-40' : 'h-24 w-28 shrink-0 rounded-xl'}`}>
         <div className="flex h-full items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-          <span className="text-lg font-black tracking-wide text-indigo-600">{document.file_type}</span>
+          <span className="text-sm font-black tracking-wide text-indigo-600">{document.file_type}</span>
         </div>
         <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 text-[10px] font-bold bg-white/90 backdrop-blur-sm rounded shadow-sm">
           <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -32,7 +36,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col flex-1 p-5">
+      <div className={`flex flex-col flex-1 ${isGrid ? 'p-5' : ''}`}>
         <div className="flex items-center gap-2 mb-3">
           <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded uppercase tracking-wider">
             {document.subject || 'Chua phan loai'}

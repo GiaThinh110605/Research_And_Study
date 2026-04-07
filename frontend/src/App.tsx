@@ -8,6 +8,7 @@ import FeaturesPage from './pages/FeaturesPage';
 import DocumentsPage from './pages/DocumentsPage';
 import CommunityPage from './pages/CommunityPage';
 import DiscussionPage from './pages/DiscussionPage';
+import AdminUserManagement from './pages/AdminUserManagement';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
@@ -26,6 +27,7 @@ function App() {
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
         <Route path="/test-list" element={<TestListPage />} />
+        <Route path="/admin/users" element={<AdminUserManagement />} />
       </Routes>
     </Router>
   );

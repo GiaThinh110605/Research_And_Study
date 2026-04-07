@@ -19,6 +19,7 @@ const CommunityPage: React.FC = () => {
               <Link to="/tinh-nang" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Tính năng</Link>
               <Link to="/tai-lieu" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Tài liệu</Link>
               <Link to="/cong-dong" className="text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Cộng đồng</Link>
+              <Link to="/thao-luan" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Thảo luận</Link>
             </nav>
 
             {/* Right side */}

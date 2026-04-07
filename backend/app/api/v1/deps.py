@@ -28,7 +28,7 @@ def get_current_user(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         token_data = TokenPayload(**payload)
-    except (jwt.JWTError, ValidationError):
+    except (JWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
@@ -38,20 +38,11 @@ def get_current_user(
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-
-def get_current_user_optional(
-    db: Session = Depends(get_db), token: Optional[str] = Depends(optional_oauth2)
-) -> Optional[User]:
-    if not token:
-        return None
-
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+def get_current_active_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403, detail="The user doesn't have enough privileges"
         )
-        token_data = TokenPayload(**payload)
-    except (jwt.JWTError, ValidationError):
-        return None
-
-    user = db.query(User).filter(User.id == token_data.sub).first()
-    return user
+    return current_user

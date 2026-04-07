@@ -69,151 +69,22 @@
 - Tất cả text trên giao diện phải bằng tiếng Việt.
 
 ---
-## 6. Hướng dẫn chạy project
 
-### 6.1. Cách 1 (Khuyến nghị): Chạy bằng Docker Compose
+**Hướng dẫn sử dụng:**
+1. Copy toàn bộ nội dung trên
+2. Tạo file mới: `PLAN_MVP_FULL.md`
+3. Paste và lưu
+4. Mở bằng VS Code hoặc Typora để xem đẹp hơn
 
-Ưu điểm: nhanh, ít lỗi môi trường, không cần cài Python/Node/PostgreSQL thủ công.
+File này đã bao gồm:
+- Landing Page (trang công khai)
+- Toàn bộ use case trong diagram
+- Phân công cân bằng giữa 4 thành viên
+- Tech stack FastAPI + React + PostgreSQL
 
-1. Cài sẵn:
-- Docker Desktop
-- Docker Compose (đi kèm Docker Desktop)
+Bạn muốn tôi bổ sung thêm phần nào không?
+- Danh sách API endpoints chi tiết theo module
+- Cấu trúc thư mục chi tiết cho Frontend và Backend
+- Template commit message & Git workflow
 
-2. Mở terminal tại thư mục gốc project rồi chạy:
-
-```bash
-docker compose -f docker-compose.dev.yml up -d --build
-```
-
-3. Chạy migration database (nên làm 1 lần sau khi services đã lên):
-
-```bash
-docker compose -f docker-compose.dev.yml exec -T backend alembic upgrade head
-```
-
-4. Truy cập hệ thống:
-- Frontend: http://localhost:3000
-- Backend API Docs (Swagger): http://localhost:8000/docs
-- Health check: http://localhost:8000/health
-
-5. Theo dõi log khi cần debug:
-
-```bash
-docker compose -f docker-compose.dev.yml logs -f
-```
-
-6. Dừng hệ thống:
-
-```bash
-docker compose -f docker-compose.dev.yml down
-```
-
-7. Dừng và xóa luôn volume dữ liệu DB (chỉ dùng khi muốn reset sạch dữ liệu):
-
-```bash
-docker compose -f docker-compose.dev.yml down -v
-```
-
-### 6.2. Cách 2: Chạy local thủ công (không dùng Docker)
-
-Ưu điểm: dễ debug từng service riêng lẻ.
-
-#### Bước A - Chuẩn bị môi trường
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL 15+
-
-Tạo database trong PostgreSQL:
-- DB name: `ai_research_db`
-- User: `postgres`
-- Password: tùy bạn đặt
-- Port: `5432`
-
-#### Bước B - Chạy Backend (FastAPI)
-1. Vào thư mục backend.
-2. Tạo và kích hoạt virtual environment.
-3. Cài dependencies từ `requirements.txt`.
-4. Tạo file `.env` trong thư mục `backend` với nội dung ví dụ:
-
-```env
-DATABASE_URL=postgresql://postgres:your_password@localhost:5432/ai_research_db
-SECRET_KEY=your-secret-key-here
-```
-
-5. Chạy migration:
-
-```bash
-alembic upgrade head
-```
-
-6. Chạy API:
-
-```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-7. Kiểm tra backend:
-- http://localhost:8000/health
-- http://localhost:8000/docs
-
-#### Bước C - Chạy Frontend (React)
-1. Mở terminal mới, vào thư mục frontend.
-2. Cài dependencies:
-
-```bash
-npm install
-```
-
-3. Chạy frontend:
-
-```bash
-npm start
-```
-
-4. Truy cập giao diện:
-- http://localhost:3000
-
-### 6.3. Checklist xác nhận chạy thành công
-- [ ] Mở được trang frontend tại `localhost:3000`
-- [ ] API trả về `{"status":"healthy"}` tại `/health`
-- [ ] Swagger mở được tại `/docs`
-- [ ] Đăng ký/đăng nhập test hoạt động bình thường
-
-### 6.4. Lỗi thường gặp và cách xử lý nhanh
-- Lỗi cổng 3000/8000/5432 đang bận: đổi cổng hoặc tắt service đang chiếm cổng.
-- Frontend không gọi được API: kiểm tra backend có đang chạy ở `localhost:8000`.
-- Lỗi kết nối DB: kiểm tra `DATABASE_URL`, tài khoản PostgreSQL và DB `ai_research_db`.
-- Lỗi thiếu bảng dữ liệu: chạy lại `alembic upgrade head`.
-- Docker build lỗi package: chạy lại với `--build` hoặc xóa image cũ rồi build lại.
-
-### 6.5. Lệnh nhanh tham khảo
-
-```bash
-# Docker
-docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.dev.yml exec -T backend alembic upgrade head
-docker compose -f docker-compose.dev.yml logs -f
-docker compose -f docker-compose.dev.yml down
-
-# Backend local
-cd backend
-alembic upgrade head
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-# Frontend local
-cd frontend
-npm install
-npm start
-```
-
-## 7. Tai lieu trien khai rieng cho thanh vien Anh
-
-- Tai lieu huong dan chi tiet theo vai tro Quan ly Tai lieu:
-  [HUONG_DAN_THUC_THI_MODULE_QUAN_LY_TAI_LIEU_NGUYEN_TUAN_ANH.md](HUONG_DAN_THUC_THI_MODULE_QUAN_LY_TAI_LIEU_NGUYEN_TUAN_ANH.md)
-
-- Tai lieu nay gom:
-  - Lo trinh M1-M4
-  - Y nghia tung buoc
-  - Chuc nang can dat
-  - Bang theo doi tien do
-  - Mau bao cao hoc thuat theo ngay
+Cứ nói tôi sẽ cập nhật ngay!

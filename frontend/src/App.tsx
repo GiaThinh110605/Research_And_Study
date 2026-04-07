@@ -9,6 +9,13 @@ import DocumentsPage from './pages/DocumentsPage';
 import DocumentsUploadPage from './pages/DocumentsUploadPage';
 import DocumentDetailPage from './pages/DocumentDetailPage';
 import CommunityPage from './pages/CommunityPage';
+import DiscussionPage from './pages/DiscussionPage';
+import AdminUserManagement from './pages/AdminUserManagement';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminDocumentManagement from './pages/AdminDocumentManagement';
+import AdminModeration from './pages/AdminModeration';
+import AdminLogs from './pages/AdminLogs';
+import AdminSettings from './pages/AdminSettings';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
@@ -27,6 +34,13 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
+        <Route path="/test-list" element={<TestListPage />} />
+        <Route path="/admin/users" element={<AdminUserManagement />} />
+        <Route path="/admin/docs" element={<AdminDocumentManagement />} />
+        <Route path="/admin/moderation" element={<AdminModeration />} />
+        <Route path="/admin/logs" element={<AdminLogs />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );

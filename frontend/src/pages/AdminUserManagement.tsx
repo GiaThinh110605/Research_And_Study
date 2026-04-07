@@ -18,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth';
 import { userService } from '../services/user';
 
@@ -48,12 +48,12 @@ const AdminUserManagement: React.FC = () => {
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Tổng quan', active: false },
-    { icon: Users, label: 'Quản lý người dùng', active: true },
-    { icon: FileText, label: 'Quản lý tài liệu', active: false },
-    { icon: CheckSquare, label: 'Kiểm duyệt chia sẻ', active: false },
-    { icon: History, label: 'Nhật ký hoạt động', active: false },
-    { icon: Settings, label: 'Cài đặt hệ thống', active: false },
+    { icon: LayoutDashboard, label: 'Tổng quan', path: '/admin' },
+    { icon: Users, label: 'Quản lý người dùng', path: '/admin/users' },
+    { icon: FileText, label: 'Quản lý tài liệu', path: '/admin/docs' },
+    { icon: CheckSquare, label: 'Kiểm duyệt chia sẻ', path: '/admin/moderation' },
+    { icon: History, label: 'Nhật ký hoạt động', path: '/admin/logs' },
+    { icon: Settings, label: 'Cài đặt hệ thống', path: '/admin/settings' },
   ];
 
   const stats = [
@@ -78,20 +78,24 @@ const AdminUserManagement: React.FC = () => {
             </div>
           </div>
 
-          <nav className="space-y-1">
-            {menuItems.map((item, index) => (
-              <button
-                key={index}
-                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${
-                  item.active 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <item.icon className={`w-5 h-5 ${item.active ? 'text-white' : 'text-slate-400 group-hover:text-slate-900'}`} />
-                <span className="font-semibold text-sm">{item.label}</span>
-              </button>
-            ))}
+          <nav className="space-y-1.5">
+            {menuItems.map((item, index) => {
+              const isActive = index === 1; // "Quản lý người dùng"
+              return (
+                <Link
+                  to={item.path}
+                  key={index}
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${
+                    isActive 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-600'}`} />
+                  <span className="font-bold text-sm tracking-wide">{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
         </div>
 

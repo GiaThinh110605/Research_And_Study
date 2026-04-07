@@ -9,6 +9,7 @@ import DocumentsPage from './pages/DocumentsPage';
 import CommunityPage from './pages/CommunityPage';
 import DiscussionPage from './pages/DiscussionPage';
 import AdminUserManagement from './pages/AdminUserManagement';
+import AdminDashboard from './pages/AdminDashboard';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
@@ -28,6 +29,7 @@ function App() {
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
         <Route path="/test-list" element={<TestListPage />} />
         <Route path="/admin/users" element={<AdminUserManagement />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );

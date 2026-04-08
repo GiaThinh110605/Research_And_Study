@@ -3,7 +3,58 @@ import { Link, useParams } from 'react-router-dom';
 import ShareModal from '../components/documents/ShareModal';
 import { authService } from '../services/auth';
 import { documentService, DocumentItem, ShareItem } from '../services/documents';
+import api from '../services/api';
 
+interface DiscussionUser {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
+}
+
+interface DiscussionItem {
+  id: number;
+  content: string;
+  created_at: string;
+  user: DiscussionUser | null;
+  replies?: DiscussionItem[];
+}
+
+interface QuestionItem {
+  id: number;
+  document_id: number;
+  content: string;
+  answer: string | null;
+  created_at: string;
+  user: DiscussionUser | null;
+}
+
+interface HighlightItem {
+  id: number;
+  page_number: number;
+  text_content: string;
+  color: string;
+  note: string;
+  created_at: string;
+}
+
+function timeAgo(dateStr: string): string {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Vừa xong';
+  if (mins < 60) return `${mins} phút trước`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  return `${days} ngày trước`;
+}
+
+function getInitials(name: string) {
+  if (!name) return '?';
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
 type DetailTab = 'info' | 'questions' | 'discussion' | 'highlight';
 
 const aiTools = [
@@ -56,7 +107,29 @@ const DocumentDetailPage: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [aiResult, setAiResult] = useState('Chọn một công cụ AI để tạo kết quả học tập nhanh.');
-  const [discussionInput, setDiscussionInput] = useState('');
+  const [discussionInput, setDiscussionInput] = useState(''); // Used in right sidebar AI
+
+  // States for discussions (Thảo luận)
+  const [discussions, setDiscussions] = useState<DiscussionItem[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [discLoading, setDiscLoading] = useState(false);
+
+  // States for questions (Đặt câu hỏi)
+  const [questions, setQuestions] = useState<QuestionItem[]>([]);
+  const [questionInput, setQuestionInput] = useState('');
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [answeringTo, setAnsweringTo] = useState<number | null>(null);
+  const [answerContent, setAnswerContent] = useState('');
+
+  // States for highlights
+  const [highlights, setHighlights] = useState<HighlightItem[]>([]);
+  const [highLoading, setHighLoading] = useState(false);
+  const [highPage, setHighPage] = useState(1);
+  const [highText, setHighText] = useState('');
+  const [highColor, setHighColor] = useState('yellow');
+  const [highNote, setHighNote] = useState('');
 
   const isOwner = Boolean(document && currentUserId && document.uploader_id === currentUserId);
 
@@ -106,6 +179,54 @@ const DocumentDetailPage: React.FC = () => {
     bootstrap();
     loadDocument();
   }, [parsedId]);
+
+  const fetchDiscussions = async (docId: number) => {
+    setDiscLoading(true);
+    try {
+      const res = await api.get(`/api/v1/discussions/?document_id=${docId}`);
+      setDiscussions(res.data);
+    } catch (err) {
+      console.error('Lỗi tải thảo luận:', err);
+    } finally {
+      setDiscLoading(false);
+    }
+  };
+
+  const fetchQuestions = async (docId: number) => {
+    setQuestionsLoading(true);
+    try {
+      const res = await api.get(`/api/v1/questions/?document_id=${docId}`);
+      setQuestions(res.data);
+    } catch (err) {
+      console.error('Lỗi tải câu hỏi:', err);
+    } finally {
+      setQuestionsLoading(false);
+    }
+  };
+
+  const fetchHighlights = async (docId: number) => {
+    setHighLoading(true);
+    try {
+      const res = await api.get(`/api/v1/highlights/?document_id=${docId}`);
+      setHighlights(res.data);
+    } catch {
+      console.error('Lỗi tải highlights');
+    } finally {
+      setHighLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (parsedId) {
+      if (activeTab === 'discussion') {
+        fetchDiscussions(parsedId);
+      } else if (activeTab === 'questions') {
+        fetchQuestions(parsedId);
+      } else if (activeTab === 'highlight') {
+        fetchHighlights(parsedId);
+      }
+    }
+  }, [parsedId, activeTab]);
 
   const openShare = async () => {
     if (!document) return;
@@ -180,6 +301,107 @@ const DocumentDetailPage: React.FC = () => {
       setEditError(err.response?.data?.detail || 'Không thể cập nhật tài liệu.');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleCommentSubmit = async () => {
+    if (!newComment.trim()) return;
+    if (!currentUserId) {
+      alert('Vui lòng đăng nhập để bình luận.'); return;
+    }
+
+    try {
+      await api.post('/api/v1/discussions/', {
+        document_id: parsedId,
+        content: newComment.trim(),
+        parent_id: 0,
+      });
+      setNewComment('');
+      await fetchDiscussions(parsedId);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Gửi thất bại.');
+    }
+  };
+
+  const handleReplySubmit = async (parentId: number) => {
+    if (!replyContent.trim()) return;
+    if (!currentUserId) {
+      alert('Vui lòng đăng nhập để bình luận.'); return;
+    }
+
+    try {
+      await api.post('/api/v1/discussions/', {
+        document_id: parsedId,
+        content: replyContent.trim(),
+        parent_id: parentId,
+      });
+      setReplyContent('');
+      setReplyingTo(null);
+      await fetchDiscussions(parsedId);
+    } catch {
+      alert('Phản hồi thất bại.');
+    }
+  };
+
+  const handleQuestionSubmit = async () => {
+    if (!questionInput.trim()) return;
+    if (!currentUserId) {
+      alert('Vui lòng đăng nhập để đặt câu hỏi.'); return;
+    }
+    try {
+      await api.post('/api/v1/questions/', {
+        document_id: parsedId,
+        content: questionInput.trim(),
+      });
+      setQuestionInput('');
+      await fetchQuestions(parsedId);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Gửi câu hỏi thất bại.');
+    }
+  };
+
+  const handleAnswerSubmit = async (questionId: number) => {
+    if (!answerContent.trim()) return;
+    try {
+      await api.put(`/api/v1/questions/${questionId}`, {
+        answer: answerContent.trim(),
+      });
+      setAnswerContent('');
+      setAnsweringTo(null);
+      await fetchQuestions(parsedId);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Trả lời thất bại.');
+    }
+  };
+
+  const handleHighlightSubmit = async () => {
+    if (!highText.trim()) return;
+    if (!currentUserId) {
+      alert('Vui lòng đăng nhập để tạo highlight'); return;
+    }
+    try {
+      await api.post('/api/v1/highlights/', {
+        document_id: parsedId,
+        page_number: highPage,
+        text_content: highText.trim(),
+        color: highColor,
+        note: highNote.trim() || undefined,
+      });
+      setHighText('');
+      setHighNote('');
+      await fetchHighlights(parsedId);
+    } catch {
+      alert('Tạo highlight thất bại');
+    }
+  };
+
+  const handleDeleteHighlight = async (id: number) => {
+    if(!window.confirm("Bạn có chắc chắn muốn xoá thẻ highlight này?")) return;
+    try {
+       await api.delete(`/api/v1/highlights/${id}`);
+       await fetchHighlights(parsedId);
+    } catch {
+       alert("Xóa thất bại");
     }
   };
 
@@ -307,46 +529,297 @@ const DocumentDetailPage: React.FC = () => {
             )}
 
             {activeTab === 'questions' && (
-              <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-900">Đặt câu hỏi về tài liệu</h3>
-                <p className="mt-1 text-sm text-slate-500">Tính năng giúp tạo câu hỏi ôn tập và lưu lịch sử học theo tài liệu.</p>
-                <textarea
-                  rows={4}
-                  value={discussionInput}
-                  onChange={(event) => setDiscussionInput(event.target.value)}
-                  placeholder="Ví dụ: Chương này có những công thức trọng tâm nào?"
-                  className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#3B66F5]"
-                />
-                <button
-                  type="button"
-                  onClick={() => setAiResult(discussionInput ? `Trả lời nhanh: ${discussionInput} -> Hãy bắt đầu từ phần định nghĩa và ví dụ minh họa trong tài liệu.` : aiResult)}
-                  className="mt-3 rounded-lg bg-[#3B66F5] px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Gửi câu hỏi
-                </button>
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900">Đặt câu hỏi về tài liệu</h3>
+                  <p className="mt-1 text-sm text-slate-500">Đặt câu hỏi để giảng viên hoặc sinh viên khác giúp bạn giải đáp cặn kẽ hơn.</p>
+                  <textarea
+                    rows={3}
+                    value={questionInput}
+                    onChange={(event) => setQuestionInput(event.target.value)}
+                    placeholder="Ví dụ: Giảng viên cho hỏi công thức này có được mang vào phòng thi không ạ?"
+                    className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#3B66F5] focus:bg-white transition-colors"
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleQuestionSubmit}
+                      disabled={!questionInput.trim()}
+                      className="rounded-lg bg-[#3B66F5] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                      Gửi câu hỏi
+                    </button>
+                  </div>
+                </div>
+
+                {questionsLoading ? (
+                  <div className="text-center text-slate-500 text-sm py-10">Đang tải danh sách câu hỏi...</div>
+                ) : questions.length > 0 ? (
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-slate-800">Q&A ({questions.length})</h3>
+                    {questions.map((q) => (
+                      <div key={q.id} className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                        <div className="p-5">
+                          <div className="flex justify-between items-start">
+                            <div className="flex gap-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm ${q.user?.role === 'lecturer' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                                {q.user ? getInitials(q.user.full_name) : '?'}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-slate-900 text-sm">{q.user?.full_name || 'Người dùng'} {q.user?.role === 'lecturer' && <span className="bg-blue-100 text-blue-700 text-[10px] uppercase px-1.5 py-0.5 rounded ml-1">GV</span>}</h4>
+                                <span className="text-[11px] text-slate-500">{timeAgo(q.created_at)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="mt-4 text-[14px] text-slate-800 font-medium">Q: {q.content}</p>
+                          
+                          {q.answer ? (
+                            <div className="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100 group relative">
+                              <div className="flex justify-between items-start mb-1">
+                                <p className="text-sm font-bold text-emerald-800">A: Trả lời</p>
+                                <button onClick={() => { setAnsweringTo(answeringTo === q.id ? null : q.id); setAnswerContent(q.answer || ''); }} className="text-[10px] px-2 py-1 bg-emerald-100 uppercase font-bold text-emerald-700 hover:bg-emerald-200 rounded transition-colors">Chỉnh sửa</button>
+                              </div>
+                              <p className="text-[13px] text-emerald-900 leading-relaxed whitespace-pre-wrap">{q.answer}</p>
+                            </div>
+                          ) : (
+                            <div className="mt-4 flex flex-col gap-3">
+                              <span className="inline-block px-3 py-1 bg-yellow-50 text-yellow-700 text-xs font-semibold rounded-full w-fit">Chưa có câu trả lời</span>
+                              {(isOwner || (currentUserId && document.uploader_id === currentUserId) || true) && (
+                                <button onClick={() => { setAnsweringTo(answeringTo === q.id ? null : q.id); setAnswerContent(''); }} className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors self-start">VIẾT CÂU TRẢ LỜI</button>
+                              )}
+                            </div>
+                          )}
+
+                          {answeringTo === q.id && (
+                            <div className="mt-3 flex gap-2">
+                              <input 
+                                className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                                placeholder="Nhập câu trả lời chuyên môn..."
+                                value={answerContent}
+                                onChange={e => setAnswerContent(e.target.value)}
+                                autoFocus
+                              />
+                              <button onClick={() => handleAnswerSubmit(q.id)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Lưu lại</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-500 py-10 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    Chưa có câu hỏi nào. Đặt câu hỏi đầu tiên!
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'discussion' && (
-              <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-900">Thảo luận lớp học</h3>
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">Bạn Linh: Mình đề xuất ôn mục 2 và 3 trước khi làm bài tập cuối chương.</div>
-                  <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">Bạn Hùng: Có ai có sơ đồ mindmap cho chương này chưa?</div>
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Thảo luận môn học</h3>
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0">U</div>
+                    <div className="flex-1">
+                      <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Hỏi đáp, trao đổi với những người cùng học tài liệu này..."
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#3B66F5] focus:bg-white transition-colors"
+                        rows={3}
+                      />
+                      <div className="mt-3 flex justify-end">
+                        <button onClick={handleCommentSubmit} disabled={!newComment.trim()} className="rounded-lg bg-[#3B66F5] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 transition-colors">Đăng thảo luận</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <input className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm" placeholder="Nhập bình luận..." />
+
+                {discLoading ? (
+                  <div className="text-center text-slate-500 text-sm py-10">Đang tải thảo luận...</div>
+                ) : discussions.length > 0 ? (
+                  <div className="space-y-6">
+                    {discussions.map((disc) => (
+                      <div key={disc.id} className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-6 pb-2 flex gap-4">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0 ${disc.user?.role === 'lecturer' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                            {disc.user ? getInitials(disc.user.full_name) : '?'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <h4 className="font-bold text-slate-900">{disc.user?.full_name || 'Người dùng Ẩn danh'}</h4>
+                              {disc.user?.role === 'lecturer' && (
+                                <span className="bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Giảng viên</span>
+                              )}
+                              <span className="text-xs font-medium text-slate-400 ml-auto">{timeAgo(disc.created_at)}</span>
+                            </div>
+                            <p className="text-[15px] text-slate-700 leading-relaxed mt-2 whitespace-pre-wrap">{disc.content}</p>
+                          </div>
+                        </div>
+
+                        {/* Nút Phản hồi */}
+                        <div className="px-6 pb-3 flex items-center gap-4">
+                          <button
+                            onClick={() => {
+                              setReplyingTo(replyingTo === disc.id ? null : disc.id);
+                              setReplyContent('');
+                            }}
+                            className="text-[13px] font-bold text-slate-500 hover:text-blue-600 transition-colors ml-[64px]"
+                          >
+                            Bình luận ({disc.replies?.length || 0})
+                          </button>
+                        </div>
+
+                        {/* Replies */}
+                        {disc.replies && disc.replies.length > 0 && (
+                          <div className="px-6 pb-4 space-y-3">
+                            <hr className="border-slate-100 mb-3 ml-[64px]" />
+                            {disc.replies.map((reply) => (
+                              <div key={reply.id} className={`ml-[64px] pl-4 border-l-2 rounded-xl p-3 ${reply.user?.role === 'lecturer' ? 'bg-[#EEF2FF] border-blue-400' : 'bg-[#F8FAFC] border-slate-200'}`}>
+                                <div className="flex gap-3">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${reply.user?.role === 'lecturer' ? 'bg-blue-200 text-blue-800' : 'bg-slate-200 text-slate-700'}`}>
+                                    {reply.user ? getInitials(reply.user.full_name) : '?'}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-bold text-[13px] text-slate-900">{reply.user?.full_name || 'Ẩn danh'}</span>
+                                      {reply.user?.role === 'lecturer' && (
+                                        <span className="bg-blue-600 text-white text-[8px] font-bold uppercase tracking-wide px-1 py-0.5 rounded">GV</span>
+                                      )}
+                                      <span className="text-[10px] font-medium text-slate-400 ml-auto">{timeAgo(reply.created_at)}</span>
+                                    </div>
+                                    <p className="text-[13px] text-slate-600 leading-relaxed mt-1 whitespace-pre-wrap">{reply.content}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Khung nhập Reply Facebook style */}
+                        {replyingTo === disc.id && (
+                          <div className="px-6 pb-5 pt-2 flex gap-3 animate-fade-in ml-[48px]">
+                            <div className="flex-1 bg-slate-100 rounded-[20px] flex items-center pr-2 pl-4 py-1.5 border border-slate-200 focus-within:border-blue-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                              <input
+                                type="text"
+                                autoFocus
+                                placeholder="Viết bình luận..."
+                                className="bg-transparent flex-1 outline-none text-[13px] text-slate-800 placeholder-slate-500"
+                                value={replyContent}
+                                onChange={(e) => setReplyContent(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(disc.id)}
+                              />
+                              <button
+                                onClick={() => handleReplySubmit(disc.id)}
+                                disabled={!replyContent.trim()}
+                                className="w-7 h-7 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                              >
+                                <svg className="w-4 h-4 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-500 py-10 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    Chưa có thảo luận nào. Bạn có thắc mắc gì không?
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'highlight' && (
-              <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-900">Highlight thông minh</h3>
-                <p className="mt-1 text-sm text-slate-500">Tự động đánh dấu nội dung quan trọng để ôn thi nhanh.</p>
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Định nghĩa trọng tâm: Khái niệm và điều kiện áp dụng công thức chính.</div>
-                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">Ví dụ thực hành: Các bài toán mẫu ở phần giữa tài liệu.</div>
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">Gợi ý ôn tập: Tổng hợp 5 câu hỏi tự kiểm tra cuối chương.</div>
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900">Ghi chú & Nổi bật (Highlight)</h3>
+                  <p className="mt-1 text-sm text-slate-500">Lưu lại những đoạn văn quan trọng từ tài liệu (trang cụ thể) kèm ghi chú cá nhân của bạn.</p>
+                  
+                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="md:col-span-2">
+                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Đoạn văn quan trọng *</label>
+                       <textarea 
+                         value={highText} 
+                         onChange={e => setHighText(e.target.value)} 
+                         rows={3} 
+                         placeholder="Ví dụ: Công thức tính năng lượng E = mc^2..." 
+                         className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium" 
+                       />
+                     </div>
+                     <div>
+                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Trang số</label>
+                       <input 
+                         type="number" 
+                         value={highPage} 
+                         onChange={e => setHighPage(Number(e.target.value))} 
+                         min={1} 
+                         className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium" 
+                       />
+                     </div>
+                     <div>
+                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Phân loại màu</label>
+                       <select 
+                         value={highColor} 
+                         onChange={e => setHighColor(e.target.value)} 
+                         className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-[9px] text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                       >
+                         <option value="yellow">🟡 Vàng (Quan trọng)</option>
+                         <option value="blue">🔵 Xanh dương (Ví dụ)</option>
+                         <option value="green">🟢 Xanh lá (Định nghĩa)</option>
+                         <option value="red">🔴 Đỏ (Cần hỏi lại)</option>
+                       </select>
+                     </div>
+                     <div className="md:col-span-2">
+                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ghi chú thêm (Tùy chọn)</label>
+                       <input 
+                         value={highNote} 
+                         onChange={e => setHighNote(e.target.value)} 
+                         placeholder="Nhập ghi chú ý hiểu của bạn cho đoạn văn này..." 
+                         className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium" 
+                       />
+                     </div>
+                  </div>
+                  
+                  <div className="mt-5 flex justify-end">
+                    <button 
+                      onClick={handleHighlightSubmit} 
+                      disabled={!highText.trim()} 
+                      className="bg-[#3B66F5] text-white px-5 py-2.5 rounded-lg font-bold text-[13px] hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm shadow-blue-200"
+                    >
+                      Lưu Highlight
+                    </button>
+                  </div>
                 </div>
+
+                {highLoading ? (
+                  <div className="text-center py-10 text-slate-500 text-sm font-medium">Đang tải ghi chú...</div>
+                ) : highlights.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {highlights.map(h => (
+                       <div key={h.id} className={`rounded-xl border p-5 shadow-sm relative transition-all hover:shadow-md ${h.color === 'yellow' ? 'bg-[#FFFBEB] border-[#FEF3C7]' : h.color === 'blue' ? 'bg-[#EFF6FF] border-[#DBEAFE]' : h.color === 'green' ? 'bg-[#F0FDF4] border-[#DCFCE7]' : 'bg-[#FEF2F2] border-[#FEE2E2]'}`}>
+                          <button onClick={() => handleDeleteHighlight(h.id)} className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-md bg-white bg-opacity-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors text-xs font-black">✕</button>
+                          <div className="flex items-center gap-2 mb-3">
+                             <span className="font-extrabold text-[10px] uppercase px-2.5 py-1 rounded-full bg-white bg-opacity-70 tracking-wider text-slate-700">Trang {h.page_number}</span>
+                             <span className="text-[11px] text-slate-500 font-medium">{timeAgo(h.created_at)}</span>
+                          </div>
+                          
+                          <div className="relative">
+                            <div className={`absolute left-0 top-1 bottom-1 w-1 rounded-full ${h.color === 'yellow' ? 'bg-amber-400' : h.color === 'blue' ? 'bg-blue-400' : h.color === 'green' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
+                            <p className={`pl-4 font-semibold text-[14px] leading-relaxed ${h.color === 'yellow' ? 'text-amber-900' : h.color === 'blue' ? 'text-blue-900' : h.color === 'green' ? 'text-emerald-900' : 'text-red-900'}`}>{h.text_content}</p>
+                          </div>
+                          
+                          {h.note && (
+                            <div className="mt-4 pt-3 border-t border-slate-300 border-opacity-30">
+                               <p className="text-[13px] text-slate-700 font-semibold"><span className="opacity-70">💡 Ghi chú: </span>{h.note}</p>
+                            </div>
+                          )}
+                       </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-500 text-sm font-medium">Bạn chưa lưu đoạn nổi bật nào.<br/><span className="text-xs font-normal opacity-70 mt-1 block">Tạo highlight để ghi nhớ bài tốt hơn!</span></div>
+                )}
               </div>
             )}
           </section>

@@ -157,7 +157,7 @@ const DocumentsUploadPage: React.FC = () => {
           <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50">BÀI KIỂM TRA</Link>
           <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50">FLASHCARD</Link>
           <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50">GPA</Link>
-          <Link to="/cong-dong" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50">THẢO LUẬN</Link>
+          <Link to="/thao-luan" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50">THẢO LUẬN</Link>
           <Link to="/" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-xl hover:bg-slate-50">LIÊN KẾT IUH</Link>
         </nav>
 

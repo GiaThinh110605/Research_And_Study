@@ -19,6 +19,7 @@ import AdminSettings from './pages/AdminSettings';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
+import TestListPage from './pages/TestListPage';
 
 function App() {
   return (
@@ -35,12 +36,15 @@ function App() {
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
         <Route path="/test-list" element={<TestListPage />} />
+        <Route path="/thao-luan" element={<DiscussionPage />} />
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/admin/docs" element={<AdminDocumentManagement />} />
         <Route path="/admin/moderation" element={<AdminModeration />} />
         <Route path="/admin/logs" element={<AdminLogs />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/thao-luan" element={<DiscussionPage />} />
+
       </Routes>
     </Router>
   );

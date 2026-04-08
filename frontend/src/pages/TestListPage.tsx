@@ -1,26 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
-import { testService, TestOut } from '../services/test';
+import { testService, TestOut, TestStats } from '../services/test';
+
 const TestListPage: React.FC = () => {
   const navigate = useNavigate();
   const [tests, setTests] = useState<TestOut[]>([]);
+  const [stats, setStats] = useState<TestStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState<string>('Tất cả');
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
-    const fetchTests = async () => {
+    const fetchData = async () => {
       try {
-        const data = await testService.getTests();
-        setTests(data);
+        const [testsData, statsData] = await Promise.all([
+          testService.getTests(),
+          testService.getTestStats()
+        ]);
+        setTests(testsData);
+        setStats(statsData);
       } catch (error) {
-        console.error("Lỗi khi tải bài kiểm tra", error);
+        console.error("Lỗi khi tải dữ liệu", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchTests();
+    fetchData();
   }, []);
 
   const handleLogout = () => {
@@ -28,8 +36,16 @@ const TestListPage: React.FC = () => {
     navigate('/login');
   };
 
-  const totalPages = Math.ceil(tests.length / ITEMS_PER_PAGE);
-  const paginatedTests = tests.slice(
+  const filteredTests = tests.filter((test: TestOut) => {
+    if (filterStatus === 'Tất cả') return true;
+    if (filterStatus === 'Mới') return test.status === 'MỚI';
+    if (filterStatus === 'Đang làm') return test.status === 'ĐANG LÀM';
+    if (filterStatus === 'Hoàn thành') return test.status === 'HOÀN THÀNH';
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredTests.length / ITEMS_PER_PAGE);
+  const paginatedTests = filteredTests.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -153,7 +169,9 @@ const TestListPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">ĐÃ HOÀN THÀNH</div>
-                  <div className="text-lg font-black text-gray-900 leading-tight">12/15</div>
+                  <div className="text-lg font-black text-gray-900 leading-tight">
+                    {stats ? `${stats.completed_tests}/${stats.total_tests}` : "0/0"}
+                  </div>
                 </div>
               </div>
 
@@ -163,7 +181,9 @@ const TestListPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">GPA TRUNG BÌNH</div>
-                  <div className="text-lg font-black text-gray-900 leading-tight">3.42</div>
+                  <div className="text-lg font-black text-gray-900 leading-tight">
+                    {stats ? stats.average_score.toFixed(2) : "0.00"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -173,9 +193,33 @@ const TestListPage: React.FC = () => {
               <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
               <input type="text" placeholder="Lọc theo tên học phần hoặc mã lớp..." className="w-full bg-gray-50 pl-11 pr-4 py-3 rounded-xl text-sm outline-none border border-transparent focus:border-[#3B66F5] focus:bg-white transition-all text-gray-700 font-medium" />
             </div>
-            <button className="bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl text-sm transition-colors border border-transparent">
-              Tất cả trạng thái
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowStatusMenu(!showStatusMenu)}
+                className="bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl text-sm transition-colors border border-transparent flex items-center gap-2"
+              >
+                {filterStatus}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              
+              {showStatusMenu && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                  {['Tất cả', 'Mới', 'Đang làm', 'Hoàn thành'].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => {
+                        setFilterStatus(status);
+                        setShowStatusMenu(false);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-5 py-3 text-left text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-[#3B66F5] transition-colors"
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button className="bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl text-sm transition-colors border border-transparent flex items-center gap-2">
               Học kỳ gần nhất
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -263,8 +307,8 @@ const TestListPage: React.FC = () => {
             {/* Pagination */}
             <div className="flex justify-between items-center py-4 border-t border-gray-100 mt-2 px-2">
               <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                {tests.length > 0 &&
-                  `HIỂN THỊ ${(currentPage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, tests.length)} TRÊN ${tests.length} BÀI KIỂM TRA`
+                {filteredTests.length > 0 &&
+                  `HIỂN THỊ ${(currentPage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, filteredTests.length)} TRÊN ${filteredTests.length} BÀI KIỂM TRA`
                 }
               </div>
               <div className="flex gap-1">
@@ -329,10 +373,21 @@ const TestListPage: React.FC = () => {
               <div className="relative w-24 h-24 mb-4">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="40" stroke="#F3F4F6" strokeWidth="8" fill="none" />
-                  <circle cx="50" cy="50" r="40" stroke="#3B66F5" strokeWidth="8" fill="none" strokeDasharray="251" strokeDashoffset="50" strokeLinecap="round" />
+                  <circle 
+                    cx="50" 
+                    cy="50" 
+                    r="40" 
+                    stroke="#3B66F5" 
+                    strokeWidth="8" 
+                    fill="none" 
+                    strokeDasharray="251.2" 
+                    strokeDashoffset={251.2 * (1 - (stats?.progress_percent || 0) / 100)} 
+                    strokeLinecap="round" 
+                    className="transition-all duration-1000 ease-out"
+                  />
                 </svg>
                 <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                  <span className="text-2xl font-black text-gray-900">80%</span>
+                  <span className="text-2xl font-black text-gray-900">{stats ? Math.round(stats.progress_percent) : 0}%</span>
                 </div>
               </div>
               <h4 className="font-bold text-gray-900 text-center mb-1">Tiến độ hoàn thành</h4>

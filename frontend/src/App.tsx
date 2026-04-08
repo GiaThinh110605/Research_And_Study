@@ -19,6 +19,7 @@ import AdminSettings from './pages/AdminSettings';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
+import TestListPage from './pages/TestListPage';
 
 function App() {
   return (

@@ -46,6 +46,7 @@ class TestOut(BaseModel):
 	created_at: datetime
 	questions_count: int = 0
 	status: str = "MỚI"
+	questions: Optional[List[Dict[str, Any]]] = None
 
 	class Config:
 		orm_mode = True
@@ -60,6 +61,7 @@ class TestStatsOut(BaseModel):
 
 class TestSubmitIn(BaseModel):
 	answers: Dict[str, Any]
+	time_taken_seconds: Optional[int] = None
 
 
 class TestResultOut(BaseModel):
@@ -67,8 +69,15 @@ class TestResultOut(BaseModel):
 	test_id: int
 	user_id: int
 	score: float
+	time_taken_seconds: Optional[int] = None
 	completed_at: datetime
 	answers: Optional[Dict[str, Any]] = None
+	# Fields for display
+	test_title: Optional[str] = None
+	full_name: Optional[str] = None
+	rank: Optional[int] = None
+	total_participants: Optional[int] = None
+	test_questions: Optional[List[Dict[str, Any]]] = None
 
 	class Config:
 		orm_mode = True
@@ -323,29 +332,77 @@ def submit_test(
 
 	score = _calculate_score(test.questions or [], payload.answers)
 
-	existing_result = (
+	result = (
 		db.query(TestResult)
 		.filter(TestResult.test_id == test_id, TestResult.user_id == current_user.id)
 		.first()
 	)
 
-	if existing_result:
-		existing_result.score = score
-		existing_result.answers = payload.answers
-		db.commit()
-		db.refresh(existing_result)
-		return existing_result
-
-	result = TestResult(
-		test_id=test_id,
-		user_id=current_user.id,
-		score=score,
-		answers=payload.answers,
-	)
-	db.add(result)
+	if result:
+		result.score = score
+		result.answers = payload.answers
+		result.time_taken_seconds = payload.time_taken_seconds
+	else:
+		result = TestResult(
+			test_id=test_id,
+			user_id=current_user.id,
+			score=score,
+			answers=payload.answers,
+			time_taken_seconds=payload.time_taken_seconds
+		)
+		db.add(result)
+	
 	db.commit()
 	db.refresh(result)
-	return result
+
+	# Calculate rank stats
+	total_participants = db.query(TestResult).filter(TestResult.test_id == test_id).count()
+	rank = db.query(TestResult).filter(TestResult.test_id == test_id, TestResult.score > score).count() + 1
+
+	return {
+		"id": result.id,
+		"test_id": result.test_id,
+		"user_id": result.user_id,
+		"score": result.score,
+		"time_taken_seconds": result.time_taken_seconds,
+		"completed_at": result.completed_at,
+		"answers": result.answers,
+		"test_title": test.title,
+		"full_name": current_user.full_name,
+		"rank": rank,
+		"total_participants": total_participants
+	}
+
+
+@router.get("/result/{result_id}", response_model=TestResultOut)
+def get_result(
+	result_id: int,
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user),
+) -> Any:
+	result = db.query(TestResult).filter(TestResult.id == result_id).first()
+	if not result:
+		raise HTTPException(status_code=404, detail="Result not found")
+	
+	test = db.query(Test).filter(Test.id == result.test_id).first()
+	
+	total_participants = db.query(TestResult).filter(TestResult.test_id == result.test_id).count()
+	rank = db.query(TestResult).filter(TestResult.test_id == result.test_id, TestResult.score > result.score).count() + 1
+	
+	return {
+		"id": result.id,
+		"test_id": result.test_id,
+		"user_id": result.user_id,
+		"score": result.score,
+		"time_taken_seconds": result.time_taken_seconds,
+		"completed_at": result.completed_at,
+		"answers": result.answers,
+		"test_title": test.title if test else "Unknown Test",
+		"full_name": current_user.full_name,
+		"rank": rank,
+		"total_participants": total_participants,
+		"test_questions": test.questions if test else []
+	}
 
 
 @router.get("/{test_id}/results", response_model=List[TestResultOut])

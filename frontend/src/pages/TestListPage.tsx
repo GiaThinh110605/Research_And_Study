@@ -194,14 +194,14 @@ const TestListPage: React.FC = () => {
               <input type="text" placeholder="Lọc theo tên học phần hoặc mã lớp..." className="w-full bg-gray-50 pl-11 pr-4 py-3 rounded-xl text-sm outline-none border border-transparent focus:border-[#3B66F5] focus:bg-white transition-all text-gray-700 font-medium" />
             </div>
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowStatusMenu(!showStatusMenu)}
                 className="bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl text-sm transition-colors border border-transparent flex items-center gap-2"
               >
                 {filterStatus}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
-              
+
               {showStatusMenu && (
                 <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
                   {['Tất cả', 'Mới', 'Đang làm', 'Hoàn thành'].map((status) => (
@@ -243,27 +243,27 @@ const TestListPage: React.FC = () => {
                   </tr>
                 ) : paginatedTests.map((test, idx) => {
                   const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
-                  
+
                   // Format Date & Time
                   const dateObj = new Date(test.created_at);
                   const formattedDate = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
                   const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                  
+
                   // Setup Icon and Color based on type
                   let iconBg = "bg-blue-50 text-blue-500";
                   let svgPath = "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z";
-                  
+
                   if (test.type === 'database') {
-                     iconBg = "bg-indigo-50 text-indigo-500";
-                     svgPath = "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4";
+                    iconBg = "bg-indigo-50 text-indigo-500";
+                    svgPath = "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4";
                   } else if (test.type === 'exam') {
-                     iconBg = "bg-gray-100 text-gray-500";
-                     svgPath = "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9";
+                    iconBg = "bg-gray-100 text-gray-500";
+                    svgPath = "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9";
                   } else if (test.type === 'document') {
-                     iconBg = "bg-green-50 text-green-500";
-                     svgPath = "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z";
+                    iconBg = "bg-green-50 text-green-500";
+                    svgPath = "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z";
                   }
-                  
+
                   // Setup Status Tags
                   let statusTag = <span className="px-3 py-1.5 border border-gray-200 text-gray-500 text-[11px] font-bold rounded-lg uppercase tracking-wider">{test.status}</span>;
                   if (test.status === 'HOÀN THÀNH') statusTag = <span className="px-3 py-1.5 bg-green-100/60 text-green-600 text-[11px] font-bold rounded-lg uppercase tracking-wider">{test.status}</span>;
@@ -293,7 +293,10 @@ const TestListPage: React.FC = () => {
                       <td className="py-5 px-6">{statusTag}</td>
                       <td className="py-5 px-6 text-right">
                         {test.status !== 'HOÀN THÀNH' && (
-                          <button className="bg-[#3B66F5] hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg text-sm transition-colors shadow-md shadow-blue-200">
+                          <button
+                            onClick={() => navigate(`/take-test/${test.id}`)}
+                            className="bg-[#3B66F5] hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg text-sm transition-colors shadow-md shadow-blue-200"
+                          >
                             Làm bài
                           </button>
                         )}
@@ -329,11 +332,10 @@ const TestListPage: React.FC = () => {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page as number)}
-                      className={`w-8 h-8 flex items-center justify-center rounded font-bold text-sm transition-colors ${
-                        currentPage === page
-                          ? 'bg-[#3B66F5] text-white shadow-sm shadow-blue-200'
-                          : 'text-gray-600 hover:bg-gray-100 border border-transparent'
-                      }`}
+                      className={`w-8 h-8 flex items-center justify-center rounded font-bold text-sm transition-colors ${currentPage === page
+                        ? 'bg-[#3B66F5] text-white shadow-sm shadow-blue-200'
+                        : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                        }`}
                     >
                       {page}
                     </button>
@@ -356,7 +358,7 @@ const TestListPage: React.FC = () => {
             <div className="rounded-2xl overflow-hidden bg-gradient-to-r from-[#E6EFFF] to-[#DCEHFF] relative p-8 flex items-center" style={{ background: 'linear-gradient(90deg, #E6EFFF 0%, #E8F0FF 50%, #C9DBFB 100%)' }}>
               <div className="relative z-10 w-2/3">
                 <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Sẵn sàng cho kỳ thi cuối kỳ?</h3>
-                <p className="text-gray-500 mb-5 font-medium leading-relaxed">Bạn đã hoàn thành 85% lộ trình ôn tập. Hãy thử sức với bài kiểm tra mô phỏng để củng cố kiến thức tốt nhất.</p>
+                <p className="text-gray-500 mb-5 font-medium leading-relaxed">Bạn đã hoàn thành {stats ? Math.round(stats.progress_percent) : 0}% lộ trình ôn tập. Hãy thử sức với bài kiểm tra mô phỏng để củng cố kiến thức tốt nhất.</p>
                 <button className="bg-white text-[#3B66F5] font-bold py-2.5 px-6 rounded-xl hover:shadow-lg transition-shadow text-sm border border-transparent">
                   Bắt đầu mô phỏng ngay
                 </button>
@@ -373,16 +375,16 @@ const TestListPage: React.FC = () => {
               <div className="relative w-24 h-24 mb-4">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="40" stroke="#F3F4F6" strokeWidth="8" fill="none" />
-                  <circle 
-                    cx="50" 
-                    cy="50" 
-                    r="40" 
-                    stroke="#3B66F5" 
-                    strokeWidth="8" 
-                    fill="none" 
-                    strokeDasharray="251.2" 
-                    strokeDashoffset={251.2 * (1 - (stats?.progress_percent || 0) / 100)} 
-                    strokeLinecap="round" 
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="#3B66F5"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray="251.2"
+                    strokeDashoffset={251.2 * (1 - (stats?.progress_percent || 0) / 100)}
+                    strokeLinecap="round"
                     className="transition-all duration-1000 ease-out"
                   />
                 </svg>

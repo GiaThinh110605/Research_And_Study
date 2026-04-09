@@ -36,17 +36,32 @@ class TestUpdate(BaseModel):
 	duration_minutes: Optional[int] = Field(default=None, gt=0)
 
 
-class TestOut(TestBase):
+class TestOut(BaseModel):
 	id: int
+	title: str
+	type: str
+	document_id: Optional[int] = None
+	duration_minutes: Optional[int] = None
 	creator_id: int
 	created_at: datetime
+	questions_count: int = 0
+	status: str = "MỚI"
+	questions: Optional[List[Dict[str, Any]]] = None
 
 	class Config:
 		orm_mode = True
 
 
+class TestStatsOut(BaseModel):
+	total_tests: int
+	completed_tests: int
+	average_score: float
+	progress_percent: float
+
+
 class TestSubmitIn(BaseModel):
 	answers: Dict[str, Any]
+	time_taken_seconds: Optional[int] = None
 
 
 class TestResultOut(BaseModel):
@@ -54,8 +69,15 @@ class TestResultOut(BaseModel):
 	test_id: int
 	user_id: int
 	score: float
+	time_taken_seconds: Optional[int] = None
 	completed_at: datetime
 	answers: Optional[Dict[str, Any]] = None
+	# Fields for display
+	test_title: Optional[str] = None
+	full_name: Optional[str] = None
+	rank: Optional[int] = None
+	total_participants: Optional[int] = None
+	test_questions: Optional[List[Dict[str, Any]]] = None
 
 	class Config:
 		orm_mode = True
@@ -105,6 +127,40 @@ def _calculate_score(questions: List[Dict[str, Any]], answers: Dict[str, Any]) -
 	return round((correct_count / total) * 10, 2)
 
 
+def _to_4_scale(score_10: float) -> float:
+	if score_10 >= 8.5: return 4.0
+	if score_10 >= 8.0: return 3.5
+	if score_10 >= 7.0: return 3.0
+	if score_10 >= 6.5: return 2.5
+	if score_10 >= 5.5: return 2.0
+	if score_10 >= 5.0: return 1.5
+	if score_10 >= 4.0: return 1.0
+	return 0.0
+
+
+@router.get("/stats", response_model=TestStatsOut)
+def get_test_stats(
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user),
+) -> Any:
+	total_tests = db.query(Test).count()
+	user_results = db.query(TestResult).filter(TestResult.user_id == current_user.id).all()
+	
+	completed_tests = len(user_results)
+	
+	total_score_4 = sum(_to_4_scale(res.score) for res in user_results)
+	average_score = round(total_score_4 / completed_tests, 2) if completed_tests > 0 else 0.0
+	
+	progress_percent = round((completed_tests / total_tests) * 100, 1) if total_tests > 0 else 0.0
+	
+	return {
+		"total_tests": total_tests,
+		"completed_tests": completed_tests,
+		"average_score": average_score,
+		"progress_percent": progress_percent
+	}
+
+
 @router.get("/", response_model=List[TestOut])
 def list_tests(
 	test_type: Optional[str] = Query(default=None),
@@ -123,7 +179,37 @@ def list_tests(
 	if creator_id is not None:
 		query = query.filter(Test.creator_id == creator_id)
 
-	return query.order_by(Test.created_at.desc()).offset(skip).limit(limit).all()
+	tests = query.order_by(Test.created_at.desc()).offset(skip).limit(limit).all()
+	
+	# Fetch all user results for these tests in one go for efficiency if needed, 
+	# but for 50 records simple filter is fine.
+	results = []
+	for test in tests:
+		test_res = db.query(TestResult).filter(
+			TestResult.test_id == test.id, 
+			TestResult.user_id == current_user.id
+		).first()
+		
+		status = "MỚI"
+		if test_res:
+			if test_res.score >= 5:
+				status = "HOÀN THÀNH"
+			else:
+				status = "ĐANG LÀM"
+		
+		results.append({
+			"id": test.id,
+			"title": test.title,
+			"type": test.type,
+			"document_id": test.document_id,
+			"duration_minutes": test.duration_minutes,
+			"creator_id": test.creator_id,
+			"created_at": test.created_at,
+			"questions_count": len(test.questions) if test.questions else 0,
+			"status": status
+		})
+	
+	return results
 
 
 @router.post("/", response_model=TestOut, status_code=status.HTTP_201_CREATED)
@@ -246,29 +332,77 @@ def submit_test(
 
 	score = _calculate_score(test.questions or [], payload.answers)
 
-	existing_result = (
+	result = (
 		db.query(TestResult)
 		.filter(TestResult.test_id == test_id, TestResult.user_id == current_user.id)
 		.first()
 	)
 
-	if existing_result:
-		existing_result.score = score
-		existing_result.answers = payload.answers
-		db.commit()
-		db.refresh(existing_result)
-		return existing_result
-
-	result = TestResult(
-		test_id=test_id,
-		user_id=current_user.id,
-		score=score,
-		answers=payload.answers,
-	)
-	db.add(result)
+	if result:
+		result.score = score
+		result.answers = payload.answers
+		result.time_taken_seconds = payload.time_taken_seconds
+	else:
+		result = TestResult(
+			test_id=test_id,
+			user_id=current_user.id,
+			score=score,
+			answers=payload.answers,
+			time_taken_seconds=payload.time_taken_seconds
+		)
+		db.add(result)
+	
 	db.commit()
 	db.refresh(result)
-	return result
+
+	# Calculate rank stats
+	total_participants = db.query(TestResult).filter(TestResult.test_id == test_id).count()
+	rank = db.query(TestResult).filter(TestResult.test_id == test_id, TestResult.score > score).count() + 1
+
+	return {
+		"id": result.id,
+		"test_id": result.test_id,
+		"user_id": result.user_id,
+		"score": result.score,
+		"time_taken_seconds": result.time_taken_seconds,
+		"completed_at": result.completed_at,
+		"answers": result.answers,
+		"test_title": test.title,
+		"full_name": current_user.full_name,
+		"rank": rank,
+		"total_participants": total_participants
+	}
+
+
+@router.get("/result/{result_id}", response_model=TestResultOut)
+def get_result(
+	result_id: int,
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user),
+) -> Any:
+	result = db.query(TestResult).filter(TestResult.id == result_id).first()
+	if not result:
+		raise HTTPException(status_code=404, detail="Result not found")
+	
+	test = db.query(Test).filter(Test.id == result.test_id).first()
+	
+	total_participants = db.query(TestResult).filter(TestResult.test_id == result.test_id).count()
+	rank = db.query(TestResult).filter(TestResult.test_id == result.test_id, TestResult.score > result.score).count() + 1
+	
+	return {
+		"id": result.id,
+		"test_id": result.test_id,
+		"user_id": result.user_id,
+		"score": result.score,
+		"time_taken_seconds": result.time_taken_seconds,
+		"completed_at": result.completed_at,
+		"answers": result.answers,
+		"test_title": test.title if test else "Unknown Test",
+		"full_name": current_user.full_name,
+		"rank": rank,
+		"total_participants": total_participants,
+		"test_questions": test.questions if test else []
+	}
 
 
 @router.get("/{test_id}/results", response_model=List[TestResultOut])
@@ -292,40 +426,3 @@ def list_test_results(
 		.limit(limit)
 		.all()
 	)
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from typing import List
-from app.api.v1 import deps
-from app.models.test import Test
-from app.models.test_result import TestResult
-from app.schemas.test import TestOut
-
-router = APIRouter()
-
-@router.get("/", response_model=List[TestOut])
-def get_tests(db: Session = Depends(deps.get_db)):
-    tests = db.query(Test).order_by(Test.created_at.desc()).limit(50).all()
-    
-    results = []
-    for test in tests:
-        questions_count = len(test.questions) if test.questions else 0
-        
-        # Determine status mock logic
-        test_res = db.query(TestResult).filter(TestResult.test_id == test.id).first()
-        status = "MỚI"
-        if test_res:
-            if test_res.score and test_res.score >= 5:
-                status = "HOÀN THÀNH"
-            else:
-                status = "ĐANG LÀM"
-                
-        results.append({
-            "id": test.id,
-            "title": test.title,
-            "type": test.type,
-            "created_at": test.created_at,
-            "questions_count": questions_count,
-            "status": status
-        })
-        
-    return results

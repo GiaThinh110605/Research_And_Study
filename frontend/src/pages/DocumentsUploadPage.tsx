@@ -142,10 +142,9 @@ const DocumentsUploadPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#F4F7FE] font-sans text-slate-900">
-      <aside className="w-[260px] bg-white border-r flex flex-col h-full shrink-0">
-        <div className="p-6 flex items-center gap-3 border-b border-gray-50">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl text-white flex items-center justify-center font-bold text-xl">U</div>
+    <div className="p-6 md:p-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-8 space-y-5">
           <div>
             <h1 className="text-xl font-bold text-blue-900 leading-none mb-1">UniStudy</h1>
             <p className="text-[10px] font-bold text-gray-500 tracking-wider">IUH STUDENT PORTAL</p>
@@ -174,168 +173,153 @@ const DocumentsUploadPage: React.FC = () => {
           <div className="relative w-[420px]">
             <svg className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <input type="text" placeholder="Tìm kiếm tài liệu..." className="w-full rounded-xl border border-gray-100 bg-gray-50 pl-11 pr-4 py-2.5 text-sm outline-none focus:border-[#3B66F5] focus:bg-white" />
+            <h2 className="text-4xl font-black text-slate-900">Tải tài liệu lên</h2>
+            <p className="mt-2 text-slate-500">Chia sẻ tài liệu học tập của bạn để giúp đỡ cộng đồng sinh viên IUH.</p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="text-gray-400 hover:text-gray-600">🔔</button>
-            <button className="text-gray-400 hover:text-gray-600">⚙️</button>
-            <div className="w-9 h-9 bg-blue-100 rounded-full" />
-          </div>
-        </div>
+          <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div
+              onDragOver={(event) => {
+                event.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                setIsDragging(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setIsDragging(false);
+                const dropped = event.dataTransfer.files?.[0] || null;
+                applyFile(dropped);
+              }}
+              className={`rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
+                isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-slate-50'
+              }`}
+            >
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                ☁
+              </div>
+              <p className="text-lg font-bold text-slate-800">{selectedFileDisplay}</p>
+              <p className="mt-1 text-sm text-slate-500">Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT (Tối đa {maxUploadMb}MB)</p>
 
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-6">
-            <div className="xl:col-span-8 space-y-5">
+              <label className="mt-4 inline-flex cursor-pointer rounded-xl bg-[#3B66F5] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                Chọn tệp từ máy
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={(event) => applyFile(event.target.files?.[0] || null)}
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 space-y-4">
               <div>
-                <h2 className="text-4xl font-black text-slate-900">Tải tài liệu lên</h2>
-                <p className="mt-2 text-slate-500">Chia sẻ tài liệu học tập của bạn để giúp đỡ cộng đồng sinh viên IUH.</p>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Tiêu đề tài liệu</label>
+                <input
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="Ví dụ: Đề cương Kinh tế vi mô Chương 1-3"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
+                />
               </div>
 
-              <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <div
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={(event) => {
-                    event.preventDefault();
-                    setIsDragging(false);
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    setIsDragging(false);
-                    const dropped = event.dataTransfer.files?.[0] || null;
-                    applyFile(dropped);
-                  }}
-                  className={`rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
-                    isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-slate-50'
-                  }`}
-                >
-                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-700">
-                    ☁
-                  </div>
-                  <p className="text-lg font-bold text-slate-800">{selectedFileDisplay}</p>
-                  <p className="mt-1 text-sm text-slate-500">Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT (Tối đa {maxUploadMb}MB)</p>
-
-                  <label className="mt-4 inline-flex cursor-pointer rounded-xl bg-[#3B66F5] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-                    Chọn tệp từ máy
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={(event) => applyFile(event.target.files?.[0] || null)}
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-5 space-y-4">
-                  <div>
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Tiêu đề tài liệu</label>
-                    <input
-                      value={title}
-                      onChange={(event) => setTitle(event.target.value)}
-                      placeholder="Ví dụ: Đề cương Kinh tế vi mô Chương 1-3"
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Môn học</label>
-                      <select
-                        value={subject}
-                        onChange={(event) => setSubject(event.target.value)}
-                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
-                      >
-                        {subjectOptions.map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Quyền riêng tư</label>
-                      <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
-                        <button
-                          type="button"
-                          onClick={() => setIsPublic(true)}
-                          className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold ${
-                            isPublic ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'
-                          }`}
-                        >
-                          Công khai
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsPublic(false)}
-                          className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold ${
-                            !isPublic ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'
-                          }`}
-                        >
-                          Riêng tư
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Mô tả chi tiết</label>
-                    <textarea
-                      value={description}
-                      onChange={(event) => setDescription(event.target.value)}
-                      rows={4}
-                      placeholder="Mô tả ngắn gọn về nội dung tài liệu..."
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
-                    />
-                  </div>
-                </div>
-
-                {uploadError && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{uploadError}</div>}
-                {successMessage && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{successMessage}</div>}
-
-                <div className="mt-5 flex items-center justify-end gap-3">
-                  <Link to="/tai-lieu" className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-100">Hủy bỏ</Link>
-                  <button
-                    type="submit"
-                    disabled={isUploading}
-                    className="rounded-xl bg-[#3B66F5] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-60"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Môn học</label>
+                  <select
+                    value={subject}
+                    onChange={(event) => setSubject(event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
                   >
-                    {isUploading ? 'Đang tải lên...' : 'Tải tài liệu lên ngay'}
-                  </button>
+                    {subjectOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
                 </div>
-              </form>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Quyền riêng tư</label>
+                  <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsPublic(true)}
+                      className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold ${
+                        isPublic ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'
+                      }`}
+                    >
+                      Công khai
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsPublic(false)}
+                      className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold ${
+                        !isPublic ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'
+                      }`}
+                    >
+                      Riêng tư
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Mô tả chi tiết</label>
+                <textarea
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  rows={4}
+                  placeholder="Mô tả ngắn gọn về nội dung tài liệu..."
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
+                />
+              </div>
             </div>
 
-            <div className="xl:col-span-4 space-y-4">
-              <div className="rounded-2xl bg-[#EEF3FB] p-5">
-                <h3 className="text-sm font-black uppercase tracking-wider text-slate-600">Quy định tải lên</h3>
-                <ul className="mt-4 space-y-3 text-sm text-slate-600">
-                  <li>• Tài liệu phải thuộc sở hữu cá nhân hoặc có quyền chia sẻ.</li>
-                  <li>• Không chứa nội dung vi phạm pháp luật hoặc thuần phong mỹ tục.</li>
-                  <li>• Khuyến khích tài liệu có chất lượng hình ảnh và nội dung tốt.</li>
-                </ul>
-              </div>
+            {uploadError && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{uploadError}</div>}
+            {successMessage && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{successMessage}</div>}
 
-              <div className="rounded-2xl border border-slate-100 bg-white p-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Hoạt động của bạn</h3>
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase text-blue-700">Tháng này</span>
-                </div>
-                <p className="mt-3 text-sm text-slate-500">Đã tải lên</p>
-                <p className="text-4xl font-black text-slate-900">{uploadedThisMonth}</p>
-                <div className="mt-3 h-2 rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-[#3B66F5]" style={{ width: `${Math.min(100, uploadedThisMonth * 12)}%` }} />
-                </div>
-                <p className="mt-2 text-xs text-slate-400">Mục tiêu: 8 tài liệu chất lượng mỗi tháng.</p>
-              </div>
-
-              <div className="rounded-2xl bg-gradient-to-r from-[#7AA7FF] to-[#4D80F8] p-5 text-white">
-                <p className="text-xs font-bold uppercase tracking-wider">Tham gia cộng đồng</p>
-                <p className="mt-2 text-lg font-black leading-tight">Nhận 50 điểm thưởng cho mỗi tài liệu chất lượng được duyệt.</p>
-              </div>
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <Link to="/tai-lieu" className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-100">Hủy bỏ</Link>
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="rounded-xl bg-[#3B66F5] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-60"
+              >
+                {isUploading ? 'Đang tải lên...' : 'Tải tài liệu lên ngay'}
+              </button>
             </div>
+          </form>
+        </div>
+
+        <div className="xl:col-span-4 space-y-4">
+          <div className="rounded-2xl bg-[#EEF3FB] p-5">
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-600">Quy định tải lên</h3>
+            <ul className="mt-4 space-y-3 text-sm text-slate-600">
+              <li>• Tài liệu phải thuộc sở hữu cá nhân hoặc có quyền chia sẻ.</li>
+              <li>• Không chứa nội dung vi phạm pháp luật hoặc thuần phong mỹ tục.</li>
+              <li>• Khuyến khích tài liệu có chất lượng hình ảnh và nội dung tốt.</li>
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-slate-100 bg-white p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Hoạt động của bạn</h3>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase text-blue-700">Tháng này</span>
+            </div>
+            <p className="mt-3 text-sm text-slate-500">Đã tải lên</p>
+            <p className="text-4xl font-black text-slate-900">{uploadedThisMonth}</p>
+            <div className="mt-3 h-2 rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-[#3B66F5]" style={{ width: `${Math.min(100, uploadedThisMonth * 12)}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-slate-400">Mục tiêu: 8 tài liệu chất lượng mỗi tháng.</p>
+          </div>
+
+          <div className="rounded-2xl bg-gradient-to-r from-[#7AA7FF] to-[#4D80F8] p-5 text-white">
+            <p className="text-xs font-bold uppercase tracking-wider">Tham gia cộng đồng</p>
+            <p className="mt-2 text-lg font-black leading-tight">Nhận 50 điểm thưởng cho mỗi tài liệu chất lượng được duyệt.</p>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

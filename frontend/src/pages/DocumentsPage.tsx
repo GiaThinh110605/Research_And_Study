@@ -283,186 +283,201 @@ const DocumentsPage: React.FC = () => {
                     <p className="text-2xl font-black">{documentStats.newCount}</p>
                     <p className="text-xs text-blue-100">Tài liệu mới</p>
                   </div>
+    <>
+      <div className="p-6 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-6 rounded-2xl bg-[#2F63D9] p-6 text-white">
+              <h2 className="text-3xl font-black mb-2">Thư viện Tài liệu</h2>
+              <p className="text-blue-100 text-sm mb-5">Khám phá kho tàng kiến thức với hơn 10,000+ tài liệu được đóng góp từ cộng đồng sinh viên IUH.</p>
+              <div className="flex items-center gap-4">
+                <div className="rounded-xl bg-white/10 px-4 py-3">
+                  <p className="text-2xl font-black">{(total / 1000).toFixed(1)}k</p>
+                  <p className="text-xs text-blue-100">Lượt tải hôm nay</p>
                 </div>
-              </div>
-
-              <div className="lg:col-span-3 rounded-2xl bg-white border border-gray-100 p-5">
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Phổ biến</p>
-                <p className="mt-5 text-sm font-semibold text-slate-600 uppercase">{documentStats.popularSubject}</p>
-                <p className="text-3xl font-black text-slate-900 mt-1">{total.toLocaleString('vi-VN')}</p>
-                <p className="text-xs text-slate-400">lượt xem</p>
-              </div>
-
-              <div className="lg:col-span-3 rounded-2xl bg-[#0F172A] p-5 text-white">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-300">Yêu thích</p>
-                <p className="mt-5 text-sm font-semibold uppercase text-slate-200">Lập trình C++</p>
-                <p className="text-3xl font-black mt-1">{Math.max(1000, total * 3).toLocaleString('vi-VN')}</p>
-                <p className="text-xs text-slate-400">lượt tải</p>
+                <div className="rounded-xl bg-white/10 px-4 py-3">
+                  <p className="text-2xl font-black">{documentStats.newCount}</p>
+                  <p className="text-xs text-blue-100">Tài liệu mới</p>
+                </div>
               </div>
             </div>
 
-            <section className="rounded-2xl bg-white border border-gray-100 p-5">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <h3 className="text-lg font-bold text-slate-900">Phân loại môn học</h3>
+            <div className="lg:col-span-3 rounded-2xl bg-white border border-gray-100 p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Phổ biến</p>
+              <p className="mt-5 text-sm font-semibold text-slate-600 uppercase">{documentStats.popularSubject}</p>
+              <p className="text-3xl font-black text-slate-900 mt-1">{total.toLocaleString('vi-VN')}</p>
+              <p className="text-xs text-slate-400">lượt xem</p>
+            </div>
+
+            <div className="lg:col-span-3 rounded-2xl bg-[#0F172A] p-5 text-white">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-300">Yêu thích</p>
+              <p className="mt-5 text-sm font-semibold uppercase text-slate-200">Lập trình C++</p>
+              <p className="text-3xl font-black mt-1">{Math.max(1000, total * 3).toLocaleString('vi-VN')}</p>
+              <p className="text-xs text-slate-400">lượt tải</p>
+            </div>
+          </div>
+
+          <section className="rounded-2xl bg-white border border-gray-100 p-5">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h3 className="text-lg font-bold text-slate-900">Phân loại môn học</h3>
+              <button
+                onClick={() => {
+                  setSubjectFilter('Tất cả tài liệu');
+                  setCurrentPage(1);
+                }}
+                className="text-sm font-semibold text-[#3B66F5] hover:underline"
+              >
+                Xem tất cả
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {subjectOptions.map((subjectOption) => (
                 <button
+                  key={subjectOption}
                   onClick={() => {
-                    setSubjectFilter('Tất cả tài liệu');
+                    setSubjectFilter(subjectOption);
                     setCurrentPage(1);
                   }}
-                  className="text-sm font-semibold text-[#3B66F5] hover:underline"
+                  className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                    subjectFilter === subjectOption
+                      ? 'bg-[#3B66F5] text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
                 >
-                  Xem tất cả
+                  {subjectOption}
                 </button>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {subjectOptions.map((subjectOption) => (
-                  <button
-                    key={subjectOption}
-                    onClick={() => {
-                      setSubjectFilter(subjectOption);
-                      setCurrentPage(1);
-                    }}
-                    className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
-                      subjectFilter === subjectOption
-                        ? 'bg-[#3B66F5] text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {subjectOption}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Sắp xếp</div>
-                  <select
-                    value={sortOption}
-                    onChange={(e) => {
-                      setSortOption(e.target.value as SortOption);
-                      setCurrentPage(1);
-                    }}
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
-                  >
-                    <option value="newest">Mới nhất</option>
-                    <option value="oldest">Cũ nhất</option>
-                    <option value="title_asc">Tên A-Z</option>
-                  </select>
-
-                  <select
-                    value={fileTypeFilter}
-                    onChange={(e) => {
-                      setFileTypeFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
-                  >
-                    {fileTypeOptions.map((type) => (
-                      <option key={type} value={type}>
-                        {type === 'all' ? 'Tất cả định dạng' : type.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('grid')}
-                    className={`rounded-md px-3 py-2 text-sm font-semibold ${
-                      viewMode === 'grid' ? 'bg-[#3B66F5] text-white' : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    Grid
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('list')}
-                    className={`rounded-md px-3 py-2 text-sm font-semibold ${
-                      viewMode === 'list' ? 'bg-[#3B66F5] text-white' : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    List
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">
-                Hiển thị <span className="font-bold text-slate-900">{visibleStart}-{visibleEnd}</span> trong <span className="font-bold text-slate-900">{total}</span> tài liệu
-              </p>
+              ))}
             </div>
 
-            {error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                {Array.from({ length: 8 }).map((_, index) => (
-                  <div key={index} className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-white" />
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Sắp xếp</div>
+                <select
+                  value={sortOption}
+                  onChange={(e) => {
+                    setSortOption(e.target.value as SortOption);
+                    setCurrentPage(1);
+                  }}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="title_asc">Tên A-Z</option>
+                </select>
+
+                <select
+                  value={fileTypeFilter}
+                  onChange={(e) => {
+                    setFileTypeFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
+                >
+                  {fileTypeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {type === 'all' ? 'Tất cả định dạng' : type.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={`rounded-md px-3 py-2 text-sm font-semibold ${
+                    viewMode === 'grid' ? 'bg-[#3B66F5] text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  Grid
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`rounded-md px-3 py-2 text-sm font-semibold ${
+                    viewMode === 'list' ? 'bg-[#3B66F5] text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  List
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-slate-500">
+              Hiển thị <span className="font-bold text-slate-900">{visibleStart}-{visibleEnd}</span> trong <span className="font-bold text-slate-900">{total}</span> tài liệu
+            </p>
+          </div>
+
+          {error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className="h-64 animate-pulse rounded-2xl border border-slate-100 bg-white" />
+              ))}
+            </div>
+          ) : documents.length > 0 ? (
+            <>
+              <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4' : 'space-y-3'}>
+                {documents.map((doc) => (
+                  <DocumentCard
+                    key={doc.id}
+                    document={doc}
+                    currentUserId={currentUserId}
+                    viewMode={viewMode}
+                    onOpenDetail={openDetail}
+                    onOpenShare={openShare}
+                  />
                 ))}
               </div>
-            ) : documents.length > 0 ? (
-              <>
-                <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4' : 'space-y-3'}>
-                  {documents.map((doc) => (
-                    <DocumentCard
-                      key={doc.id}
-                      document={doc}
-                      currentUserId={currentUserId}
-                      viewMode={viewMode}
-                      onOpenDetail={openDetail}
-                      onOpenShare={openShare}
-                    />
+
+              {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 disabled:opacity-50"
+                  >
+                    ‹
+                  </button>
+
+                  {pageButtons.map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-9 w-9 rounded-md text-sm font-semibold ${
+                        currentPage === page
+                          ? 'bg-[#3B66F5] text-white shadow-md shadow-blue-200'
+                          : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
                   ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 disabled:opacity-50"
+                  >
+                    ›
+                  </button>
                 </div>
-
-                {totalPages > 1 && (
-                  <div className="mt-8 flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 disabled:opacity-50"
-                    >
-                      ‹
-                    </button>
-
-                    {pageButtons.map((page) => (
-                      <button
-                        key={page}
-                        type="button"
-                        onClick={() => setCurrentPage(page)}
-                        className={`h-9 w-9 rounded-md text-sm font-semibold ${
-                          currentPage === page
-                            ? 'bg-[#3B66F5] text-white shadow-md shadow-blue-200'
-                            : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                      className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 disabled:opacity-50"
-                    >
-                      ›
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-                <h3 className="text-xl font-bold text-slate-800">Không tìm thấy tài liệu phù hợp</h3>
-                <p className="mt-2 text-slate-500">Thử đổi từ khóa, bộ lọc môn học hoặc định dạng file.</p>
-              </div>
-            )}
-          </div>
+              )}
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+              <h3 className="text-xl font-bold text-slate-800">Không tìm thấy tài liệu phù hợp</h3>
+              <p className="mt-2 text-slate-500">Thử đổi từ khóa, bộ lọc môn học hoặc định dạng file.</p>
+            </div>
+          )}
         </div>
-      </main>
+      </div>
 
       <button
         onClick={openUpload}
@@ -484,7 +499,7 @@ const DocumentsPage: React.FC = () => {
         onChangeShareTargetEmail={setShareTargetEmail}
         onChangeSharePermission={setSharePermission}
       />
-    </div>
+    </>
   );
 };
 

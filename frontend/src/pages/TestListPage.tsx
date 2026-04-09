@@ -12,6 +12,7 @@ const TestListPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState<string>('Tất cả');
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -41,6 +42,11 @@ const TestListPage: React.FC = () => {
   };
 
   const filteredTests = tests.filter((test: TestOut) => {
+    // Search filter
+    const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+
+    // Status filter
     if (filterStatus === 'Tất cả') return true;
     if (filterStatus === 'Mới') return test.status === 'MỚI';
     if (filterStatus === 'Đang làm') return test.status === 'ĐANG LÀM';
@@ -106,7 +112,16 @@ const TestListPage: React.FC = () => {
       <div className="flex items-center gap-4 mb-6">
         <div className="relative flex-1">
           <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-          <input type="text" placeholder="Lọc theo tên học phần hoặc mã lớp..." className="w-full bg-gray-50 pl-11 pr-4 py-3 rounded-xl text-sm outline-none border border-transparent focus:border-[#3B66F5] focus:bg-white transition-all text-gray-700 font-medium" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm bài kiểm tra..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full bg-gray-50 pl-11 pr-4 py-3 rounded-xl text-sm outline-none border border-transparent focus:border-[#3B66F5] focus:bg-white transition-all text-gray-700 font-medium"
+          />
         </div>
         <div className="relative">
           <button

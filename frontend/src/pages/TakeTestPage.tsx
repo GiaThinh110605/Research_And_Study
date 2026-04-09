@@ -37,25 +37,26 @@ const TakeTestPage: React.FC = () => {
 
   const handleSubmit = useCallback(async () => {
     if (!test) return;
+    const answersMap: Record<string, any> = {};
+    Object.keys(answers).forEach((idxStr: string) => {
+      const idx = parseInt(idxStr);
+      const answerIdx = answers[idx];
+      const qId = test.questions?.[idx]?.id;
+      if (qId !== undefined) {
+        answersMap[qId.toString()] = answerIdx;
+      }
+    });
+
     try {
-      // Map numeric indices to question IDs for the backend if needed
-      const answersMap: Record<string, any> = {};
-      Object.keys(answers).forEach((idxStr: string) => {
-        const idx = parseInt(idxStr);
-        const answerIdx = answers[idx];
-        const qId = test.questions?.[idx]?.id;
-        if (qId !== undefined) {
-          answersMap[qId.toString()] = answerIdx;
-        }
-      });
       const duration = test.duration_minutes ? test.duration_minutes * 60 : 3600;
       const timeTaken = duration - timeLeft;
       const res = await testService.submitTest(test.id, answersMap, timeTaken);
-      navigate(`/test-result/${res.id}`);
+      navigate(`/test-result/${res.id}`, { state: { questions: test.questions, answers: answersMap, timeTaken, testTitle: test.title, test_id: test.id } });
     } catch (error) {
       console.error("Lỗi khi nộp bài. Mô phỏng nộp thành công.", error);
-      // Simulate successful submission by redirecting to a mock result ID
-      navigate(`/test-result/999`);
+      const duration = test.duration_minutes ? test.duration_minutes * 60 : 3600;
+      const timeTaken = duration - timeLeft;
+      navigate(`/test-result/999`, { state: { questions: test.questions, answers: answersMap, timeTaken, testTitle: test.title, test_id: test.id } });
     }
   }, [test, answers, navigate]);
 

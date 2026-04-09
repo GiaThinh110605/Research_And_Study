@@ -443,35 +443,8 @@ const DocumentDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#F4F7FE] font-sans text-slate-900">
-      <aside className="w-[88px] bg-white border-r flex flex-col items-center py-5 gap-4 shrink-0">
-        <Link to="/tai-lieu" className="h-10 w-10 rounded-xl bg-[#3B66F5] text-white flex items-center justify-center font-bold">U</Link>
-        <Link to="/tai-lieu" className="h-10 w-10 rounded-xl bg-blue-50 text-[#3B66F5] flex items-center justify-center">📚</Link>
-        <div className="h-10 w-10 rounded-xl text-slate-400 flex items-center justify-center">🏠</div>
-        <div className="h-10 w-10 rounded-xl text-slate-400 flex items-center justify-center">📝</div>
-        <div className="h-10 w-10 rounded-xl text-slate-400 flex items-center justify-center">📣</div>
-        <div className="mt-auto h-10 w-10 rounded-xl text-slate-400 flex items-center justify-center">❔</div>
-      </aside>
-
+    <div className="flex h-screen bg-[#F4F7FE] font-sans text-slate-900 border-t-4 border-[#3B66F5]">
       <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-16 bg-white border-b px-6 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-6 text-sm font-semibold text-slate-500">
-            <Link to="/dashboard" className="hover:text-slate-900">Trang chủ</Link>
-            <Link to="/tai-lieu" className="text-[#3B66F5]">Thư viện</Link>
-            <Link to="/dashboard" className="hover:text-slate-900">Bài kiểm tra</Link>
-          </div>
-
-          <div className="relative w-[320px]">
-            <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input placeholder="Tìm kiếm tài liệu..." className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 py-2 text-sm outline-none focus:border-[#3B66F5]" />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="text-slate-400">🔔</button>
-            <button className="text-slate-400">⚙️</button>
-            <div className="h-8 w-8 rounded-full bg-blue-100" />
-          </div>
-        </div>
 
         <div className="h-[72px] bg-white border-b px-6 flex items-center justify-between shrink-0">
           <div>

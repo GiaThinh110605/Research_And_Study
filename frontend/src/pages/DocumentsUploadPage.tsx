@@ -4,7 +4,8 @@ import { authService } from '../services/auth';
 import { documentService, DocumentItem } from '../services/documents';
 
 const allowedExtensions = new Set(['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt']);
-const maxFileSize = 50 * 1024 * 1024;
+const maxUploadMb = 10;
+const maxFileSize = maxUploadMb * 1024 * 1024;
 
 const subjectOptions = [
   'Toán học',
@@ -76,7 +77,7 @@ const DocumentsUploadPage: React.FC = () => {
     }
 
     if (candidate.size > maxFileSize) {
-      return 'Kích thước tệp vượt quá 50MB.';
+      return `Kích thước tệp vượt quá ${maxUploadMb}MB.`;
     }
 
     return '';
@@ -214,7 +215,7 @@ const DocumentsUploadPage: React.FC = () => {
                     ☁
                   </div>
                   <p className="text-lg font-bold text-slate-800">{selectedFileDisplay}</p>
-                  <p className="mt-1 text-sm text-slate-500">Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT (Tối đa 50MB)</p>
+                  <p className="mt-1 text-sm text-slate-500">Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT (Tối đa {maxUploadMb}MB)</p>
 
                   <label className="mt-4 inline-flex cursor-pointer rounded-xl bg-[#3B66F5] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
                     Chọn tệp từ máy

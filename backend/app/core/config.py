@@ -17,7 +17,6 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://localhost:8000",
         "https://research-and-study.onrender.com",
-        "*"
     ]
     
     # File Upload

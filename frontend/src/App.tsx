@@ -20,6 +20,8 @@ import AdminSettings from './pages/AdminSettings';
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
 import TestListPage from './pages/TestListPage';
+import TakeTestPage from './pages/TakeTestPage';
+import TestResultPage from './pages/TestResultPage';
 
 function App() {
   return (
@@ -37,6 +39,8 @@ function App() {
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
         <Route path="/test-list" element={<TestListPage />} />
         <Route path="/thao-luan" element={<DiscussionPage />} />
+        <Route path="/take-test/:id" element={<TakeTestPage />} />
+        <Route path="/test-result/:id" element={<TestResultPage />} />
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/admin/docs" element={<AdminDocumentManagement />} />
         <Route path="/admin/moderation" element={<AdminModeration />} />

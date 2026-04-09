@@ -1,39 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const CommunityPage: React.FC = () => {
+  const [showGroupModal, setShowGroupModal] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <Link to="/" className="flex items-center">
-              <div className="text-2xl font-black tracking-tight text-blue-600">UniStudy</div>
-            </Link>
-
-            {/* Navigation */}
-            <nav className="hidden space-x-10 md:flex">
-              <Link to="/" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Trang chủ</Link>
-              <Link to="/tinh-nang" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Tính năng</Link>
-              <Link to="/tai-lieu" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Tài liệu</Link>
-              <Link to="/cong-dong" className="text-sm font-semibold text-blue-600 border-b-2 border-blue-600">Cộng đồng</Link>
-              <Link to="/thao-luan" className="text-sm font-semibold text-gray-500 transition-colors hover:text-blue-600">Thảo luận</Link>
-            </nav>
-
-            {/* Right side */}
-            <div className="flex items-center space-x-4">
-              <Link to="/login" className="px-5 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:text-blue-600">
-                Đăng nhập
-              </Link>
-              <Link to="/register" className="px-5 py-2.5 text-sm font-semibold text-white transition-all bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg">
-                Đăng ký
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <main className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
         {/* Hero Banner */}
@@ -54,10 +26,10 @@ const CommunityPage: React.FC = () => {
                 Nơi kết nối hơn 10,000 sinh viên Công nghiệp. Chia sẻ tài liệu, thảo luận bài tập và cùng nhau chinh phục học bổng.
               </p>
               <div className="flex flex-wrap items-center gap-4">
-                <button className="px-8 py-3.5 text-sm font-bold text-blue-600 transition-all bg-white shadow-md rounded-xl hover:bg-slate-50 hover:shadow-lg">
+                <a href="https://www.facebook.com/sviuh" target="_blank" rel="noopener noreferrer" className="inline-block px-8 py-3.5 text-sm font-bold text-blue-600 transition-all bg-white shadow-md rounded-xl hover:bg-slate-50 hover:shadow-lg">
                   Tham gia ngay
-                </button>
-                <button className="px-8 py-3.5 text-sm font-bold text-white transition-colors border-2 border-white/30 backdrop-blur-sm rounded-xl hover:bg-white/10">
+                </a>
+                <button onClick={() => setShowGroupModal(true)} className="px-8 py-3.5 text-sm font-bold text-white transition-colors border-2 border-white/30 backdrop-blur-sm rounded-xl hover:bg-white/10">
                   Khám phá nhóm
                 </button>
               </div>
@@ -319,6 +291,39 @@ const CommunityPage: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Group Info Modal */}
+      {showGroupModal && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] p-10 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-6 font-black text-2xl">
+              iUH
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">Cộng đồng Sinh viên IUH</h3>
+            <p className="text-gray-500 font-medium mb-4 leading-relaxed">
+              Bạn đang tìm kiếm bạn đồng hành cho những dự án lớn? Hay cần người có cùng chí hướng để ôn thi cuối kỳ, review môn học? 
+            </p>
+            <p className="text-gray-500 font-medium mb-10 leading-relaxed">
+              Group "Cộng đồng Sinh viên Công nghiệp" là nơi sinh hoạt của hàng chục nghìn IUHer. Nhấn tham gia ngay để không bỏ lỡ tài liệu quý giá.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => setShowGroupModal(false)}
+                className="font-bold py-4 rounded-2xl text-gray-500 hover:bg-gray-50 transition-colors"
+              >
+                Đóng lại
+              </button>
+              <a 
+                href="https://www.facebook.com/sviuh"
+                target="_blank" rel="noopener noreferrer"
+                className="font-black py-4 text-center rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center justify-center"
+              >
+                Vào nhóm ngay
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

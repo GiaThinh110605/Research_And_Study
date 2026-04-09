@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
+import { validateName, validateStudentId, validateEmail } from '../utils/validation';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,30 +11,38 @@ const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [studentIdError, setStudentIdError] = useState('');
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const validateStudentId = (value: string) => {
-    if (value && !/^\d{8}$/.test(value)) {
-      setStudentIdError('Mã số sinh viên phải có đúng 8 chữ số');
-    } else {
-      setStudentIdError('');
-    }
-  };
 
   const handleStudentIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow numbers
     if (value === '' || /^\d+$/.test(value)) {
       setStudentId(value);
-      validateStudentId(value);
+      if (errors.studentId) setErrors({...errors, studentId: ''});
     }
+  };
+
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    const nameErr = validateName(fullName);
+    if (nameErr) newErrors.fullName = nameErr;
+    
+    const emailErr = validateEmail(email);
+    if (emailErr) newErrors.email = emailErr;
+    
+    const idErr = validateStudentId(studentId);
+    if (idErr) newErrors.studentId = idErr;
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (studentIdError) return;
+    if (!validateForm()) return;
     if (!agreeTerms) {
       setError('Vui lòng đồng ý với các điều khoản.');
       return;
@@ -131,11 +140,15 @@ const RegisterPage: React.FC = () => {
                           type="text"
                           required
                           value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
+                          onChange={(e) => {
+                            setFullName(e.target.value);
+                            if (errors.fullName) setErrors({...errors, fullName: ''});
+                          }}
                           placeholder="Nguyễn Văn A"
-                          className="w-full py-3 pl-10 pr-4 transition border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full py-3 pl-10 pr-4 transition border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.fullName ? 'border-red-500' : 'border-gray-300'}`}
                         />
                       </div>
+                      {errors.fullName && <p className="mt-1 text-xs text-red-500">{errors.fullName}</p>}
                     </div>
 
                     {/* Email Field */}
@@ -155,11 +168,15 @@ const RegisterPage: React.FC = () => {
                           type="email"
                           required
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => {
+                             setEmail(e.target.value);
+                             if (errors.email) setErrors({...errors, email: ''});
+                          }}
                           placeholder="example@student.iuh.edu.vn"
-                          className="w-full py-3 pl-10 pr-4 transition border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full py-3 pl-10 pr-4 transition border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                         />
                       </div>
+                      {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                     </div>
 
                     {/* Student ID Field */}
@@ -182,12 +199,12 @@ const RegisterPage: React.FC = () => {
                           onChange={handleStudentIdChange}
                           placeholder="20211234"
                           maxLength={8}
-                          className={`w-full py-3 pl-10 pr-4 transition border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${studentIdError ? 'border-red-500' : 'border-gray-300'
+                          className={`w-full py-3 pl-10 pr-4 transition border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.studentId ? 'border-red-500' : 'border-gray-300'
                             }`}
                         />
                       </div>
-                      {studentIdError && (
-                        <p className="mt-1 text-sm text-red-500">{studentIdError}</p>
+                      {errors.studentId && (
+                        <p className="mt-1 text-sm text-red-500">{errors.studentId}</p>
                       )}
                     </div>
 

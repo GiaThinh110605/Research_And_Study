@@ -1,4 +1,4 @@
-# AI Research to help student with their homework and don't comsuming time 
+# Research and Study to help student with their homework and don't comsuming time 
 - web: https://research-and-study.onrender.com
 
 # Contributors:

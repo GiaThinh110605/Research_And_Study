@@ -9,8 +9,8 @@ const DashboardLayout: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Settings State
-  const [theme, setTheme] = useState<'light'|'dark'>('light');
-  const [language, setLanguage] = useState<'vi'|'en'>('vi');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [language, setLanguage] = useState<'vi' | 'en'>('vi');
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [avatarUrl] = useState<string>(localStorage.getItem('user_avatar') || '');
 
@@ -18,9 +18,9 @@ const DashboardLayout: React.FC = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     if (newTheme === 'dark') {
-       document.documentElement.style.filter = "invert(1) hue-rotate(180deg)";
+      document.documentElement.style.filter = "invert(1) hue-rotate(180deg)";
     } else {
-       document.documentElement.style.filter = "none";
+      document.documentElement.style.filter = "none";
     }
   };
 
@@ -116,7 +116,7 @@ const DashboardLayout: React.FC = () => {
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {menuItems.map((item, idx) => {
             const isActive = location.pathname === item.path || (item.isHome && location.pathname === '/dashboard');
-            
+
             if (item.external) {
               return (
                 <a key={idx} href={item.path} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 px-4 py-3.5 text-gray-500 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium">
@@ -127,14 +127,13 @@ const DashboardLayout: React.FC = () => {
             }
 
             return (
-              <Link 
-                key={idx} 
-                to={item.path} 
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-medium transition-all ${
-                  isActive 
-                    ? "bg-[#3B66F5] text-white shadow-md shadow-blue-200" 
+              <Link
+                key={idx}
+                to={item.path}
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-medium transition-all ${isActive
+                    ? "bg-[#3B66F5] text-white shadow-md shadow-blue-200"
                     : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 {item.isHome ? (
                   <svg className="w-5 h-5 opacity-90" fill="currentColor" viewBox="0 0 20 20"><path d={item.icon} /></svg>
@@ -152,7 +151,7 @@ const DashboardLayout: React.FC = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             {currentT.upload}
           </Link>
-          
+
           <div className="space-y-1">
             <Link to="#" className="flex items-center gap-3 px-4 py-3 font-medium text-gray-500 transition-colors rounded-xl hover:bg-gray-50 hover:text-gray-900">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -175,20 +174,20 @@ const DashboardLayout: React.FC = () => {
             <Link to="/tai-lieu" className={`font-semibold pb-7 pt-7 relative top-[1px] transition-all ${location.pathname.startsWith('/tai-lieu') ? "text-[#3B66F5] border-b-2 border-[#3B66F5]" : "text-gray-500 hover:text-gray-900"}`}>{currentT.library}</Link>
             <Link to="/cong-dong" className={`font-semibold pb-7 pt-7 relative top-[1px] transition-all ${location.pathname.startsWith('/cong-dong') ? "text-[#3B66F5] border-b-2 border-[#3B66F5]" : "text-gray-500 hover:text-gray-900"}`}>{currentT.community}</Link>
           </div>
-          
+
           <div className="flex items-center gap-6">
             <div className="relative">
               <svg className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
                 placeholder={currentT.searchPlaceholder}
-                className="bg-gray-50 pl-11 pr-4 py-2.5 rounded-full text-sm outline-none w-[280px] border border-gray-100 focus:border-[#3B66F5] focus:bg-white transition-all" 
+                className="bg-gray-50 pl-11 pr-4 py-2.5 rounded-full text-sm outline-none w-[280px] border border-gray-100 focus:border-[#3B66F5] focus:bg-white transition-all"
               />
             </div>
-            
+
             <div className="flex items-center gap-4 border-l pl-6 border-gray-100 relative">
               {/* Notifications */}
               <div className="relative">
@@ -231,7 +230,7 @@ const DashboardLayout: React.FC = () => {
                     <button onClick={() => setNotifEnabled(!notifEnabled)} className="flex justify-between items-center w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
                       <span>{currentT.emailNotif}</span>
                       <div className={`w-8 h-4 rounded-full flex items-center transition-colors ${notifEnabled ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                         <div className={`w-3 h-3 bg-white rounded-full mx-0.5 transition-transform ${notifEnabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                        <div className={`w-3 h-3 bg-white rounded-full mx-0.5 transition-transform ${notifEnabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
                       </div>
                     </button>
                   </div>

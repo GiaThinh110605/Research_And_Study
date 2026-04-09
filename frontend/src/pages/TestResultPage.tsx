@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { testService, TestResultOut, ITestQuestion } from '../services/test';
+import { mockTestResult } from '../mock_data/test_result';
 
 const TestResultPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,10 +15,13 @@ const TestResultPage: React.FC = () => {
       if (!id) return;
       try {
         const data = await testService.getResultDetail(parseInt(id));
+        if (!data || !data.test_questions) {
+          throw new Error("No data or questions");
+        }
         setResult(data);
       } catch (error) {
-        console.error("Lỗi khi tải kết quả", error);
-        navigate('/test-list');
+        console.error("Lỗi khi tải kết quả. Mô phỏng dữ liệu.", error);
+        setResult(mockTestResult);
       } finally {
         setLoading(false);
       }
@@ -50,27 +54,7 @@ const TestResultPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFF] font-sans pb-20">
-      {/* Header Navigation */}
-      <header className="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/test-list')}>
-            <div className="w-8 h-8 bg-[#3B66F5] rounded-lg flex items-center justify-center text-white font-black text-xl">U</div>
-            <span className="text-xl font-black tracking-tight text-[#1A1C1E]">UniStudy</span>
-          </div>
-          <nav className="flex gap-6 text-sm font-bold text-gray-400">
-             <button onClick={() => navigate('/dashboard')} className="hover:text-gray-600 transition-colors">Trang chủ</button>
-             <button onClick={() => navigate('/test-list')} className="text-[#3B66F5]">Bài kiểm tra</button>
-             <button className="hover:text-gray-600 transition-colors">Thư viện</button>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-           <button className="text-gray-400"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22a2 2 0 002-2H10a2 2 0 002 2zm6-6V10c0-3.07-1.63-5.64-4.5-6.32V3a1.5 1.5 0 00-3 0v.68C7.63 4.36 6 6.92 6 10v6l-2 2v1h16v-1l-2-2z" /></svg></button>
-           <button className="text-gray-400"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" /></svg></button>
-           <div className="w-8 h-8 bg-gray-200 rounded-full border border-gray-100 overflow-hidden">
-              <img src="https://ui-avatars.com/api/?name=User&background=3B66F5&color=fff" alt="Avatar" />
-           </div>
-        </div>
-      </header>
+
 
       <main className="max-w-6xl mx-auto px-8 pt-10">
         <div className="grid grid-cols-3 gap-8">

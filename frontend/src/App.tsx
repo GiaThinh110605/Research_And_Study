@@ -22,6 +22,9 @@ import LecturerDashboard from './pages/LecturerDashboard';
 import TestListPage from './pages/TestListPage';
 import TakeTestPage from './pages/TakeTestPage';
 import TestResultPage from './pages/TestResultPage';
+import ProfilePage from './pages/ProfilePage';
+
+import DashboardLayout from './components/layout/DashboardLayout';
 
 function App() {
   return (
@@ -29,17 +32,24 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/tinh-nang" element={<FeaturesPage />} />
-        <Route path="/tai-lieu/tai-len" element={<DocumentsUploadPage />} />
-        <Route path="/tai-lieu/:documentId" element={<DocumentDetailPage />} />
-        <Route path="/tai-lieu" element={<DocumentsPage />} />
-        <Route path="/cong-dong" element={<CommunityPage />} />
+        
+        {/* Student Dashboard Routes */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<StudentDashboard />} />
+          <Route path="/tai-lieu" element={<DocumentsPage />} />
+          <Route path="/tai-lieu/tai-len" element={<DocumentsUploadPage />} />
+          <Route path="/tai-lieu/:documentId" element={<DocumentDetailPage />} />
+          <Route path="/cong-dong" element={<CommunityPage />} />
+          <Route path="/test-list" element={<TestListPage />} />
+          <Route path="/take-test/:id" element={<TakeTestPage />} />
+          <Route path="/test-result/:id" element={<TestResultPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Route>
+
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
-        <Route path="/test-list" element={<TestListPage />} />
-        <Route path="/take-test/:id" element={<TakeTestPage />} />
-        <Route path="/test-result/:id" element={<TestResultPage />} />
+        
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/admin/docs" element={<AdminDocumentManagement />} />
         <Route path="/admin/moderation" element={<AdminModeration />} />

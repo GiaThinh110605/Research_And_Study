@@ -396,12 +396,12 @@ const DocumentDetailPage: React.FC = () => {
   };
 
   const handleDeleteHighlight = async (id: number) => {
-    if(!window.confirm("Bạn có chắc chắn muốn xoá thẻ highlight này?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xoá thẻ highlight này?")) return;
     try {
-       await api.delete(`/api/v1/highlights/${id}`);
-       await fetchHighlights(parsedId);
+      await api.delete(`/api/v1/highlights/${id}`);
+      await fetchHighlights(parsedId);
     } catch {
-       alert("Xóa thất bại");
+      alert("Xóa thất bại");
     }
   };
 
@@ -572,7 +572,7 @@ const DocumentDetailPage: React.FC = () => {
                             </div>
                           </div>
                           <p className="mt-4 text-[14px] text-slate-800 font-medium">Q: {q.content}</p>
-                          
+
                           {q.answer ? (
                             <div className="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100 group relative">
                               <div className="flex justify-between items-start mb-1">
@@ -592,7 +592,7 @@ const DocumentDetailPage: React.FC = () => {
 
                           {answeringTo === q.id && (
                             <div className="mt-3 flex gap-2">
-                              <input 
+                              <input
                                 className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
                                 placeholder="Nhập câu trả lời chuyên môn..."
                                 value={answerContent}
@@ -735,56 +735,56 @@ const DocumentDetailPage: React.FC = () => {
                 <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-900">Ghi chú & Nổi bật (Highlight)</h3>
                   <p className="mt-1 text-sm text-slate-500">Lưu lại những đoạn văn quan trọng từ tài liệu (trang cụ thể) kèm ghi chú cá nhân của bạn.</p>
-                  
+
                   <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="md:col-span-2">
-                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Đoạn văn quan trọng *</label>
-                       <textarea 
-                         value={highText} 
-                         onChange={e => setHighText(e.target.value)} 
-                         rows={3} 
-                         placeholder="Ví dụ: Công thức tính năng lượng E = mc^2..." 
-                         className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium" 
-                       />
-                     </div>
-                     <div>
-                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Trang số</label>
-                       <input 
-                         type="number" 
-                         value={highPage} 
-                         onChange={e => setHighPage(Number(e.target.value))} 
-                         min={1} 
-                         className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium" 
-                       />
-                     </div>
-                     <div>
-                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Phân loại màu</label>
-                       <select 
-                         value={highColor} 
-                         onChange={e => setHighColor(e.target.value)} 
-                         className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-[9px] text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
-                       >
-                         <option value="yellow">🟡 Vàng (Quan trọng)</option>
-                         <option value="blue">🔵 Xanh dương (Ví dụ)</option>
-                         <option value="green">🟢 Xanh lá (Định nghĩa)</option>
-                         <option value="red">🔴 Đỏ (Cần hỏi lại)</option>
-                       </select>
-                     </div>
-                     <div className="md:col-span-2">
-                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ghi chú thêm (Tùy chọn)</label>
-                       <input 
-                         value={highNote} 
-                         onChange={e => setHighNote(e.target.value)} 
-                         placeholder="Nhập ghi chú ý hiểu của bạn cho đoạn văn này..." 
-                         className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium" 
-                       />
-                     </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Đoạn văn quan trọng *</label>
+                      <textarea
+                        value={highText}
+                        onChange={e => setHighText(e.target.value)}
+                        rows={3}
+                        placeholder="Ví dụ: Công thức tính năng lượng E = mc^2..."
+                        className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Trang số</label>
+                      <input
+                        type="number"
+                        value={highPage}
+                        onChange={e => setHighPage(Number(e.target.value))}
+                        min={1}
+                        className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Phân loại màu</label>
+                      <select
+                        value={highColor}
+                        onChange={e => setHighColor(e.target.value)}
+                        className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-[9px] text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                      >
+                        <option value="yellow">🟡 Vàng (Quan trọng)</option>
+                        <option value="blue">🔵 Xanh dương (Ví dụ)</option>
+                        <option value="green">🟢 Xanh lá (Định nghĩa)</option>
+                        <option value="red">🔴 Đỏ (Cần hỏi lại)</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ghi chú thêm (Tùy chọn)</label>
+                      <input
+                        value={highNote}
+                        onChange={e => setHighNote(e.target.value)}
+                        placeholder="Nhập ghi chú ý hiểu của bạn cho đoạn văn này..."
+                        className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                      />
+                    </div>
                   </div>
-                  
+
                   <div className="mt-5 flex justify-end">
-                    <button 
-                      onClick={handleHighlightSubmit} 
-                      disabled={!highText.trim()} 
+                    <button
+                      onClick={handleHighlightSubmit}
+                      disabled={!highText.trim()}
                       className="bg-[#3B66F5] text-white px-5 py-2.5 rounded-lg font-bold text-[13px] hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm shadow-blue-200"
                     >
                       Lưu Highlight
@@ -797,28 +797,28 @@ const DocumentDetailPage: React.FC = () => {
                 ) : highlights.length > 0 ? (
                   <div className="grid grid-cols-1 gap-4">
                     {highlights.map(h => (
-                       <div key={h.id} className={`rounded-xl border p-5 shadow-sm relative transition-all hover:shadow-md ${h.color === 'yellow' ? 'bg-[#FFFBEB] border-[#FEF3C7]' : h.color === 'blue' ? 'bg-[#EFF6FF] border-[#DBEAFE]' : h.color === 'green' ? 'bg-[#F0FDF4] border-[#DCFCE7]' : 'bg-[#FEF2F2] border-[#FEE2E2]'}`}>
-                          <button onClick={() => handleDeleteHighlight(h.id)} className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-md bg-white bg-opacity-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors text-xs font-black">✕</button>
-                          <div className="flex items-center gap-2 mb-3">
-                             <span className="font-extrabold text-[10px] uppercase px-2.5 py-1 rounded-full bg-white bg-opacity-70 tracking-wider text-slate-700">Trang {h.page_number}</span>
-                             <span className="text-[11px] text-slate-500 font-medium">{timeAgo(h.created_at)}</span>
+                      <div key={h.id} className={`rounded-xl border p-5 shadow-sm relative transition-all hover:shadow-md ${h.color === 'yellow' ? 'bg-[#FFFBEB] border-[#FEF3C7]' : h.color === 'blue' ? 'bg-[#EFF6FF] border-[#DBEAFE]' : h.color === 'green' ? 'bg-[#F0FDF4] border-[#DCFCE7]' : 'bg-[#FEF2F2] border-[#FEE2E2]'}`}>
+                        <button onClick={() => handleDeleteHighlight(h.id)} className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-md bg-white bg-opacity-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors text-xs font-black">✕</button>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="font-extrabold text-[10px] uppercase px-2.5 py-1 rounded-full bg-white bg-opacity-70 tracking-wider text-slate-700">Trang {h.page_number}</span>
+                          <span className="text-[11px] text-slate-500 font-medium">{timeAgo(h.created_at)}</span>
+                        </div>
+
+                        <div className="relative">
+                          <div className={`absolute left-0 top-1 bottom-1 w-1 rounded-full ${h.color === 'yellow' ? 'bg-amber-400' : h.color === 'blue' ? 'bg-blue-400' : h.color === 'green' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
+                          <p className={`pl-4 font-semibold text-[14px] leading-relaxed ${h.color === 'yellow' ? 'text-amber-900' : h.color === 'blue' ? 'text-blue-900' : h.color === 'green' ? 'text-emerald-900' : 'text-red-900'}`}>{h.text_content}</p>
+                        </div>
+
+                        {h.note && (
+                          <div className="mt-4 pt-3 border-t border-slate-300 border-opacity-30">
+                            <p className="text-[13px] text-slate-700 font-semibold"><span className="opacity-70">💡 Ghi chú: </span>{h.note}</p>
                           </div>
-                          
-                          <div className="relative">
-                            <div className={`absolute left-0 top-1 bottom-1 w-1 rounded-full ${h.color === 'yellow' ? 'bg-amber-400' : h.color === 'blue' ? 'bg-blue-400' : h.color === 'green' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
-                            <p className={`pl-4 font-semibold text-[14px] leading-relaxed ${h.color === 'yellow' ? 'text-amber-900' : h.color === 'blue' ? 'text-blue-900' : h.color === 'green' ? 'text-emerald-900' : 'text-red-900'}`}>{h.text_content}</p>
-                          </div>
-                          
-                          {h.note && (
-                            <div className="mt-4 pt-3 border-t border-slate-300 border-opacity-30">
-                               <p className="text-[13px] text-slate-700 font-semibold"><span className="opacity-70">💡 Ghi chú: </span>{h.note}</p>
-                            </div>
-                          )}
-                       </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-500 text-sm font-medium">Bạn chưa lưu đoạn nổi bật nào.<br/><span className="text-xs font-normal opacity-70 mt-1 block">Tạo highlight để ghi nhớ bài tốt hơn!</span></div>
+                  <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-500 text-sm font-medium">Bạn chưa lưu đoạn nổi bật nào.<br /><span className="text-xs font-normal opacity-70 mt-1 block">Tạo highlight để ghi nhớ bài tốt hơn!</span></div>
                 )}
               </div>
             )}

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { validateName, validateStudentId, validateEmail, validatePhone } from '../utils/validation';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'info' | 'activity' | 'security'>('info');
@@ -38,28 +39,17 @@ const ProfilePage: React.FC = () => {
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
     
-    // Họ tên ít nhất có 2 chữ
-    const nameNormalized = profileData.name.trim();
-    if (nameNormalized.split(/\s+/).length < 2) {
-      newErrors.name = 'Họ và tên phải có ít nhất 2 chữ';
-    }
+    const nameErr = validateName(profileData.name);
+    if (nameErr) newErrors.name = nameErr;
     
-    // Mã số sinh viên bắt buộc 8 chữ số
-    if (!/^\d{8}$/.test(profileData.studentId)) {
-      newErrors.studentId = 'Mã số sinh viên phải có đúng 8 chữ số';
-    }
+    const idErr = validateStudentId(profileData.studentId);
+    if (idErr) newErrors.studentId = idErr;
     
-    // Email phải có @
-    if (!profileData.email.includes('@')) {
-      newErrors.email = 'Email phải chứa ký tự @';
-    }
+    const emailErr = validateEmail(profileData.email);
+    if (emailErr) newErrors.email = emailErr;
     
-    // Số điện thoại bắt buộc 10 số
-    if (profileData.phone && !/^\d{10}$/.test(profileData.phone)) {
-      newErrors.phone = 'Số điện thoại phải có đúng 10 chữ số';
-    } else if (!profileData.phone) {
-       newErrors.phone = 'Số điện thoại không được để trống';
-    }
+    const phoneErr = validatePhone(profileData.phone);
+    if (phoneErr) newErrors.phone = phoneErr;
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

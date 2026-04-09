@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
+import { validateName, validateStudentId, validateEmail } from '../utils/validation';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,18 +11,10 @@ const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [studentIdError, setStudentIdError] = useState('');
   const [error, setError] = useState('');
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const validateStudentId = (value: string) => {
-    if (value && !/^\d{8}$/.test(value)) {
-      setStudentIdError('Mã số sinh viên phải có đúng 8 chữ số');
-    } else {
-      setStudentIdError('');
-    }
-  };
 
   const handleStudentIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -34,20 +27,14 @@ const RegisterPage: React.FC = () => {
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
     
-    // Họ tên ít nhất có 2 chữ
-    if (fullName.trim().split(/\s+/).length < 2) {
-      newErrors.fullName = 'Họ và tên phải có ít nhất 2 chữ';
-    }
+    const nameErr = validateName(fullName);
+    if (nameErr) newErrors.fullName = nameErr;
     
-    // Email phải có @
-    if (!email.includes('@')) {
-      newErrors.email = 'Email không hợp lệ';
-    }
+    const emailErr = validateEmail(email);
+    if (emailErr) newErrors.email = emailErr;
     
-    // Mã số sinh viên bắt buộc 8 chữ số
-    if (!/^\d{8}$/.test(studentId)) {
-      newErrors.studentId = 'Mã số sinh viên phải có đúng 8 chữ số';
-    }
+    const idErr = validateStudentId(studentId);
+    if (idErr) newErrors.studentId = idErr;
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

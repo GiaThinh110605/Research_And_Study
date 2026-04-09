@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-
+import { authService } from '../services/auth';
 const sidebarMenus = [
   { name: 'TRANG CHỦ', path: '/', icon: <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg> },
   { name: 'THƯ VIỆN', path: '/tai-lieu', icon: <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg> },
@@ -47,22 +47,23 @@ function getInitials(name: string): string {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
-const DOCUMENT_ID = 1; // Tài liệu mặc định để hiển thị thảo luận
-
 const DiscussionPage: React.FC = () => {
+  const [documentId, setDocumentId] = useState<number | null>(null);
   const [discussions, setDiscussions] = useState<DiscussionItem[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyContent, setReplyContent] = useState('');
 
   const isLoggedIn = !!localStorage.getItem('token');
 
   // Fetch discussions từ API
-  const fetchDiscussions = async () => {
+  const fetchDiscussions = async (docId: number) => {
     try {
-      const res = await api.get(`/api/v1/discussions/?document_id=${DOCUMENT_ID}`);
+      const res = await api.get(`/api/v1/discussions/?document_id=${docId}`);
       setDiscussions(res.data);
     } catch (err) {
       console.error('Lỗi tải thảo luận:', err);
@@ -72,7 +73,21 @@ const DiscussionPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDiscussions();
+    const init = async () => {
+      try {
+        const docsRes = await api.get('/api/v1/documents/?page_size=1');
+        if (docsRes.data.items && docsRes.data.items.length > 0) {
+          const docId = docsRes.data.items[0].id;
+          setDocumentId(docId);
+          fetchDiscussions(docId);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   // Gửi thảo luận mới
@@ -86,18 +101,23 @@ const DiscussionPage: React.FC = () => {
       return;
     }
 
+    if (!documentId) {
+      setError('Chưa có tài liệu để thảo luận.');
+      return;
+    }
+
     setSending(true);
     setError('');
     try {
       await api.post('/api/v1/discussions/', {
-        document_id: DOCUMENT_ID,
+        document_id: documentId,
         content: newComment.trim(),
         parent_id: 0, // Comment gốc
       });
       setNewComment('');
       setSuccessMsg('Gửi thảo luận thành công!');
       setTimeout(() => setSuccessMsg(''), 3000);
-      await fetchDiscussions(); // Reload danh sách
+      await fetchDiscussions(documentId); // Reload danh sách
     } catch (err: any) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
@@ -106,6 +126,34 @@ const DiscussionPage: React.FC = () => {
       }
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleReplySubmit = async (parentId: number) => {
+    if (!replyContent.trim()) return;
+    if (!isLoggedIn) {
+       setError('Bạn cần đăng nhập để bình luận.'); return;
+    }
+    if (!documentId) return;
+
+    try {
+      await api.post('/api/v1/discussions/', {
+        document_id: documentId,
+        content: replyContent.trim(),
+        parent_id: parentId,
+      });
+      setReplyContent('');
+      await fetchDiscussions(documentId);
+    } catch (err: any) {
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail;
+      
+      if (status === 401 || status === 403 || (status === 404 && detail === 'User not found')) {
+        setError('Phiên đăng nhập bị lỗi. Vui lòng tải lại trang và đăng nhập lại.');
+        authService.logout();
+      } else {
+        setError(detail || 'Gửi bình luận thất bại.');
+      }
     }
   };
 
@@ -267,6 +315,19 @@ const DiscussionPage: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Nút Phản hồi & Dòng kẻ */}
+                    <div className="px-6 pb-3 flex items-center gap-4">
+                      <button 
+                        onClick={() => {
+                          setReplyingTo(replyingTo === disc.id ? null : disc.id);
+                          setReplyContent('');
+                        }} 
+                        className="text-[13px] font-bold text-slate-500 hover:text-blue-600 transition-colors"
+                      >
+                        Bình luận
+                      </button>
+                    </div>
+
                     {/* Replies */}
                     {disc.replies && disc.replies.length > 0 && (
                       <div className="px-6 pb-4 space-y-3">
@@ -290,6 +351,32 @@ const DiscussionPage: React.FC = () => {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Khung nhập Reply Facebook style */}
+                    {replyingTo === disc.id && (
+                      <div className="px-6 pb-5 pt-2 flex gap-3 animate-fade-in">
+                        <img src="https://i.pravatar.cc/100?img=1" className="w-8 h-8 rounded-full border border-slate-200 shrink-0" alt="Avatar"/>
+                        <div className="flex-1 bg-slate-100 rounded-[20px] flex items-center pr-2 pl-4 py-1.5 border border-slate-200 focus-within:border-blue-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                          <input 
+                            type="text"
+                            autoFocus
+                            placeholder="Viết bình luận..."
+                            className="bg-transparent flex-1 outline-none text-[13px] text-slate-800 placeholder-slate-500"
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(disc.id)}
+                            disabled={!isLoggedIn}
+                          />
+                          <button 
+                            onClick={() => handleReplySubmit(disc.id)} 
+                            disabled={!isLoggedIn || !replyContent.trim()}
+                            className="w-7 h-7 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                          >
+                            <svg className="w-4 h-4 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -1,5 +1,8 @@
 import os
-from pydantic import BaseSettings
+try:
+    from pydantic import BaseSettings
+except ImportError:
+    from pydantic.v1 import BaseSettings
 from typing import Optional, List
 
 class Settings(BaseSettings):

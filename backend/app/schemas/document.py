@@ -55,3 +55,70 @@ class DocumentShareOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class AdminDocumentOverview(BaseModel):
+    total_documents: int
+    public_documents: int
+    private_documents: int
+    total_shares: int
+    pending_shares: int
+    approved_shares: int
+    rejected_shares: int
+
+
+class AdminDocumentItem(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    subject: Optional[str] = None
+    is_public: bool
+    file_url: str
+    file_type: str
+    uploader_id: int
+    uploader_name: Optional[str] = None
+    uploader_email: Optional[EmailStr] = None
+    share_count: int = 0
+    pending_share_count: int = 0
+    approved_share_count: int = 0
+    rejected_share_count: int = 0
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+
+class AdminDocumentListResponse(BaseModel):
+    items: List[AdminDocumentItem]
+    total: int
+    page: int
+    page_size: int
+
+
+class AdminDocumentVisibilityUpdate(BaseModel):
+    is_public: bool
+
+
+class AdminShareModerationItem(BaseModel):
+    id: int
+    document_id: int
+    document_title: str
+    shared_with_user_id: int
+    shared_with_name: Optional[str] = None
+    shared_with_email: Optional[EmailStr] = None
+    shared_by_user_id: int
+    shared_by_name: Optional[str] = None
+    shared_by_email: Optional[EmailStr] = None
+    permission: str
+    status: str
+    shared_at: datetime
+
+
+class AdminShareModerationListResponse(BaseModel):
+    items: List[AdminShareModerationItem]
+    total: int
+    page: int
+    page_size: int
+
+
+class AdminShareModerationUpdate(BaseModel):
+    status: Literal["pending", "approved", "rejected"]
+    permission: Optional[Literal["view", "edit", "comment"]] = None

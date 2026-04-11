@@ -4,16 +4,32 @@ from typing import Any, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
-from sqlalchemy import or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy import func, or_, select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session, aliased
 
-from app.api.v1.deps import get_current_user, get_current_user_optional
+from app.api.v1.deps import get_current_active_admin, get_current_user, get_current_user_optional
 from app.core.config import settings
 from app.models.base import get_db
 from app.models.document import Document
 from app.models.document_share import DocumentShare
+from app.models.discussion import Discussion
+from app.models.flashcard import Flashcard
+from app.models.highlight import Highlight
+from app.models.mindmap import Mindmap
+from app.models.plagiarism_report import PlagiarismReport
+from app.models.question import Question
+from app.models.summary import Summary
+from app.models.test import Test
+from app.models.test_result import TestResult
 from app.models.user import User
 from app.schemas.document import (
+    AdminDocumentListResponse,
+    AdminDocumentOverview,
+    AdminDocumentVisibilityUpdate,
+    AdminShareModerationItem,
+    AdminShareModerationListResponse,
+    AdminShareModerationUpdate,
     DocumentListResponse,
     DocumentOut,
     DocumentShareCreate,
@@ -88,6 +104,77 @@ def _can_edit_document(db: Session, document: Document, current_user: User) -> b
     return share is not None
 
 
+def _remove_document_file(document: Document) -> None:
+    if document.file_url.startswith("/uploads/"):
+        file_name = document.file_url.replace("/uploads/", "", 1)
+        local_file = os.path.join(settings.UPLOAD_DIR, file_name)
+        if os.path.exists(local_file):
+            os.remove(local_file)
+
+
+def _delete_document_dependencies(db: Session, document_id: int) -> None:
+    test_ids = [
+        test_id
+        for (test_id,) in db.query(Test.id)
+        .filter(Test.document_id == document_id)
+        .all()
+    ]
+
+    if test_ids:
+        test_result_ids = [
+            test_result_id
+            for (test_result_id,) in db.query(TestResult.id)
+            .filter(TestResult.test_id.in_(test_ids))
+            .all()
+        ]
+        if test_result_ids:
+            db.query(PlagiarismReport).filter(
+                PlagiarismReport.test_result_id.in_(test_result_ids)
+            ).delete(synchronize_session=False)
+
+        db.query(TestResult).filter(
+            TestResult.test_id.in_(test_ids)
+        ).delete(synchronize_session=False)
+
+        db.query(Test).filter(
+            Test.id.in_(test_ids)
+        ).delete(synchronize_session=False)
+
+    db.query(Discussion).filter(
+        Discussion.document_id == document_id,
+        Discussion.parent_id.isnot(None),
+    ).delete(synchronize_session=False)
+
+    db.query(Discussion).filter(
+        Discussion.document_id == document_id,
+        Discussion.parent_id.is_(None),
+    ).delete(synchronize_session=False)
+
+    db.query(Question).filter(
+        Question.document_id == document_id
+    ).delete(synchronize_session=False)
+
+    db.query(Highlight).filter(
+        Highlight.document_id == document_id
+    ).delete(synchronize_session=False)
+
+    db.query(Flashcard).filter(
+        Flashcard.document_id == document_id
+    ).delete(synchronize_session=False)
+
+    db.query(Summary).filter(
+        Summary.document_id == document_id
+    ).delete(synchronize_session=False)
+
+    db.query(Mindmap).filter(
+        Mindmap.document_id == document_id
+    ).delete(synchronize_session=False)
+
+    db.query(DocumentShare).filter(
+        DocumentShare.document_id == document_id
+    ).delete(synchronize_session=False)
+
+
 @router.get("", response_model=DocumentListResponse)
 def list_documents(
     q: Optional[str] = Query(None, description="Search by title or description"),
@@ -151,6 +238,307 @@ def list_documents(
         "total": total,
         "page": page,
         "page_size": page_size,
+    }
+
+
+@router.get("/admin/overview", response_model=AdminDocumentOverview)
+def admin_document_overview(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    del current_admin
+
+    total_documents = db.query(Document).count()
+    public_documents = db.query(Document).filter(Document.is_public.is_(True)).count()
+    private_documents = total_documents - public_documents
+
+    total_shares = db.query(DocumentShare).count()
+    pending_shares = db.query(DocumentShare).filter(DocumentShare.status == "pending").count()
+    approved_shares = db.query(DocumentShare).filter(DocumentShare.status == "approved").count()
+    rejected_shares = db.query(DocumentShare).filter(DocumentShare.status == "rejected").count()
+
+    return {
+        "total_documents": total_documents,
+        "public_documents": public_documents,
+        "private_documents": private_documents,
+        "total_shares": total_shares,
+        "pending_shares": pending_shares,
+        "approved_shares": approved_shares,
+        "rejected_shares": rejected_shares,
+    }
+
+
+@router.get("/admin/list", response_model=AdminDocumentListResponse)
+def admin_list_documents(
+    q: Optional[str] = Query(None, description="Search by title, description, uploader name/email"),
+    subject: Optional[str] = Query(None, description="Filter by subject"),
+    is_public: Optional[bool] = Query(None, description="Filter by visibility"),
+    uploader_id: Optional[int] = Query(None, ge=1, description="Filter by uploader id"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(12, ge=1, le=100),
+    sort: str = Query("newest", pattern="^(newest|oldest|title_asc)$"),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    del current_admin
+
+    query = db.query(Document).join(User, Document.uploader_id == User.id)
+
+    if q:
+        like_pattern = f"%{q}%"
+        query = query.filter(
+            or_(
+                Document.title.ilike(like_pattern),
+                Document.description.ilike(like_pattern),
+                User.full_name.ilike(like_pattern),
+                User.email.ilike(like_pattern),
+            )
+        )
+
+    if subject:
+        query = query.filter(Document.subject.ilike(f"%{subject}%"))
+
+    if is_public is not None:
+        query = query.filter(Document.is_public.is_(is_public))
+
+    if uploader_id:
+        query = query.filter(Document.uploader_id == uploader_id)
+
+    if sort == "oldest":
+        query = query.order_by(Document.created_at.asc())
+    elif sort == "title_asc":
+        query = query.order_by(Document.title.asc())
+    else:
+        query = query.order_by(Document.created_at.desc())
+
+    total = query.count()
+    documents = query.offset((page - 1) * page_size).limit(page_size).all()
+
+    share_count_rows = (
+        db.query(DocumentShare.document_id, func.count(DocumentShare.id))
+        .group_by(DocumentShare.document_id)
+        .all()
+    )
+    share_count_map = {doc_id: count for doc_id, count in share_count_rows}
+
+    status_count_rows = (
+        db.query(
+            DocumentShare.document_id,
+            DocumentShare.status,
+            func.count(DocumentShare.id),
+        )
+        .group_by(DocumentShare.document_id, DocumentShare.status)
+        .all()
+    )
+    status_count_map: dict[int, dict[str, int]] = {}
+    for doc_id, status, count in status_count_rows:
+        if doc_id not in status_count_map:
+            status_count_map[doc_id] = {
+                "pending": 0,
+                "approved": 0,
+                "rejected": 0,
+            }
+        if status in status_count_map[doc_id]:
+            status_count_map[doc_id][status] = int(count)
+
+    items = []
+    for document in documents:
+        uploader = document.uploader
+        status_counts = status_count_map.get(
+            document.id,
+            {"pending": 0, "approved": 0, "rejected": 0},
+        )
+        items.append(
+            {
+                "id": document.id,
+                "title": document.title,
+                "description": document.description,
+                "subject": document.subject,
+                "is_public": bool(document.is_public),
+                "file_url": document.file_url,
+                "file_type": document.file_type,
+                "uploader_id": document.uploader_id,
+                "uploader_name": uploader.full_name if uploader else None,
+                "uploader_email": uploader.email if uploader else None,
+                "share_count": int(share_count_map.get(document.id, 0)),
+                "pending_share_count": int(status_counts["pending"]),
+                "approved_share_count": int(status_counts["approved"]),
+                "rejected_share_count": int(status_counts["rejected"]),
+                "created_at": document.created_at,
+                "updated_at": document.updated_at,
+            }
+        )
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@router.patch("/admin/{document_id}/visibility", response_model=DocumentOut)
+def admin_update_document_visibility(
+    document_id: int,
+    payload: AdminDocumentVisibilityUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    del current_admin
+
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    document.is_public = payload.is_public
+    db.commit()
+    db.refresh(document)
+    return _to_document_out(document)
+
+
+@router.delete("/admin/{document_id}")
+def admin_delete_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    del current_admin
+
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    try:
+        _delete_document_dependencies(db, document.id)
+        _remove_document_file(document)
+        db.delete(document)
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Delete failed due to related records. Please try again.",
+        )
+
+    return {"message": "Document deleted by admin successfully"}
+
+
+@router.get("/admin/share-moderation", response_model=AdminShareModerationListResponse)
+def admin_list_share_moderation(
+    q: Optional[str] = Query(None, description="Search by document title or user/email"),
+    status: Optional[str] = Query(None, pattern="^(pending|approved|rejected)$"),
+    permission: Optional[str] = Query(None, pattern="^(view|edit|comment)$"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(12, ge=1, le=100),
+    sort: str = Query("newest", pattern="^(newest|oldest)$"),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    del current_admin
+
+    recipient_user = aliased(User)
+    uploader_user = aliased(User)
+
+    query = (
+        db.query(DocumentShare, Document, recipient_user, uploader_user)
+        .join(Document, DocumentShare.document_id == Document.id)
+        .outerjoin(recipient_user, recipient_user.id == DocumentShare.shared_with_user_id)
+        .outerjoin(uploader_user, uploader_user.id == Document.uploader_id)
+    )
+
+    if q:
+        like_pattern = f"%{q}%"
+        query = query.filter(
+            or_(
+                Document.title.ilike(like_pattern),
+                recipient_user.full_name.ilike(like_pattern),
+                recipient_user.email.ilike(like_pattern),
+                uploader_user.full_name.ilike(like_pattern),
+                uploader_user.email.ilike(like_pattern),
+            )
+        )
+
+    if status:
+        query = query.filter(DocumentShare.status == status)
+
+    if permission:
+        query = query.filter(DocumentShare.permission == permission)
+
+    if sort == "oldest":
+        query = query.order_by(DocumentShare.shared_at.asc())
+    else:
+        query = query.order_by(DocumentShare.shared_at.desc())
+
+    total = query.count()
+    rows = query.offset((page - 1) * page_size).limit(page_size).all()
+
+    items = []
+    for share, document, recipient, uploader in rows:
+        items.append(
+            {
+                "id": share.id,
+                "document_id": document.id,
+                "document_title": document.title,
+                "shared_with_user_id": share.shared_with_user_id,
+                "shared_with_name": recipient.full_name if recipient else None,
+                "shared_with_email": recipient.email if recipient else None,
+                "shared_by_user_id": document.uploader_id,
+                "shared_by_name": uploader.full_name if uploader else None,
+                "shared_by_email": uploader.email if uploader else None,
+                "permission": share.permission,
+                "status": share.status,
+                "shared_at": share.shared_at,
+            }
+        )
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@router.patch("/admin/share-moderation/{share_id}", response_model=AdminShareModerationItem)
+def admin_update_share_moderation(
+    share_id: int,
+    payload: AdminShareModerationUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    del current_admin
+
+    share = db.query(DocumentShare).filter(DocumentShare.id == share_id).first()
+    if not share:
+        raise HTTPException(status_code=404, detail="Share record not found")
+
+    share.status = payload.status
+    if payload.permission:
+        share.permission = payload.permission
+
+    db.commit()
+    db.refresh(share)
+
+    document = db.query(Document).filter(Document.id == share.document_id).first()
+    recipient = db.query(User).filter(User.id == share.shared_with_user_id).first()
+    uploader = db.query(User).filter(User.id == document.uploader_id).first() if document else None
+
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return {
+        "id": share.id,
+        "document_id": document.id,
+        "document_title": document.title,
+        "shared_with_user_id": share.shared_with_user_id,
+        "shared_with_name": recipient.full_name if recipient else None,
+        "shared_with_email": recipient.email if recipient else None,
+        "shared_by_user_id": document.uploader_id,
+        "shared_by_name": uploader.full_name if uploader else None,
+        "shared_by_email": uploader.email if uploader else None,
+        "permission": share.permission,
+        "status": share.status,
+        "shared_at": share.shared_at,
     }
 
 
@@ -254,16 +642,17 @@ def delete_document(
     if document.uploader_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the uploader can delete this document")
 
-    db.query(DocumentShare).filter(DocumentShare.document_id == document.id).delete()
-
-    if document.file_url.startswith("/uploads/"):
-        file_name = document.file_url.replace("/uploads/", "", 1)
-        local_file = os.path.join(settings.UPLOAD_DIR, file_name)
-        if os.path.exists(local_file):
-            os.remove(local_file)
-
-    db.delete(document)
-    db.commit()
+    try:
+        _delete_document_dependencies(db, document.id)
+        _remove_document_file(document)
+        db.delete(document)
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Delete failed due to related records. Please try again.",
+        )
 
     return {"message": "Document deleted successfully"}
 

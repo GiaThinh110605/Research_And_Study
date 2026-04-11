@@ -119,7 +119,11 @@ def test_list_documents_guest_only_sees_public(client: TestClient, db_session):
     public_doc = create_document(db_session, owner.id, "Public Doc", is_public=True)
     create_document(db_session, owner.id, "Private Doc", is_public=False)
 
-    response = client.get("/api/v1/documents")
+    # Use a different user (stranger) to verify they only see public docs
+    # This maintains the intent of the test while complying with mandatory login
+    stranger = create_user(db_session, "stranger_list@example.com")
+    token = login(client, stranger.email)
+    response = client.get("/api/v1/documents", headers=auth_headers(token))
 
     assert response.status_code == 200
     payload = response.json()
@@ -212,7 +216,8 @@ def test_delete_document_only_owner_can_delete(client: TestClient, db_session):
     )
     assert deleted.status_code == 200
 
-    missing = client.get(f"/api/v1/documents/{doc.id}")
+    # Must provide a token even for checking 404
+    missing = client.get(f"/api/v1/documents/{doc.id}", headers=auth_headers(owner_token))
     assert missing.status_code == 404
 
 

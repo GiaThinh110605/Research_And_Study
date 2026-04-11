@@ -7,6 +7,10 @@ from app.core.config import settings
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # Allow preflight (OPTIONS) requests to bypass auth for CORS compatibility
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # List of public paths that don't require authentication
         # Using regex for flexible matching (e.g., /uploads/...)
         EXEMPT_PATHS = [

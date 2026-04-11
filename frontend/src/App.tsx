@@ -19,6 +19,7 @@ import AdminSettings from './pages/AdminSettings';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
+import LecturerDocumentsPage from './pages/LecturerDocumentsPage';
 import TestListPage from './pages/TestListPage';
 import TakeTestPage from './pages/TakeTestPage';
 import TestResultPage from './pages/TestResultPage';
@@ -49,6 +50,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
+        <Route path="/lecturer/tai-lieu" element={<LecturerDocumentsPage />} />
         
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/admin/docs" element={<AdminDocumentManagement />} />

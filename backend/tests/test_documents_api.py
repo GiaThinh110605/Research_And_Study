@@ -119,8 +119,10 @@ def test_list_documents_guest_only_sees_public(client: TestClient, db_session):
     public_doc = create_document(db_session, owner.id, "Public Doc", is_public=True)
     create_document(db_session, owner.id, "Private Doc", is_public=False)
 
-    # Now that we have AuthMiddleware, all requests require a token
-    token = login(client, owner.email)
+    # Use a different user (stranger) to verify they only see public docs
+    # This maintains the intent of the test while complying with mandatory login
+    stranger = create_user(db_session, "stranger_list@example.com")
+    token = login(client, stranger.email)
     response = client.get("/api/v1/documents", headers=auth_headers(token))
 
     assert response.status_code == 200

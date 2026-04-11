@@ -20,12 +20,14 @@ import AdminSettings from './pages/AdminSettings';
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
 import LecturerDocumentsPage from './pages/LecturerDocumentsPage';
+import LecturerTestsPage from './pages/LecturerTestsPage';
 import TestListPage from './pages/TestListPage';
 import TakeTestPage from './pages/TakeTestPage';
 import TestResultPage from './pages/TestResultPage';
 import ProfilePage from './pages/ProfilePage';
 
 import DashboardLayout from './components/layout/DashboardLayout';
+import LecturerLayout from './components/layout/LecturerLayout';
 
 function App() {
   return (
@@ -49,8 +51,13 @@ function App() {
 
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
-        <Route path="/lecturer/tai-lieu" element={<LecturerDocumentsPage />} />
+        
+        {/* Lecturer Routes */}
+        <Route element={<LecturerLayout />}>
+          <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
+          <Route path="/lecturer/tai-lieu" element={<LecturerDocumentsPage />} />
+          <Route path="/lecturer/bai-kiem-tra" element={<LecturerTestsPage />} />
+        </Route>
         
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/admin/docs" element={<AdminDocumentManagement />} />

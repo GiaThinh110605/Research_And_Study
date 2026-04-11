@@ -93,6 +93,16 @@ def test_uploads_are_whitelisted(client: TestClient):
     assert response.status_code == 404
     assert response.json()["detail"] == "Not Found" # From StaticFiles, not middleware
 
+def test_documents_list_requires_token(client: TestClient):
+    """GET /api/v1/documents should now require a token."""
+    response = client.get("/api/v1/documents")
+    assert response.status_code == 401
+
+def test_document_detail_requires_token(client: TestClient):
+    """GET /api/v1/documents/123 should now require a token."""
+    response = client.get("/api/v1/documents/123")
+    assert response.status_code == 401
+
 # --- Protection Tests ---
 
 def test_protected_route_fails_without_token(client: TestClient):

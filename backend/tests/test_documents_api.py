@@ -119,7 +119,9 @@ def test_list_documents_guest_only_sees_public(client: TestClient, db_session):
     public_doc = create_document(db_session, owner.id, "Public Doc", is_public=True)
     create_document(db_session, owner.id, "Private Doc", is_public=False)
 
-    response = client.get("/api/v1/documents")
+    # Now that we have AuthMiddleware, all requests require a token
+    token = login(client, owner.email)
+    response = client.get("/api/v1/documents", headers=auth_headers(token))
 
     assert response.status_code == 200
     payload = response.json()
@@ -212,7 +214,8 @@ def test_delete_document_only_owner_can_delete(client: TestClient, db_session):
     )
     assert deleted.status_code == 200
 
-    missing = client.get(f"/api/v1/documents/{doc.id}")
+    # Must provide a token even for checking 404
+    missing = client.get(f"/api/v1/documents/{doc.id}", headers=auth_headers(owner_token))
     assert missing.status_code == 404
 
 

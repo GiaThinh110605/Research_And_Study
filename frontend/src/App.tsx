@@ -43,6 +43,7 @@ function App() {
           <Route path="/tai-lieu" element={<DocumentsPage />} />
           <Route path="/tai-lieu/tai-len" element={<DocumentsUploadPage />} />
           <Route path="/tai-lieu/:documentId" element={<DocumentDetailPage />} />
+          <Route path="/thao-luan" element={<DiscussionPage />} />
           <Route path="/cong-dong" element={<CommunityPage />} />
           <Route path="/test-list" element={<TestListPage />} />
           <Route path="/take-test/:id" element={<TakeTestPage />} />
@@ -59,6 +60,7 @@ function App() {
           <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
           <Route path="/lecturer/tai-lieu" element={<LecturerDocumentsPage />} />
           <Route path="/lecturer/bai-kiem-tra" element={<LecturerTestsPage />} />
+          <Route path="/lecturer/thao-luan" element={<DiscussionPage />} />
         </Route>
         
         <Route path="/admin/users" element={<AdminUserManagement />} />

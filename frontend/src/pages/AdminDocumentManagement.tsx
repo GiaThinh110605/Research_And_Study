@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Users, 
   LayoutDashboard, 
@@ -11,7 +11,6 @@ import {
   Plus,
   Bell,
   HelpCircle,
-  MoreVertical,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -19,21 +18,270 @@ import {
   Lock,
   AlertCircle,
   BarChart,
-  Cloud,
-  FileArchive,
-  FileBox,
-  FileAxis3d,
-  FileImageIcon
+  Cloud
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
+import api from '../services/api';
+
+interface AdminOverview {
+  total_documents: number;
+  public_documents: number;
+  private_documents: number;
+  total_shares: number;
+  pending_shares: number;
+  approved_shares: number;
+  rejected_shares: number;
+}
+
+interface AdminDocumentItem {
+  id: number;
+  title: string;
+  description: string | null;
+  subject: string | null;
+  is_public: boolean;
+  file_url: string;
+  file_type: string;
+  uploader_id: number;
+  uploader_name: string | null;
+  uploader_email: string | null;
+  share_count: number;
+  pending_share_count: number;
+  approved_share_count: number;
+  rejected_share_count: number;
+  created_at: string;
+  updated_at: string | null;
+}
+
+interface AdminDocumentListResponse {
+  items: AdminDocumentItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+const PAGE_SIZE = 10;
+
+const formatDate = (isoDate: string): string => {
+  return new Date(isoDate).toLocaleDateString('vi-VN');
+};
+
+const getInitials = (name: string | null): string => {
+  if (!name) {
+    return 'NA';
+  }
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('');
+};
+
+const fileTypeClass = (fileType: string): string => {
+  const upper = fileType.toUpperCase();
+  if (upper === 'PDF') {
+    return 'bg-red-50 text-red-500';
+  }
+  if (upper === 'DOC' || upper === 'DOCX') {
+    return 'bg-blue-50 text-blue-500';
+  }
+  if (upper === 'PPT' || upper === 'PPTX') {
+    return 'bg-orange-50 text-orange-500';
+  }
+  return 'bg-slate-100 text-slate-500';
+};
 
 const AdminDocumentManagement: React.FC = () => {
   const navigate = useNavigate();
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [docs, setDocs] = useState<AdminDocumentItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('all');
+  const [visibilityFilter, setVisibilityFilter] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [createTitle, setCreateTitle] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+  const [createSubject, setCreateSubject] = useState('');
+  const [createIsPublic, setCreateIsPublic] = useState(true);
+  const [createFile, setCreateFile] = useState<File | null>(null);
 
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
+  };
+
+  const fetchOverview = async () => {
+    try {
+      const response = await api.get<AdminOverview>('/api/v1/documents/admin/overview');
+      setOverview(response.data);
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        setError('Tài khoản hiện tại không có quyền admin để truy cập trang này.');
+      } else if (err?.response?.status === 401) {
+        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else {
+        setError('Không tải được thống kê tài liệu.');
+      }
+    }
+  };
+
+  const fetchDocuments = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const params: Record<string, string | number | boolean> = {
+        page,
+        page_size: PAGE_SIZE,
+        sort: 'newest',
+      };
+
+      if (searchQuery.trim()) {
+        params.q = searchQuery.trim();
+      }
+      if (subjectFilter !== 'all') {
+        params.subject = subjectFilter;
+      }
+      if (visibilityFilter === 'public') {
+        params.is_public = true;
+      }
+      if (visibilityFilter === 'private') {
+        params.is_public = false;
+      }
+
+      const response = await api.get<AdminDocumentListResponse>('/api/v1/documents/admin/list', { params });
+      setDocs(response.data.items);
+      setTotal(response.data.total);
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        setError('Tài khoản hiện tại không có quyền admin để truy cập trang này.');
+      } else if (err?.response?.status === 401) {
+        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else {
+        setError('Không tải được danh sách tài liệu.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOverview();
+  }, []);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [page, searchQuery, subjectFilter, visibilityFilter]);
+
+  useEffect(() => {
+    const refreshData = () => {
+      fetchOverview();
+      fetchDocuments();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshData();
+      }
+    };
+
+    window.addEventListener('focus', refreshData);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', refreshData);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [page, searchQuery, subjectFilter, visibilityFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const subjects = useMemo(() => {
+    const unique = new Set<string>();
+    docs.forEach((doc) => {
+      if (doc.subject) {
+        unique.add(doc.subject);
+      }
+    });
+    return Array.from(unique);
+  }, [docs]);
+
+  const handleToggleVisibility = async (doc: AdminDocumentItem) => {
+    try {
+      await api.patch(`/api/v1/documents/admin/${doc.id}/visibility`, {
+        is_public: !doc.is_public,
+      });
+      await Promise.all([fetchOverview(), fetchDocuments()]);
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        setError('Bạn không có quyền thực hiện thao tác này.');
+      } else {
+        setError('Cập nhật trạng thái tài liệu thất bại.');
+      }
+    }
+  };
+
+  const handleDeleteDocument = async (doc: AdminDocumentItem) => {
+    const confirmed = window.confirm(`Bạn chắc chắn muốn xóa tài liệu "${doc.title}"?`);
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await api.delete(`/api/v1/documents/admin/${doc.id}`);
+      await Promise.all([fetchOverview(), fetchDocuments()]);
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        setError('Bạn không có quyền thực hiện thao tác này.');
+      } else {
+        setError('Xóa tài liệu thất bại.');
+      }
+    }
+  };
+
+  const handleCreateDocument = async () => {
+    if (!createTitle.trim()) {
+      setCreateError('Vui lòng nhập tiêu đề tài liệu.');
+      return;
+    }
+    if (!createFile) {
+      setCreateError('Vui lòng chọn file tài liệu.');
+      return;
+    }
+
+    setCreating(true);
+    setCreateError('');
+    try {
+      const formData = new FormData();
+      formData.append('title', createTitle.trim());
+      formData.append('description', createDescription.trim());
+      formData.append('subject', createSubject.trim());
+      formData.append('is_public', String(createIsPublic));
+      formData.append('file', createFile);
+
+      await api.post('/api/v1/documents', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setIsCreateOpen(false);
+      setCreateTitle('');
+      setCreateDescription('');
+      setCreateSubject('');
+      setCreateIsPublic(true);
+      setCreateFile(null);
+      await Promise.all([fetchOverview(), fetchDocuments()]);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      setCreateError(typeof detail === 'string' ? detail : 'Tạo tài liệu mới thất bại.');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const menuItems = [
@@ -43,45 +291,6 @@ const AdminDocumentManagement: React.FC = () => {
     { icon: CheckSquare, label: 'Kiểm duyệt chia sẻ', path: '/admin/moderation' },
     { icon: History, label: 'Nhật ký hoạt động', path: '/admin/logs' },
     { icon: Settings, label: 'Cài đặt hệ thống', path: '/admin/settings' },
-  ];
-
-  const docs = [
-    {
-      id: 1,
-      name: 'Giải tích 1 - Đề thi 2023',
-      docId: 'DOC-92831',
-      uploader: 'Nguyễn Văn A',
-      uploaderInitials: 'NV',
-      subject: 'Toán cao cấp',
-      fileType: '.PDF',
-      date: '12/10/2023',
-      downloads: '1.2k',
-      reported: false,
-    },
-    {
-      id: 2,
-      name: 'Giáo trình Java cơ bản',
-      docId: 'DOC-92832',
-      uploader: 'Trần Thị H',
-      uploaderInitials: 'TH',
-      subject: 'Lập trình Java',
-      fileType: '.DOCX',
-      date: '10/10/2023',
-      downloads: '850',
-      reported: false,
-    },
-    {
-      id: 3,
-      name: 'Slide Kinh tế chính trị',
-      docId: 'DOC-92833',
-      uploader: 'Lê Minh',
-      uploaderInitials: 'LM',
-      subject: 'Kinh tế vi mô',
-      fileType: '.PPTX',
-      date: '05/10/2023',
-      downloads: '342',
-      reported: true,
-    }
   ];
 
   return (
@@ -140,6 +349,11 @@ const AdminDocumentManagement: React.FC = () => {
             <input 
               type="text" 
               placeholder="Tìm kiếm tài liệu, ID hoặc tác giả..." 
+              value={searchQuery}
+              onChange={(event) => {
+                setPage(1);
+                setSearchQuery(event.target.value);
+              }}
               className="w-full bg-slate-100 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm outline-none"
             />
           </div>
@@ -178,7 +392,13 @@ const AdminDocumentManagement: React.FC = () => {
                   Quản lý danh mục, kiểm duyệt và phân phối tài liệu học tập toàn hệ thống.
                 </p>
               </div>
-              <button className="bg-blue-600 text-white px-6 py-3.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 hover:-translate-y-0.5 text-sm tracking-wide">
+              <button
+                onClick={() => {
+                  setCreateError('');
+                  setIsCreateOpen(true);
+                }}
+                className="bg-blue-600 text-white px-6 py-3.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 hover:-translate-y-0.5 text-sm tracking-wide"
+              >
                 <Plus className="w-5 h-5" />
                 Tải tài liệu mới
               </button>
@@ -197,7 +417,7 @@ const AdminDocumentManagement: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-slate-500 font-medium mb-1">Tổng tài liệu</p>
-                <h3 className="text-3xl font-black text-slate-900 mb-2">12,840</h3>
+                <h3 className="text-3xl font-black text-slate-900 mb-2">{overview?.total_documents ?? 0}</h3>
                 <div className="flex items-center text-emerald-500 text-xs font-bold gap-1 mt-auto">
                   <TrendingUp className="w-3.5 h-3.5" />
                   <span>+12% tháng này</span>
@@ -215,7 +435,7 @@ const AdminDocumentManagement: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-slate-500 font-medium mb-1">Tài liệu công khai</p>
-                <h3 className="text-3xl font-black text-slate-900 mb-2">11,205</h3>
+                <h3 className="text-3xl font-black text-slate-900 mb-2">{overview?.public_documents ?? 0}</h3>
                 <div className="flex items-center text-emerald-500 text-xs font-bold gap-1 mt-auto">
                   <CheckSquare className="w-3.5 h-3.5" />
                   <span>Hoạt động tốt</span>
@@ -233,7 +453,7 @@ const AdminDocumentManagement: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-slate-500 font-medium mb-1">Tài liệu riêng tư</p>
-                <h3 className="text-3xl font-black text-slate-900 mb-2">1,635</h3>
+                <h3 className="text-3xl font-black text-slate-900 mb-2">{overview?.private_documents ?? 0}</h3>
                 <div className="flex items-center text-slate-400 text-xs font-bold gap-1 mt-auto">
                   <Settings className="w-3.5 h-3.5" />
                   <span>Chế độ ẩn</span>
@@ -252,8 +472,8 @@ const AdminDocumentManagement: React.FC = () => {
                     </div>
                   </div>
                   <div className="mt-auto">
-                    <p className="text-slate-300 font-medium mb-1">Tài liệu bị báo cáo</p>
-                    <h3 className="text-4xl font-black text-white mb-2">42</h3>
+                    <p className="text-slate-300 font-medium mb-1">Yêu cầu chờ duyệt</p>
+                    <h3 className="text-4xl font-black text-white mb-2">{overview?.pending_shares ?? 0}</h3>
                     <div className="flex items-center text-red-400 text-xs font-bold gap-1">
                       <span>! Cần xử lý ngay</span>
                     </div>
@@ -267,22 +487,49 @@ const AdminDocumentManagement: React.FC = () => {
               <div className="flex items-center gap-4 py-2 px-4">
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Môn học:</span>
-                  <select className="bg-slate-50 text-slate-700 font-bold text-sm border-none rounded-xl py-2 pl-4 pr-10 focus:ring-0 cursor-pointer appearance-none">
+                  <select
+                    value={subjectFilter}
+                    onChange={(event) => {
+                      setPage(1);
+                      setSubjectFilter(event.target.value);
+                    }}
+                    className="bg-slate-50 text-slate-700 font-bold text-sm border-none rounded-xl py-2 pl-4 pr-10 focus:ring-0 cursor-pointer appearance-none"
+                  >
                     <option>Tất cả môn học</option>
+                    {subjects.map((subject) => (
+                      <option key={subject} value={subject}>
+                        {subject}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="w-px h-6 bg-slate-200"></div>
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái:</span>
-                  <select className="bg-slate-50 text-slate-700 font-bold text-sm border-none rounded-xl py-2 pl-4 pr-10 focus:ring-0 cursor-pointer appearance-none">
-                    <option>Tất cả trạng thái</option>
+                  <select
+                    value={visibilityFilter}
+                    onChange={(event) => {
+                      setPage(1);
+                      setVisibilityFilter(event.target.value);
+                    }}
+                    className="bg-slate-50 text-slate-700 font-bold text-sm border-none rounded-xl py-2 pl-4 pr-10 focus:ring-0 cursor-pointer appearance-none"
+                  >
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="public">Công khai</option>
+                    <option value="private">Riêng tư</option>
                   </select>
                 </div>
               </div>
               <div className="py-2 px-6">
-                <span className="text-sm font-medium text-slate-400">Hiển thị <span className="font-bold text-slate-700">10</span> trong 12,840 tài liệu</span>
+                <span className="text-sm font-medium text-slate-400">Hiển thị <span className="font-bold text-slate-700">{PAGE_SIZE}</span> trong {total} tài liệu</span>
               </div>
             </div>
+
+            {error && (
+              <div className="mb-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-600">
+                {error}
+              </div>
+            )}
 
             {/* Table Area */}
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-8">
@@ -299,24 +546,47 @@ const AdminDocumentManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {docs.map((doc, idx) => (
+                  {loading && (
+                    <tr>
+                      <td colSpan={7} className="px-8 py-12 text-center text-sm font-semibold text-slate-500">
+                        Đang tải dữ liệu...
+                      </td>
+                    </tr>
+                  )}
+                  {!loading && docs.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-8 py-12 text-center text-sm font-semibold text-slate-500">
+                        Không có tài liệu nào phù hợp bộ lọc.
+                      </td>
+                    </tr>
+                  )}
+                  {!loading && docs.map((doc) => (
                     <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-8 py-5">
                         <div className="flex items-start gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-[10px] shrink-0
-                            ${doc.fileType === '.PDF' ? 'bg-red-50 text-red-500' : 
-                              doc.fileType === '.DOCX' ? 'bg-blue-50 text-blue-500' : 
-                              'bg-orange-50 text-orange-500'}`}
-                          >
-                            {doc.fileType.replace('.', '')}
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-[10px] shrink-0 ${fileTypeClass(doc.file_type)}`}>
+                            {doc.file_type}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900 leading-tight mb-1">{doc.name}</p>
+                            <p className="font-bold text-slate-900 leading-tight mb-1">{doc.title}</p>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-slate-400 font-bold tracking-wider">ID: {doc.docId}</span>
-                              {doc.reported && (
-                                <span className="bg-red-50 text-red-500 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider border border-red-100">
-                                  Bị Báo Cáo
+                              <span className="text-[10px] text-slate-400 font-bold tracking-wider">ID: DOC-{doc.id}</span>
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider border ${doc.is_public ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                {doc.is_public ? 'Công khai' : 'Riêng tư'}
+                              </span>
+                              {doc.pending_share_count > 0 && (
+                                <span className="bg-amber-50 text-amber-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider border border-amber-100">
+                                  Chờ duyệt: {doc.pending_share_count}
+                                </span>
+                              )}
+                              {doc.approved_share_count > 0 && (
+                                <span className="bg-emerald-50 text-emerald-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
+                                  Đã duyệt: {doc.approved_share_count}
+                                </span>
+                              )}
+                              {doc.rejected_share_count > 0 && (
+                                <span className="bg-red-50 text-red-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider border border-red-100">
+                                  Từ chối: {doc.rejected_share_count}
                                 </span>
                               )}
                             </div>
@@ -325,34 +595,41 @@ const AdminDocumentManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-                            ${idx === 0 ? 'bg-blue-100 text-blue-600' : 
-                              idx === 1 ? 'bg-purple-100 text-purple-600' : 
-                              'bg-amber-100 text-amber-600'}`}
-                          >
-                            {doc.uploaderInitials}
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-blue-100 text-blue-600">
+                            {getInitials(doc.uploader_name)}
                           </div>
-                          <span className="font-bold text-slate-700 text-sm">{doc.uploader}</span>
+                          <span className="font-bold text-slate-700 text-sm">{doc.uploader_name ?? 'Ẩn danh'}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-sm font-semibold text-slate-600">{doc.subject}</span>
+                        <span className="text-sm font-semibold text-slate-600">{doc.subject ?? 'Chưa gán'}</span>
                       </td>
                       <td className="px-6 py-5 text-center">
                         <span className="bg-slate-100 text-slate-500 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest inline-block min-w-[50px] text-center">
-                          {doc.fileType}
+                          .{doc.file_type.toLowerCase()}
                         </span>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-sm font-semibold text-slate-500">{doc.date}</span>
+                        <span className="text-sm font-semibold text-slate-500">{formatDate(doc.created_at)}</span>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-sm font-bold text-slate-900">{doc.downloads}</span>
+                        <span className="text-sm font-bold text-slate-900">{doc.share_count}</span>
                       </td>
                       <td className="px-8 py-5 text-center">
-                        <button className="p-2 text-slate-400 hover:bg-slate-200 rounded-xl transition-colors inline-flex border border-transparent hover:border-slate-200">
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleToggleVisibility(doc)}
+                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100"
+                          >
+                            {doc.is_public ? 'Ẩn' : 'Công khai'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDocument(doc)}
+                            className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
+                          >
+                            Xóa
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -362,23 +639,40 @@ const AdminDocumentManagement: React.FC = () => {
               {/* Pagination */}
               <div className="p-6 border-t border-slate-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
+                  >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <div className="flex gap-1">
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-black shadow-sm">1</button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-100 transition-colors">2</button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-100 transition-colors">3</button>
-                    <span className="mx-1 text-slate-300 font-bold">...</span>
-                    <button className="px-3 h-8 flex items-center justify-center rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-100 transition-colors">120</button>
+                    <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-black shadow-sm">{page}</button>
+                    <span className="px-2 py-2 text-xs font-bold text-slate-400">/ {totalPages}</span>
                   </div>
-                  <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors">
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
+                  >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold text-slate-400">Đến trang:</span>
-                  <input type="text" defaultValue="1" className="w-12 py-1.5 text-center text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <input
+                    type="number"
+                    min={1}
+                    max={totalPages}
+                    value={page}
+                    onChange={(event) => {
+                      const nextPage = Number(event.target.value);
+                      if (!Number.isNaN(nextPage) && nextPage >= 1 && nextPage <= totalPages) {
+                        setPage(nextPage);
+                      }
+                    }}
+                    className="w-14 py-1.5 text-center text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
               </div>
             </div>
@@ -482,6 +776,98 @@ const AdminDocumentManagement: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-xl font-black text-slate-900">Tạo tài liệu mới</h3>
+              <button
+                onClick={() => setIsCreateOpen(false)}
+                className="rounded-lg px-3 py-1.5 text-sm font-bold text-slate-500 hover:bg-slate-100"
+              >
+                Đóng
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Tiêu đề</label>
+                <input
+                  value={createTitle}
+                  onChange={(event) => setCreateTitle(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  placeholder="Nhập tiêu đề tài liệu"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Môn học</label>
+                <input
+                  value={createSubject}
+                  onChange={(event) => setCreateSubject(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  placeholder="Ví dụ: Toán cao cấp"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Mô tả</label>
+                <textarea
+                  value={createDescription}
+                  onChange={(event) => setCreateDescription(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+                  rows={3}
+                  placeholder="Mô tả ngắn về tài liệu"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-bold text-slate-700">File tài liệu</label>
+                <input
+                  type="file"
+                  onChange={(event) => setCreateFile(event.target.files?.[0] ?? null)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <input
+                  id="isPublic"
+                  type="checkbox"
+                  checked={createIsPublic}
+                  onChange={(event) => setCreateIsPublic(event.target.checked)}
+                />
+                <label htmlFor="isPublic" className="text-sm font-semibold text-slate-700">
+                  Chia sẻ công khai
+                </label>
+              </div>
+
+              {createError && (
+                <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">
+                  {createError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setIsCreateOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleCreateDocument}
+                  disabled={creating}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {creating ? 'Đang tạo...' : 'Tạo tài liệu'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

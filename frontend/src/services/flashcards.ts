@@ -23,9 +23,7 @@ export interface UpdateFlashcardPayload {
 export const flashcardService = {
   async list(documentId?: number): Promise<FlashcardItem[]> {
     const response = await api.get('/api/v1/flashcards/', {
-      params: {
-        document_id: documentId || undefined,
-      },
+      params: documentId ? { document_id: documentId } : undefined,
     });
     return response.data;
   },

@@ -25,7 +25,10 @@ export interface GPACalculateResponse {
 export interface GPAHistoryItem {
   id: number;
   created_at: string;
-  expression: { courses: CourseInput[] };
+  expression: {
+    courses?: CourseInput[];
+    [key: string]: unknown;
+  };
   result: GPACalculateResponse;
 }
 

@@ -1,135 +1,118 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Layers, BookOpenText } from 'lucide-react';
-import { documentService, DocumentItem } from '../services/documents';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { flashcardService, FlashcardItem } from '../services/flashcards';
+import { documentService, DocumentItem } from '../services/documents';
 
 const LecturerFlashcardsPage: React.FC = () => {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
   const [flashcards, setFlashcards] = useState<FlashcardItem[]>([]);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<number | ''>('');
 
   const [front, setFront] = useState('');
   const [back, setBack] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
-  const selectedDocument = useMemo(
-    () => documents.find((doc) => doc.id === selectedDocumentId) || null,
-    [documents, selectedDocumentId],
-  );
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadDocuments = async () => {
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await documentService.list({ page: 1, page_size: 100, sort: 'newest' });
-      setDocuments(response.items);
-      if (response.items.length > 0) {
-        setSelectedDocumentId((prev) => prev ?? response.items[0].id);
+      const [docRes, flashRes] = await Promise.all([
+        documentService.list({ page: 1, page_size: 100 }),
+        flashcardService.list(),
+      ]);
+      setDocuments(docRes.items);
+      setFlashcards(flashRes);
+      if (docRes.items.length > 0 && selectedDocumentId === '') {
+        setSelectedDocumentId(docRes.items[0].id);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Không thể tải danh sách tài liệu.');
-    }
-  };
-
-  const loadFlashcards = async (documentId: number | null) => {
-    if (!documentId) {
-      setFlashcards([]);
-      return;
-    }
-
-    try {
-      const response = await flashcardService.list(documentId);
-      setFlashcards(response);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Không thể tải flashcard.');
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || 'Khong the tai du lieu flashcard.');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const bootstrap = async () => {
-      setIsLoading(true);
-      setError('');
-      await loadDocuments();
-      setIsLoading(false);
-    };
-
-    bootstrap();
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    loadFlashcards(selectedDocumentId);
-  }, [selectedDocumentId]);
+  const filteredFlashcards = useMemo(() => {
+    if (selectedDocumentId === '') return flashcards;
+    return flashcards.filter((item) => item.document_id === selectedDocumentId);
+  }, [flashcards, selectedDocumentId]);
 
-  const handleCreate = async (event: React.FormEvent) => {
+  const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!selectedDocumentId) {
-      setError('Vui lòng chọn tài liệu trước khi tạo flashcard.');
+    if (selectedDocumentId === '') {
+      setError('Vui long chon tai lieu truoc khi tao flashcard.');
       return;
     }
-
     if (!front.trim() || !back.trim()) {
-      setError('Mặt trước và mặt sau không được để trống.');
+      setError('Mat truoc va mat sau flashcard khong duoc de trong.');
       return;
     }
 
-    setIsSaving(true);
-    setError('');
+    setSubmitting(true);
+    setError(null);
     try {
-      await flashcardService.create({
+      const created = await flashcardService.create({
         document_id: selectedDocumentId,
         front: front.trim(),
         back: back.trim(),
       });
+      setFlashcards((prev) => [created, ...prev]);
       setFront('');
       setBack('');
-      await loadFlashcards(selectedDocumentId);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Tạo flashcard thất bại.');
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || 'Tao flashcard that bai.');
     } finally {
-      setIsSaving(false);
+      setSubmitting(false);
     }
   };
 
-  const handleDelete = async (flashcardId: number) => {
+  const handleDelete = async (id: number) => {
+    const confirmed = window.confirm('Ban co chac chan muon xoa flashcard nay?');
+    if (!confirmed) return;
+
     try {
-      await flashcardService.remove(flashcardId);
-      await loadFlashcards(selectedDocumentId);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Xóa flashcard thất bại.');
+      await flashcardService.remove(id);
+      setFlashcards((prev) => prev.filter((item) => item.id !== id));
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || 'Xoa flashcard that bai.');
     }
   };
 
   return (
     <div className="p-8 space-y-8 bg-[#F4F7FE] min-h-full">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl font-black text-gray-900 mb-2">Giảng viên Flashcard</h2>
-          <p className="text-gray-500">Tạo thẻ ghi nhớ nhanh từ tài liệu đang giảng dạy để hỗ trợ ôn tập cho sinh viên.</p>
-        </div>
-        <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 border border-gray-100">
-          <Layers className="w-4 h-4 text-[#3B66F5]" />
-          <span className="text-sm font-semibold text-gray-700">Tổng thẻ: {flashcards.length}</span>
-        </div>
+      <div>
+        <p className="text-[10px] font-black tracking-widest text-[#3B66F5] uppercase mb-1">Giang vien</p>
+        <h2 className="text-3xl font-black text-gray-900">Quan ly Flashcard</h2>
+        <p className="text-gray-500 font-medium mt-2">Tao bo the ghi nho theo tung tai lieu de ho tro sinh vien on tap nhanh.</p>
       </div>
 
-      {error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm font-semibold">
+          {error}
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <section className="xl:col-span-5 bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
-          <h3 className="text-lg font-black text-gray-900 mb-4">Tạo flashcard mới</h3>
-
-          <form onSubmit={handleCreate} className="space-y-4">
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 lg:col-span-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <h3 className="font-black text-gray-900 mb-4">Tao flashcard moi</h3>
+          <form className="space-y-4" onSubmit={handleCreate}>
             <div>
-              <label className="block mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Tài liệu</label>
+              <label className="block text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Tai lieu</label>
               <select
-                value={selectedDocumentId || ''}
-                onChange={(event) => setSelectedDocumentId(Number(event.target.value))}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm"
-                disabled={isLoading || documents.length === 0}
+                value={selectedDocumentId}
+                onChange={(e) => setSelectedDocumentId(e.target.value ? Number(e.target.value) : '')}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-500"
               >
                 {documents.length === 0 ? (
-                  <option value="">Chưa có tài liệu để tạo flashcard</option>
+                  <option value="">Chua co tai lieu</option>
                 ) : (
                   documents.map((doc) => (
                     <option key={doc.id} value={doc.id}>
@@ -141,77 +124,80 @@ const LecturerFlashcardsPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Mặt trước</label>
+              <label className="block text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Mat truoc</label>
               <textarea
-                rows={4}
                 value={front}
-                onChange={(event) => setFront(event.target.value)}
-                placeholder="Ví dụ: Định nghĩa chuẩn hóa CSDL là gì?"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
+                onChange={(e) => setFront(e.target.value)}
+                rows={3}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-500"
+                placeholder="Nhap cau hoi/goi y"
               />
             </div>
 
             <div>
-              <label className="block mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Mặt sau</label>
+              <label className="block text-xs font-black tracking-widest text-gray-400 uppercase mb-2">Mat sau</label>
               <textarea
-                rows={5}
                 value={back}
-                onChange={(event) => setBack(event.target.value)}
-                placeholder="Chuẩn hóa là quá trình tổ chức dữ liệu để giảm dư thừa và phụ thuộc..."
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
+                onChange={(e) => setBack(e.target.value)}
+                rows={4}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-500"
+                placeholder="Nhap dap an/noi dung giai thich"
               />
             </div>
 
             <button
               type="submit"
-              disabled={isSaving || !selectedDocumentId}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#3B66F5] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-60"
+              disabled={submitting || documents.length === 0}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#3B66F5] px-4 py-3 text-sm font-black text-white hover:bg-blue-700 disabled:opacity-60"
             >
-              <Plus className="w-4 h-4" />
-              {isSaving ? 'Đang lưu...' : 'Thêm flashcard'}
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              Them flashcard
             </button>
           </form>
-        </section>
+        </div>
 
-        <section className="xl:col-span-7 bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-black text-gray-900">Danh sách flashcard</h3>
-            <span className="text-sm font-semibold text-gray-500">
-              {selectedDocument ? `Tài liệu: ${selectedDocument.title}` : 'Chưa chọn tài liệu'}
-            </span>
+        <div className="col-span-12 lg:col-span-8 bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-black text-gray-900">Danh sach flashcard</h3>
+            <button
+              onClick={loadData}
+              className="text-sm font-black text-[#3B66F5] hover:text-blue-700"
+            >
+              Tai lai
+            </button>
           </div>
 
-          {isLoading ? (
-            <div className="text-sm text-gray-500">Đang tải dữ liệu...</div>
-          ) : flashcards.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
-              <BookOpenText className="w-10 h-10 mx-auto text-gray-400 mb-3" />
-              <p className="font-bold text-gray-700">Chưa có flashcard cho tài liệu này</p>
-              <p className="text-sm text-gray-500 mt-1">Hãy tạo thẻ đầu tiên để bắt đầu bộ ôn tập.</p>
+          {loading ? (
+            <div className="py-10 flex items-center justify-center text-gray-500 font-semibold">
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Dang tai du lieu...
+            </div>
+          ) : filteredFlashcards.length === 0 ? (
+            <div className="py-10 text-center text-gray-500 font-semibold">
+              Chua co flashcard nao cho tai lieu dang chon.
             </div>
           ) : (
-            <div className="space-y-4 max-h-[620px] overflow-y-auto pr-1">
-              {flashcards.map((card, index) => (
-                <div key={card.id} className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+            <div className="space-y-4 max-h-[540px] overflow-y-auto pr-1">
+              {filteredFlashcards.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-gray-100 p-4">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-xs font-black tracking-wider text-[#3B66F5] uppercase">Thẻ #{index + 1}</p>
-                      <p className="mt-2 text-sm font-bold text-gray-900">Q: {card.front}</p>
-                      <p className="mt-2 text-sm text-gray-700">A: {card.back}</p>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black tracking-widest text-blue-500 uppercase">Mat truoc</p>
+                      <p className="text-sm font-semibold text-gray-800">{item.front}</p>
+                      <p className="text-[10px] font-black tracking-widest text-emerald-500 uppercase mt-3">Mat sau</p>
+                      <p className="text-sm font-semibold text-gray-700">{item.back}</p>
                     </div>
                     <button
-                      onClick={() => handleDelete(card.id)}
-                      className="rounded-lg border border-red-200 bg-white px-3 py-2 text-red-600 hover:bg-red-50"
-                      title="Xóa flashcard"
+                      onClick={() => handleDelete(item.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-black text-red-600 hover:bg-red-50"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" /> Xoa
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </section>
+        </div>
       </div>
     </div>
   );

@@ -53,6 +53,19 @@ const LecturerDashboard: React.FC = () => {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link to="/lecturer/flashcard" className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#3B66F5]">Giảng viên Flashcard</p>
+            <h4 className="mt-2 text-xl font-black text-gray-900">Tạo thẻ ôn tập từ tài liệu</h4>
+            <p className="mt-1 text-sm text-gray-500">Soạn bộ thẻ nhanh, quản lý và cập nhật trực tiếp theo từng tài liệu.</p>
+          </Link>
+          <Link to="/lecturer/gpa" className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#3B66F5]">Giảng viên GPA</p>
+            <h4 className="mt-2 text-xl font-black text-gray-900">Tính GPA hỗ trợ tư vấn học tập</h4>
+            <p className="mt-1 text-sm text-gray-500">Nhập học phần, tính hệ 10/hệ 4 và theo dõi lịch sử để tư vấn sinh viên.</p>
+          </Link>
+        </div>
+
         {/* Bottom Section */}
         <div className="grid grid-cols-12 gap-8">
           {/* Left Column: Recent Documents */}

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import ShareModal from '../components/documents/ShareModal';
 import { authService } from '../services/auth';
 import { documentService, DocumentItem, ShareItem } from '../services/documents';
+import { FlashcardItem } from '../services/flashcards';
 import api from '../services/api';
 
 interface DiscussionUser {
@@ -55,7 +56,7 @@ function getInitials(name: string) {
   if (!name) return '?';
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
-type DetailTab = 'info' | 'questions' | 'discussion' | 'highlight';
+type DetailTab = 'info' | 'questions' | 'discussion' | 'highlight' | 'flashcards';
 
 const aiTools = [
   {
@@ -82,10 +83,13 @@ const aiTools = [
 
 const DocumentDetailPage: React.FC = () => {
   const { documentId } = useParams();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get('tab') as DetailTab || 'info';
   const parsedId = Number(documentId);
   const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-  const [activeTab, setActiveTab] = useState<DetailTab>('info');
+  const [activeTab, setActiveTab] = useState<DetailTab>(initialTab);
   const [document, setDocument] = useState<DocumentItem | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -130,6 +134,43 @@ const DocumentDetailPage: React.FC = () => {
   const [highText, setHighText] = useState('');
   const [highColor, setHighColor] = useState('yellow');
   const [highNote, setHighNote] = useState('');
+  // States for flashcards
+  const [flashcards, setFlashcards] = useState<FlashcardItem[]>([]);
+  const [flashLoading, setFlashLoading] = useState(false);
+  const [studyIndex, setStudyIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [studyStats, setStudyStats] = useState({ known: 0, review: 0, unknown: 0 });
+
+  const sampleFlashcards: FlashcardItem[] = [
+    {
+      id: -1,
+      document_id: parsedId,
+      user_id: 0,
+      front: "Độ phức tạp thời gian (Time Complexity) của thuật toán Quick Sort trong trường hợp trung bình là gì?",
+      back: "O(n log n). Quick Sort sử dụng chiến thuật chia để trị, phân chia mảng dựa trên phần tử chốt (pivot).",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: -2,
+      document_id: parsedId,
+      user_id: 0,
+      front: "Nguyên lý ACID trong hệ quản trị cơ sở dữ liệu (DBMS) là gì?",
+      back: "Atomicity (Nguyên tử), Consistency (Nhất quán), Isolation (Cô lập), Durability (Bền vững).",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: -3,
+      document_id: parsedId,
+      user_id: 0,
+      front: "Sự khác biệt giữa REST và GraphQL là gì?",
+      back: "REST dựa trên tài nguyên với các endpoint cố định. GraphQL cho phép client yêu cầu chính xác dữ liệu họ cần thông qua một endpoint duy nhất.",
+      created_at: new Date().toISOString()
+    }
+  ];
+
+  const effectiveFlashcards = flashcards.length > 0 ? flashcards : sampleFlashcards;
+  const currentFlashcard = effectiveFlashcards[studyIndex];
+  const progressPercent = Math.round(((studyIndex) / effectiveFlashcards.length) * 100);
 
   const isOwner = Boolean(document && currentUserId && document.uploader_id === currentUserId);
 
@@ -216,6 +257,18 @@ const DocumentDetailPage: React.FC = () => {
     }
   };
 
+  const fetchFlashcards = async (docId: number) => {
+    setFlashLoading(true);
+    try {
+      const res = await api.get(`/api/v1/flashcards/?document_id=${docId}`);
+      setFlashcards(res.data);
+    } catch {
+      console.error('Lỗi tải flashcards');
+    } finally {
+      setFlashLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (parsedId) {
       if (activeTab === 'discussion') {
@@ -224,6 +277,8 @@ const DocumentDetailPage: React.FC = () => {
         fetchQuestions(parsedId);
       } else if (activeTab === 'highlight') {
         fetchHighlights(parsedId);
+      } else if (activeTab === 'flashcards') {
+        fetchFlashcards(parsedId);
       }
     }
   }, [parsedId, activeTab]);
@@ -419,7 +474,9 @@ const DocumentDetailPage: React.FC = () => {
     }
 
     if (toolId === 'flashcard') {
-      setAiResult(`Flashcard mẫu:\n- Q: Khái niệm trung tâm của tài liệu là gì?\n  A: ${document.subject || 'Kiến thức chuyên ngành'}\n- Q: Khi nào áp dụng công thức chính?\n  A: Khi dữ liệu thỏa điều kiện trong ví dụ.`);
+      setActiveTab('flashcards');
+      fetchFlashcards(parsedId);
+      setAiResult(`Đã chuyển sang tab Flashcards để bạn ôn tập bộ thẻ ghi nhớ của tài liệu này.`);
       return;
     }
 
@@ -466,6 +523,7 @@ const DocumentDetailPage: React.FC = () => {
           <button onClick={() => setActiveTab('questions')} className={activeTab === 'questions' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Đặt câu hỏi</button>
           <button onClick={() => setActiveTab('discussion')} className={activeTab === 'discussion' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Thảo luận</button>
           <button onClick={() => setActiveTab('highlight')} className={activeTab === 'highlight' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Highlight</button>
+          <button onClick={() => setActiveTab('flashcards')} className={activeTab === 'flashcards' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Flashcards</button>
         </div>
 
         <div className="flex-1 overflow-hidden grid grid-cols-1 xl:grid-cols-12">
@@ -704,7 +762,8 @@ const DocumentDetailPage: React.FC = () => {
             )}
 
             {activeTab === 'highlight' && (
-              <div className="space-y-6">
+              <>
+                <div className="space-y-6">
                 <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-900">Ghi chú & Nổi bật (Highlight)</h3>
                   <p className="mt-1 text-sm text-slate-500">Lưu lại những đoạn văn quan trọng từ tài liệu (trang cụ thể) kèm ghi chú cá nhân của bạn.</p>
@@ -794,6 +853,169 @@ const DocumentDetailPage: React.FC = () => {
                   <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-500 text-sm font-medium">Bạn chưa lưu đoạn nổi bật nào.<br /><span className="text-xs font-normal opacity-70 mt-1 block">Tạo highlight để ghi nhớ bài tốt hơn!</span></div>
                 )}
               </div>
+            </>
+            )}
+
+            {activeTab === 'flashcards' && (
+              <>
+                <div className="flex flex-col gap-6 lg:flex-row h-full">
+                {/* Left Sidebar - Stats & Tips */}
+                <div className="lg:w-80 flex flex-col gap-6 shrink-0">
+                  {/* Progress Card */}
+                  <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 flex flex-col items-center">
+                    <p className="text-[10px] font-black tracking-widest text-blue-500 uppercase mb-6 self-start">Tiến độ hôm nay</p>
+                    <div className="relative w-40 h-40 flex items-center justify-center">
+                      <svg className="w-full h-full -rotate-90">
+                        <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-blue-50" />
+                        <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={440} strokeDashoffset={440 - (440 * progressPercent) / 100} strokeLinecap="round" className="text-[#3B66F5] transition-all duration-1000" />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-black text-slate-800">{progressPercent}%</span>
+                        <span className="text-[10px] font-bold text-slate-400">Hoàn thành</span>
+                      </div>
+                    </div>
+                    <div className="w-full mt-8 flex justify-between gap-4">
+                      <div className="flex-1 bg-slate-50 rounded-2xl p-3 text-center">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Đã học</p>
+                        <p className="text-xl font-black text-slate-800">{studyIndex}</p>
+                      </div>
+                      <div className="flex-1 bg-slate-50 rounded-2xl p-3 text-center">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Còn lại</p>
+                        <p className="text-xl font-black text-slate-800">{effectiveFlashcards.length - studyIndex}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Achievement Card */}
+                  <div className="bg-[#0A1A3F] rounded-[32px] p-8 text-white">
+                    <div className="flex justify-between items-center mb-6">
+                      <p className="text-[10px] font-black tracking-widest text-blue-300 uppercase">Thành tích</p>
+                      <span className="text-lg">🔥</span>
+                    </div>
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">⚡</div>
+                        <div>
+                          <p className="text-[13px] font-black">Chuỗi ngày</p>
+                          <p className="text-[11px] font-semibold text-blue-200">12 Ngày liên tiếp <span className="bg-emerald-500 text-white text-[8px] px-1.5 py-0.5 rounded-full ml-1">MỚI</span></p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">🏆</div>
+                        <div>
+                          <p className="text-[13px] font-black">Điểm số</p>
+                          <p className="text-[11px] font-semibold text-blue-200">1,450 XP</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tips Card */}
+                  <div className="bg-[#EEF2FF] rounded-[32px] p-6 border border-blue-100 flex gap-4">
+                    <div className="w-10 h-10 bg-[#3B66F5] rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-200">💡</div>
+                    <div>
+                      <p className="text-[13px] font-black text-slate-800"><span className="text-[#3B66F5]">Mẹo học:</span> Việc ôn lại các thẻ "Không biết" ngay lập tức giúp tăng khả năng ghi nhớ lên 40%.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main Content - Study Mode */}
+                <div className="flex-1 bg-white rounded-[32px] p-12 shadow-sm border border-gray-100 flex flex-col items-center relative overflow-hidden">
+                  <div className="absolute top-8 left-12 flex items-center gap-4">
+                    <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Câu hỏi #{studyIndex + 1}</p>
+                  </div>
+
+                  {/* Flashcard Component */}
+                  <div className="mt-16 w-full max-w-2xl h-96 perspective-1000 group cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
+                    <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                      {/* Front */}
+                      <div className="absolute inset-0 backface-hidden flex items-center justify-center p-12 bg-white rounded-[40px] shadow-2xl shadow-blue-100 border border-slate-50 border-b-4 border-b-slate-100">
+                        <div className="flex flex-col items-center">
+                          <h3 className="text-2xl font-black text-center text-slate-800 leading-tight">
+                            {currentFlashcard?.front}
+                          </h3>
+                          <div className="mt-12 flex items-center gap-2 text-slate-400">
+                            <span className="text-xs">👆</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Nhấn để xem đáp án</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Back */}
+                      <div className="absolute inset-0 backface-hidden rotate-y-180 flex items-center justify-center p-12 bg-[#F8FAFC] rounded-[40px] shadow-2xl shadow-slate-200 border border-slate-100">
+                        <div className="flex flex-col items-center">
+                          <p className="text-lg font-bold text-center text-slate-700 leading-relaxed whitespace-pre-wrap">
+                            {currentFlashcard?.back}
+                          </p>
+                          <div className="mt-12 flex items-center gap-2 text-blue-400">
+                            <span className="text-xs">🔙</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Quay lại mặt trước</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-16 flex items-end gap-12">
+                    <div className="flex flex-col items-center gap-3">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStudyStats(prev => ({ ...prev, unknown: prev.unknown + 1 }));
+                          setStudyIndex((studyIndex + 1) % effectiveFlashcards.length);
+                          setIsFlipped(false);
+                        }}
+                        className="w-16 h-16 rounded-full border-2 border-red-50 text-red-500 hover:bg-red-50 transition-all flex items-center justify-center text-2xl font-black shadow-lg shadow-red-100/50 hover:scale-110 active:scale-95"
+                      >
+                        ✕
+                      </button>
+                      <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Không biết</p>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-3">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStudyStats(prev => ({ ...prev, review: prev.review + 1 }));
+                          setStudyIndex((studyIndex + 1) % effectiveFlashcards.length);
+                          setIsFlipped(false);
+                        }}
+                        className="w-20 h-20 rounded-full border-2 border-amber-50 text-amber-500 hover:bg-amber-50 transition-all flex items-center justify-center text-2xl font-black shadow-lg shadow-amber-100/50 hover:scale-110 active:scale-95"
+                      >
+                        <svg className="w-8 h-8 rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                      </button>
+                      <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Ôn lại</p>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-3">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStudyStats(prev => ({ ...prev, known: prev.known + 1 }));
+                          setStudyIndex((studyIndex + 1) % effectiveFlashcards.length);
+                          setIsFlipped(false);
+                        }}
+                        className="w-16 h-16 rounded-full border-2 border-emerald-50 text-emerald-500 hover:bg-emerald-50 transition-all flex items-center justify-center text-2xl font-black shadow-lg shadow-emerald-100/50 hover:scale-110 active:scale-95"
+                      >
+                        ✓
+                      </button>
+                      <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Biết</p>
+                    </div>
+                  </div>
+
+                  {/* Footer - Social Proof */}
+                  <div className="mt-auto pt-16 flex items-center gap-4 text-slate-400">
+                    <div className="flex -space-x-2">
+                      <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-200"></div>
+                      <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-100"></div>
+                      <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-300"></div>
+                      <div className="w-8 h-8 rounded-full border-2 border-white bg-[#3B66F5] text-[10px] font-black text-white flex items-center justify-center">+12</div>
+                    </div>
+                    <p className="text-[12px] font-semibold">14 bạn khác đang học cùng bạn</p>
+                  </div>
+                </div>
+                </div>
+              </>
             )}
           </section>
 

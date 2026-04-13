@@ -46,9 +46,10 @@ def list_flashcards(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	query = db.query(Flashcard).filter(Flashcard.user_id == current_user.id)
 	if document_id is not None:
-		query = query.filter(Flashcard.document_id == document_id)
+		query = db.query(Flashcard).filter(Flashcard.document_id == document_id)
+	else:
+		query = db.query(Flashcard).filter(Flashcard.user_id == current_user.id)
 	return query.order_by(Flashcard.created_at.desc()).offset(skip).limit(limit).all()
 
 

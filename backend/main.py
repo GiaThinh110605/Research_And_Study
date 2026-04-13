@@ -18,7 +18,8 @@ app.add_middleware(AuthMiddleware)
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.ALLOWED_ORIGINS],
+    allow_origins=[str(origin) for origin in settings.ALLOWED_ORIGINS] if "*" not in settings.ALLOWED_ORIGINS else [],
+    allow_origin_regex="https?://.*" if "*" in settings.ALLOWED_ORIGINS else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

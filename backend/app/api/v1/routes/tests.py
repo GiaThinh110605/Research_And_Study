@@ -143,22 +143,30 @@ def get_test_stats(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	total_tests = db.query(Test).count()
-	user_results = db.query(TestResult).filter(TestResult.user_id == current_user.id).all()
-	
-	completed_tests = len(user_results)
-	
-	total_score_4 = sum(_to_4_scale(res.score) for res in user_results)
-	average_score = round(total_score_4 / completed_tests, 2) if completed_tests > 0 else 0.0
-	
-	progress_percent = round((completed_tests / total_tests) * 100, 1) if total_tests > 0 else 0.0
-	
-	return {
-		"total_tests": total_tests,
-		"completed_tests": completed_tests,
-		"average_score": average_score,
-		"progress_percent": progress_percent
-	}
+	try:
+		total_tests = db.query(Test).count()
+		user_results = db.query(TestResult).filter(TestResult.user_id == current_user.id).all()
+		
+		completed_tests = len(user_results)
+		
+		total_score_4 = 0.0
+		for res in user_results:
+			score = getattr(res, 'score', 0.0)
+			if score is not None:
+				total_score_4 += _to_4_scale(float(score))
+		
+		average_score = round(total_score_4 / completed_tests, 2) if completed_tests > 0 else 0.0
+		
+		progress_percent = round((completed_tests / total_tests) * 100, 1) if total_tests > 0 else 0.0
+		
+		return {
+			"total_tests": total_tests,
+			"completed_tests": completed_tests,
+			"average_score": average_score,
+			"progress_percent": progress_percent
+		}
+	except Exception as e:
+		raise HTTPException(status_code=500, detail=f"Stats Error: {str(e)}")
 
 
 @router.get("/", response_model=List[TestOut])

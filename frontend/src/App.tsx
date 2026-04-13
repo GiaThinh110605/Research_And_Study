@@ -28,6 +28,7 @@ import TakeTestPage from './pages/TakeTestPage';
 import TestResultPage from './pages/TestResultPage';
 import ProfilePage from './pages/ProfilePage';
 import GPAPage from './pages/GPAPage';
+import FlashcardListPage from './pages/FlashcardListPage';
 
 import DashboardLayout from './components/layout/DashboardLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
@@ -50,6 +51,7 @@ function App() {
           <Route path="/test-list" element={<TestListPage />} />
           <Route path="/take-test/:id" element={<TakeTestPage />} />
           <Route path="/test-result/:id" element={<TestResultPage />} />
+          <Route path="/flashcard" element={<FlashcardListPage />} />
           <Route path="/gpa" element={<GPAPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

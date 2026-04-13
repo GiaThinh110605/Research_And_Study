@@ -38,7 +38,7 @@ class FlashcardOut(FlashcardBase):
 		orm_mode = True
 
 
-@router.get("/", response_model=List[FlashcardOut])
+@router.get("", response_model=List[FlashcardOut])
 def list_flashcards(
 	document_id: Optional[int] = Query(default=None),
 	skip: int = Query(default=0, ge=0),
@@ -52,7 +52,7 @@ def list_flashcards(
 	return query.order_by(Flashcard.created_at.desc()).offset(skip).limit(limit).all()
 
 
-@router.post("/", response_model=FlashcardOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=FlashcardOut, status_code=status.HTTP_201_CREATED)
 def create_flashcard(
 	payload: FlashcardCreate,
 	db: Session = Depends(get_db),
@@ -72,6 +72,39 @@ def create_flashcard(
 	db.commit()
 	db.refresh(flashcard)
 	return flashcard
+
+
+@router.post("/bulk", response_model=List[FlashcardOut], status_code=status.HTTP_201_CREATED)
+def bulk_create_flashcards(
+	payload: List[FlashcardCreate],
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user),
+) -> Any:
+	if not payload:
+		return []
+
+	# Verify all document_ids exist and belong to user (optional but good)
+	# For simplicity, we'll just check if the documents exist
+	document_ids = {p.document_id for p in payload}
+	documents = db.query(Document).filter(Document.id.in_(document_ids)).all()
+	if len(documents) != len(document_ids):
+		raise HTTPException(status_code=404, detail="One or more documents not found")
+
+	flashcards = []
+	for p in payload:
+		fc = Flashcard(
+			document_id=p.document_id,
+			user_id=current_user.id,
+			front=p.front,
+			back=p.back,
+		)
+		db.add(fc)
+		flashcards.append(fc)
+
+	db.commit()
+	for fc in flashcards:
+		db.refresh(fc)
+	return flashcards
 
 
 @router.get("/{flashcard_id}", response_model=FlashcardOut)

@@ -25,6 +25,7 @@ import TestListPage from './pages/TestListPage';
 import TakeTestPage from './pages/TakeTestPage';
 import TestResultPage from './pages/TestResultPage';
 import ProfilePage from './pages/ProfilePage';
+import FlashcardPage from './pages/FlashcardPage';
 
 import DashboardLayout from './components/layout/DashboardLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
@@ -46,6 +47,7 @@ function App() {
           <Route path="/test-list" element={<TestListPage />} />
           <Route path="/take-test/:id" element={<TakeTestPage />} />
           <Route path="/test-result/:id" element={<TestResultPage />} />
+          <Route path="/flashcards" element={<FlashcardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 

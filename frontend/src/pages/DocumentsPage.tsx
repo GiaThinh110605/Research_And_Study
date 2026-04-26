@@ -33,11 +33,6 @@ const DocumentsPage: React.FC = () => {
   const [selectedDocument, setSelectedDocument] = useState<DocumentItem | null>(null);
 
   const [isShareOpen, setIsShareOpen] = useState(false);
-  const [shareTargetEmail, setShareTargetEmail] = useState('');
-  const [sharePermission, setSharePermission] = useState<'view' | 'edit' | 'comment'>('view');
-  const [shareItems, setShareItems] = useState<ShareItem[]>([]);
-  const [shareError, setShareError] = useState('');
-  const [isSharing, setIsSharing] = useState(false);
 
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('token')));
@@ -157,52 +152,10 @@ const DocumentsPage: React.FC = () => {
   };
 
   const openShare = async (doc: DocumentItem) => {
-    setShareError('');
-    setShareItems([]);
     setSelectedDocument(doc);
     setIsShareOpen(true);
-    try {
-      const shares = await documentService.listShares(doc.id);
-      setShareItems(shares);
-    } catch (err: any) {
-      setShareError(err.response?.data?.detail || 'Không thể tải danh sách chia sẻ.');
-    }
   };
 
-  const handleShare = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDocument) return;
-
-    if (!shareTargetEmail.trim()) {
-      setShareError('Vui lòng nhập email người nhận.');
-      return;
-    }
-
-    setIsSharing(true);
-    setShareError('');
-    try {
-      await documentService.share(selectedDocument.id, {
-        shared_with_email: shareTargetEmail.trim(),
-        permission: sharePermission,
-      });
-      setShareTargetEmail('');
-      const shares = await documentService.listShares(selectedDocument.id);
-      setShareItems(shares);
-    } catch (err: any) {
-      setShareError(err.response?.data?.detail || 'Chia sẻ tài liệu thất bại.');
-    } finally {
-      setIsSharing(false);
-    }
-  };
-
-  const closeShareModal = () => {
-    setIsShareOpen(false);
-    setSelectedDocument(null);
-    setShareError('');
-    setShareTargetEmail('');
-    setSharePermission('view');
-    setShareItems([]);
-  };
 
   const openUpload = () => {
     if (!isLoggedIn) {
@@ -424,15 +377,10 @@ const DocumentsPage: React.FC = () => {
       <ShareModal
         isOpen={isShareOpen}
         document={selectedDocument}
-        shareTargetEmail={shareTargetEmail}
-        sharePermission={sharePermission}
-        shareItems={shareItems}
-        shareError={shareError}
-        isSharing={isSharing}
-        onClose={closeShareModal}
-        onSubmit={handleShare}
-        onChangeShareTargetEmail={setShareTargetEmail}
-        onChangeSharePermission={setSharePermission}
+        onClose={() => setIsShareOpen(false)}
+        onShareSuccess={() => {
+          // Success callback
+        }}
       />
     </>
   );

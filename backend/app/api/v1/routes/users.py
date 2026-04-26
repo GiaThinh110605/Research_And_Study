@@ -10,6 +10,20 @@ from app.core.security import get_password_hash
 
 router = APIRouter()
 
+@router.get("/search", response_model=List[UserOut])
+def search_users(
+    q: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """
+    Search users by email or username.
+    """
+    users = db.query(User).filter(
+        (User.email.ilike(f"%{q}%")) | (User.username.ilike(f"%{q}%"))
+    ).limit(10).all()
+    return users
+
 @router.get("/", response_model=List[UserOut])
 def read_users(
     db: Session = Depends(get_db),

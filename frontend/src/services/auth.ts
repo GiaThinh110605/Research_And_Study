@@ -6,9 +6,9 @@ export const authService = {
     return response.data;
   },
   
-  async login(email: string, password: string) {
+  async login(usernameOrEmail: string, password: string) {
     const formData = new URLSearchParams();
-    formData.append('username', email);
+    formData.append('username', usernameOrEmail);
     formData.append('password', password);
     
     const response = await api.post('/api/v1/auth/login', formData, {

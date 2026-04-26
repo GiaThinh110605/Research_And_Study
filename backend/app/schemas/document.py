@@ -28,7 +28,7 @@ class DocumentOut(DocumentBase):
     updated_at: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class DocumentListResponse(BaseModel):
@@ -39,22 +39,25 @@ class DocumentListResponse(BaseModel):
 
 
 class DocumentShareCreate(BaseModel):
-    shared_with_user_id: Optional[int] = None
-    shared_with_email: Optional[EmailStr] = None
+    shared_to_id: Optional[int] = None
     permission: Literal["view", "edit", "comment"] = "view"
+    message: Optional[str] = None
 
 
 class DocumentShareOut(BaseModel):
     id: int
     document_id: int
-    shared_with_user_id: int
-    shared_with_email: Optional[EmailStr] = None
+    shared_by_id: int
+    shared_to_id: Optional[int] = None
+    shared_to_name: Optional[str] = None
+    shared_to_email: Optional[EmailStr] = None
     permission: str
     status: str
+    message: Optional[str] = None
     shared_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class AdminDocumentOverview(BaseModel):

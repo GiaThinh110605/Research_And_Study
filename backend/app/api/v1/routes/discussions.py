@@ -47,6 +47,7 @@ def create_discussion(
         user_id=current_user.id,
         parent_id=parent_id,
         content=disc_in.content,
+        is_question=disc_in.is_question
     )
     db.add(db_disc)
     db.commit()

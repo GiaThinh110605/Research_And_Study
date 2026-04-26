@@ -10,6 +10,7 @@ class DiscussionCreate(BaseModel):
     document_id: int
     content: str
     parent_id: Optional[int] = None  # None = comment gốc, có giá trị = reply
+    is_question: Optional[bool] = False
 
 
 class DiscussionUpdate(BaseModel):
@@ -22,11 +23,11 @@ class DiscussionUpdate(BaseModel):
 class DiscussionUserOut(BaseModel):
     id: int
     full_name: str
-    email: str
+    username: str
     role: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ---------- Response schemas ----------
@@ -37,15 +38,18 @@ class DiscussionOut(BaseModel):
     user_id: int
     parent_id: Optional[int] = None
     content: str
+    is_question: bool
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     # Nested
     user: Optional[DiscussionUserOut] = None
     replies: Optional[List["DiscussionOut"]] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-# Cho phép tự tham chiếu (Pydantic v1)
-DiscussionOut.update_forward_refs()
+# Cho phép tự tham chiếu (Pydantic v2 style or v1)
+# DiscussionOut.update_forward_refs()  # Pydantic v1
+# DiscussionOut.model_rebuild()         # Pydantic v2

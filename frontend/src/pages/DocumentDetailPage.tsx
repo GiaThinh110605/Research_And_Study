@@ -5,6 +5,8 @@ import { authService } from '../services/auth';
 import { documentService, DocumentItem, ShareItem } from '../services/documents';
 import { FlashcardItem } from '../services/flashcards';
 import api from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { aiService } from '../services/ai';
 
 interface DiscussionUser {
   id: number;
@@ -96,11 +98,6 @@ const DocumentDetailPage: React.FC = () => {
 
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
-  const [shareTargetEmail, setShareTargetEmail] = useState('');
-  const [sharePermission, setSharePermission] = useState<'view' | 'edit' | 'comment'>('view');
-  const [shareItems, setShareItems] = useState<ShareItem[]>([]);
-  const [shareError, setShareError] = useState('');
-  const [isSharing, setIsSharing] = useState(false);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editTitle, setEditTitle] = useState('');
@@ -120,7 +117,7 @@ const DocumentDetailPage: React.FC = () => {
   const [replyContent, setReplyContent] = useState('');
   const [discLoading, setDiscLoading] = useState(false);
 
-  // States for questions (Đặt câu hỏi)
+  const [isQuestionInput, setIsQuestionInput] = useState(false);
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [questionInput, setQuestionInput] = useState('');
   const [questionsLoading, setQuestionsLoading] = useState(false);
@@ -284,53 +281,10 @@ const DocumentDetailPage: React.FC = () => {
   }, [parsedId, activeTab]);
 
   const openShare = async () => {
-    if (!document) return;
-
-    setShareError('');
-    setShareItems([]);
     setIsShareOpen(true);
-
-    try {
-      const shares = await documentService.listShares(document.id);
-      setShareItems(shares);
-    } catch (err: any) {
-      setShareError(err.response?.data?.detail || 'Không thể tải danh sách chia sẻ.');
-    }
   };
 
-  const handleShare = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!document) return;
 
-    if (!shareTargetEmail.trim()) {
-      setShareError('Vui lòng nhập email người nhận.');
-      return;
-    }
-
-    setIsSharing(true);
-    setShareError('');
-    try {
-      await documentService.share(document.id, {
-        shared_with_email: shareTargetEmail.trim(),
-        permission: sharePermission,
-      });
-      setShareTargetEmail('');
-      const shares = await documentService.listShares(document.id);
-      setShareItems(shares);
-    } catch (err: any) {
-      setShareError(err.response?.data?.detail || 'Chia sẻ tài liệu thất bại.');
-    } finally {
-      setIsSharing(false);
-    }
-  };
-
-  const closeShareModal = () => {
-    setIsShareOpen(false);
-    setShareError('');
-    setShareTargetEmail('');
-    setSharePermission('view');
-    setShareItems([]);
-  };
 
   const handleUpdateDocument = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -359,17 +313,19 @@ const DocumentDetailPage: React.FC = () => {
     }
   };
 
-  const handleCommentSubmit = async () => {
+  const handleCommentSubmit = async (isQuestion: boolean = false) => {
     if (!newComment.trim()) return;
     if (!currentUserId) {
-      alert('Vui lòng đăng nhập để bình luận.'); return;
+      alert('Vui lòng đăng nhập để thực hiện thao tác này.');
+      return;
     }
 
     try {
       await api.post('/api/v1/discussions/', {
         document_id: parsedId,
         content: newComment.trim(),
-        parent_id: 0,
+        parent_id: null,
+        is_question: isQuestion
       });
       setNewComment('');
       await fetchDiscussions(parsedId);
@@ -377,6 +333,8 @@ const DocumentDetailPage: React.FC = () => {
       alert(err.response?.data?.detail || 'Gửi thất bại.');
     }
   };
+
+  // ... (Update the UI part in the return)
 
   const handleReplySubmit = async (parentId: number) => {
     if (!replyContent.trim()) return;
@@ -459,28 +417,31 @@ const DocumentDetailPage: React.FC = () => {
       alert("Xóa thất bại");
     }
   };
-
-  const handleGenerateAi = (toolId: string) => {
+  const handleGenerateAi = async (toolId: string) => {
     if (!document) return;
-
-    if (toolId === 'summary') {
-      setAiResult(`Tóm tắt nhanh: ${document.title}. Tài liệu thuộc ${document.subject || 'chuyên đề tổng hợp'}, tập trung vào kiến thức cốt lõi và có thể học trong 3-5 ý chính.`);
+    if (!currentUserId) {
+      alert('Vui lòng đăng nhập để sử dụng AI.');
       return;
     }
 
-    if (toolId === 'mindmap') {
-      setAiResult(`Sơ đồ tư duy đề xuất:\n1) Tổng quan ${document.subject || 'môn học'}\n2) Khái niệm nền tảng\n3) Công thức và ví dụ ứng dụng\n4) Bài tập tự luyện theo mức độ.`);
-      return;
+    setAiResult(`Đang xử lý ${toolId}...`);
+    try {
+      if (toolId === 'summary') {
+        const res = await aiService.generateSummary(document.id);
+        setAiResult(res.content);
+      } else if (toolId === 'mindmap') {
+        const res = await aiService.generateMindmap(document.id);
+        setAiResult(`Đã tạo sơ đồ tư duy thành công!\n\n${JSON.stringify(res.data.root.children.map((c: any) => c.text), null, 2)}`);
+      } else if (toolId === 'flashcard') {
+        const res = await aiService.generateFlashcards(document.id, 5);
+        setAiResult(`Đã tạo thành công ${res.length} flashcards cho tài liệu này.`);
+        await fetchFlashcards(document.id);
+      } else {
+        setAiResult('Tính năng chưa được hỗ trợ.');
+      }
+    } catch (err: any) {
+      setAiResult(`Lỗi AI: ${err.response?.data?.detail || 'Không thể thực hiện yêu cầu.'}`);
     }
-
-    if (toolId === 'flashcard') {
-      setActiveTab('flashcards');
-      fetchFlashcards(parsedId);
-      setAiResult(`Đã chuyển sang tab Flashcards để bạn ôn tập bộ thẻ ghi nhớ của tài liệu này.`);
-      return;
-    }
-
-    setAiResult(`Highlight thông minh:\n- Từ khóa 1: ${document.subject || 'Chủ đề chính'}\n- Từ khóa 2: Định nghĩa trọng tâm\n- Từ khóa 3: Mô hình áp dụng\n- Từ khóa 4: Bài tập minh họa.`);
   };
 
   if (isLoading) {
@@ -650,92 +611,124 @@ const DocumentDetailPage: React.FC = () => {
                 <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-900 mb-4">Thảo luận môn học</h3>
                   <div className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0">U</div>
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold shrink-0 shadow-sm">
+                      {currentUserId ? 'Me' : 'U'}
+                    </div>
                     <div className="flex-1">
                       <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Hỏi đáp, trao đổi với những người cùng học tài liệu này..."
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#3B66F5] focus:bg-white transition-colors"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 outline-none focus:border-[#3B66F5] focus:bg-white transition-all text-[15px]"
                         rows={3}
                       />
-                      <div className="mt-3 flex justify-end">
-                        <button onClick={handleCommentSubmit} disabled={!newComment.trim()} className="rounded-lg bg-[#3B66F5] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 transition-colors">Đăng thảo luận</button>
+                      <div className="mt-4 flex items-center justify-between">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <div className={`w-10 h-5 rounded-full transition-colors relative ${isQuestionInput ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                            <input 
+                              type="checkbox" 
+                              className="hidden" 
+                              checked={isQuestionInput} 
+                              onChange={e => setIsQuestionInput(e.target.checked)} 
+                            />
+                            <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${isQuestionInput ? 'translate-x-5' : ''}`} />
+                          </div>
+                          <span className="text-xs font-bold text-slate-500 group-hover:text-indigo-600 transition-colors">Đánh dấu là câu hỏi</span>
+                        </label>
+                        <button 
+                          onClick={() => handleCommentSubmit(isQuestionInput)} 
+                          disabled={!newComment.trim()} 
+                          className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-indigo-300 disabled:opacity-50 transition-all active:scale-95"
+                        >
+                          Đăng bài
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {discLoading ? (
-                  <div className="text-center text-slate-500 text-sm py-10">Đang tải thảo luận...</div>
+                  <div className="text-center text-slate-500 text-sm py-12">
+                    <div className="inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="font-medium">Đang tải thảo luận...</p>
+                  </div>
                 ) : discussions.length > 0 ? (
                   <div className="space-y-6">
-                    {discussions.map((disc) => (
-                      <div key={disc.id} className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-                        <div className="p-6 pb-2 flex gap-4">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0 ${disc.user?.role === 'lecturer' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                            {disc.user ? getInitials(disc.user.full_name) : '?'}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <h4 className="font-bold text-slate-900">{disc.user?.full_name || 'Người dùng Ẩn danh'}</h4>
-                              {disc.user?.role === 'lecturer' && (
-                                <span className="bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Giảng viên</span>
-                              )}
-                              <span className="text-xs font-medium text-slate-400 ml-auto">{timeAgo(disc.created_at)}</span>
+                    {discussions.map((disc: any) => (
+                      <div key={disc.id} className={`rounded-2xl bg-white border shadow-sm overflow-hidden transition-all hover:shadow-md ${disc.is_question ? 'border-indigo-200 ring-1 ring-indigo-50' : 'border-slate-100'}`}>
+                        <div className="p-6">
+                          <div className="flex gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold shadow-sm shrink-0 text-lg ${disc.user?.role === 'lecturer' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                              {disc.user ? getInitials(disc.user.full_name) : '?'}
                             </div>
-                            <p className="text-[15px] text-slate-700 leading-relaxed mt-2 whitespace-pre-wrap">{disc.content}</p>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="font-bold text-slate-900">{disc.user?.full_name || 'Người dùng Ẩn danh'}</h4>
+                                {disc.user?.role === 'lecturer' && (
+                                  <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">Giảng viên</span>
+                                )}
+                                {disc.is_question && (
+                                  <span className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" /></svg>
+                                    Câu hỏi
+                                  </span>
+                                )}
+                                <span className="text-[11px] font-bold text-slate-400 ml-auto">{timeAgo(disc.created_at)}</span>
+                              </div>
+                              <p className="text-[15px] text-slate-700 leading-relaxed whitespace-pre-wrap font-medium">{disc.content}</p>
+                              
+                              <div className="mt-4 flex items-center gap-6">
+                                <button
+                                  onClick={() => {
+                                    setReplyingTo(replyingTo === disc.id ? null : disc.id);
+                                    setReplyContent('');
+                                  }}
+                                  className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1.5"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                  {disc.replies?.length > 0 ? `Bình luận (${disc.replies.length})` : 'Trả lời ngay'}
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Nút Phản hồi */}
-                        <div className="px-6 pb-3 flex items-center gap-4">
-                          <button
-                            onClick={() => {
-                              setReplyingTo(replyingTo === disc.id ? null : disc.id);
-                              setReplyContent('');
-                            }}
-                            className="text-[13px] font-bold text-slate-500 hover:text-blue-600 transition-colors ml-[64px]"
-                          >
-                            Bình luận ({disc.replies?.length || 0})
-                          </button>
-                        </div>
-
-                        {/* Replies */}
-                        {disc.replies && disc.replies.length > 0 && (
-                          <div className="px-6 pb-4 space-y-3">
-                            <hr className="border-slate-100 mb-3 ml-[64px]" />
-                            {disc.replies.map((reply) => (
-                              <div key={reply.id} className={`ml-[64px] pl-4 border-l-2 rounded-xl p-3 ${reply.user?.role === 'lecturer' ? 'bg-[#EEF2FF] border-blue-400' : 'bg-[#F8FAFC] border-slate-200'}`}>
-                                <div className="flex gap-3">
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${reply.user?.role === 'lecturer' ? 'bg-blue-200 text-blue-800' : 'bg-slate-200 text-slate-700'}`}>
-                                    {reply.user ? getInitials(reply.user.full_name) : '?'}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-bold text-[13px] text-slate-900">{reply.user?.full_name || 'Ẩn danh'}</span>
-                                      {reply.user?.role === 'lecturer' && (
-                                        <span className="bg-blue-600 text-white text-[8px] font-bold uppercase tracking-wide px-1 py-0.5 rounded">GV</span>
-                                      )}
-                                      <span className="text-[10px] font-medium text-slate-400 ml-auto">{timeAgo(reply.created_at)}</span>
+                          {/* Replies */}
+                          {disc.replies && disc.replies.length > 0 && (
+                            <div className="mt-6 ml-16 space-y-4 border-l-2 border-slate-100 pl-6">
+                              {disc.replies.map((reply: any) => (
+                                <div key={reply.id} className="group">
+                                  <div className="flex gap-3">
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-[10px] shrink-0 shadow-sm ${reply.user?.role === 'lecturer' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                                      {reply.user ? getInitials(reply.user.full_name) : '?'}
                                     </div>
-                                    <p className="text-[13px] text-slate-600 leading-relaxed mt-1 whitespace-pre-wrap">{reply.content}</p>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-bold text-sm text-slate-900">{reply.user?.full_name || 'Ẩn danh'}</span>
+                                        {reply.user?.role === 'lecturer' && (
+                                          <span className="bg-indigo-600 text-white text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-sm">GV</span>
+                                        )}
+                                        <span className="text-[10px] font-bold text-slate-400 ml-auto">{timeAgo(reply.created_at)}</span>
+                                      </div>
+                                      <p className="text-[13px] text-slate-600 leading-relaxed font-medium">{reply.content}</p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                              ))}
+                            </div>
+                          )}
 
-                        {/* Khung nhập Reply Facebook style */}
-                        {replyingTo === disc.id && (
-                          <div className="px-6 pb-5 pt-2 flex gap-3 animate-fade-in ml-[48px]">
-                            <div className="flex-1 bg-slate-100 rounded-[20px] flex items-center pr-2 pl-4 py-1.5 border border-slate-200 focus-within:border-blue-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                          {/* Reply Input */}
+                          {replyingTo === disc.id && (
+                            <motion.div 
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="mt-6 ml-16 bg-slate-50 rounded-2xl p-2 flex items-center gap-2 border border-slate-200"
+                            >
                               <input
                                 type="text"
                                 autoFocus
-                                placeholder="Viết bình luận..."
-                                className="bg-transparent flex-1 outline-none text-[13px] text-slate-800 placeholder-slate-500"
+                                placeholder="Viết phản hồi của bạn..."
+                                className="bg-transparent flex-1 outline-none text-sm px-3 py-2 text-slate-800 placeholder:text-slate-400"
                                 value={replyContent}
                                 onChange={(e) => setReplyContent(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(disc.id)}
@@ -743,19 +736,22 @@ const DocumentDetailPage: React.FC = () => {
                               <button
                                 onClick={() => handleReplySubmit(disc.id)}
                                 disabled={!replyContent.trim()}
-                                className="w-7 h-7 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                                className="bg-indigo-600 text-white p-2 rounded-xl shadow-md shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-50 transition-all"
                               >
-                                <svg className="w-4 h-4 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
                               </button>
-                            </div>
-                          </div>
-                        )}
+                            </motion.div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center text-slate-500 py-10 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    Chưa có thảo luận nào. Bạn có thắc mắc gì không?
+                  <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm border-dashed">
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                    </div>
+                    <p className="text-slate-400 font-bold tracking-wide">Chưa có thảo luận nào cho tài liệu này.</p>
                   </div>
                 )}
               </div>
@@ -1065,15 +1061,10 @@ const DocumentDetailPage: React.FC = () => {
       <ShareModal
         isOpen={isShareOpen}
         document={document}
-        shareTargetEmail={shareTargetEmail}
-        sharePermission={sharePermission}
-        shareItems={shareItems}
-        shareError={shareError}
-        isSharing={isSharing}
-        onClose={closeShareModal}
-        onSubmit={handleShare}
-        onChangeShareTargetEmail={setShareTargetEmail}
-        onChangeSharePermission={setSharePermission}
+        onClose={() => setIsShareOpen(false)}
+        onShareSuccess={() => {
+          // Success callback if needed
+        }}
       />
 
       {isEditOpen && (

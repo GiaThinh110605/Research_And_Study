@@ -46,18 +46,18 @@ export interface UpdateDocumentPayload {
 }
 
 export interface SharePayload {
-  shared_with_user_id?: number;
-  shared_with_email?: string;
-  permission: 'view' | 'edit' | 'comment';
+  shared_to_id?: number | null;
+  message?: string;
 }
 
 export interface ShareItem {
   id: number;
   document_id: number;
-  shared_with_user_id: number;
-  shared_with_email?: string | null;
-  permission: string;
-  status: string;
+  shared_by_id: number;
+  shared_to_id?: number | null;
+  shared_to_name?: string | null;
+  shared_to_email?: string | null;
+  message?: string | null;
   shared_at: string;
 }
 

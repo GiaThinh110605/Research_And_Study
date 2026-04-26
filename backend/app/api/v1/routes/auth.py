@@ -14,20 +14,23 @@ router = APIRouter()
 
 @router.post("/register", response_model=UserOut)
 def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
-    user = db.query(User).filter(User.email == user_in.email).first()
+    user = db.query(User).filter(
+        (User.email == user_in.email) | (User.username == user_in.username)
+    ).first()
     if user:
         raise HTTPException(
             status_code=400,
-            detail="User with this email already exists",
+            detail="User with this email or username already exists",
         )
     
     db_user = User(
         email=user_in.email,
+        username=user_in.username,
         password_hash=get_password_hash(user_in.password),
         full_name=user_in.full_name,
         role=user_in.role,
-        student_id=user_in.student_id,
-        gpa=user_in.gpa
+        student_code=user_in.student_code,
+        lecturer_code=user_in.lecturer_code
     )
     db.add(db_user)
     db.commit()
@@ -36,14 +39,21 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
 
 @router.post("/login", response_model=Token)
 def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()) -> Any:
-    user = db.query(User).filter(User.email == form_data.username).first()
+    # Allow login with either email or username
+    user = db.query(User).filter(
+        (User.email == form_data.username) | (User.username == form_data.username)
+    ).first()
+    
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Incorrect email/username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": create_access_token(
@@ -51,3 +61,7 @@ def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = 
         ),
         "token_type": "bearer",
     }
+
+@router.post("/logout")
+def logout():
+    return {"message": "Successfully logged out"}

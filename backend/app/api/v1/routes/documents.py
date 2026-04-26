@@ -79,7 +79,7 @@ def _can_access_document(db: Session, document: Document, current_user: Optional
         db.query(DocumentShare)
         .filter(
             DocumentShare.document_id == document.id,
-            DocumentShare.shared_with_user_id == current_user.id,
+            DocumentShare.shared_to_id == current_user.id,
             DocumentShare.status == "approved",
         )
         .first()
@@ -95,7 +95,7 @@ def _can_edit_document(db: Session, document: Document, current_user: User) -> b
         db.query(DocumentShare)
         .filter(
             DocumentShare.document_id == document.id,
-            DocumentShare.shared_with_user_id == current_user.id,
+            DocumentShare.shared_to_id == current_user.id,
             DocumentShare.status == "approved",
             DocumentShare.permission == "edit",
         )
@@ -189,20 +189,16 @@ def list_documents(
     query = db.query(Document)
 
     if current_user:
-        shared_document_ids = (
-            db.query(DocumentShare.document_id)
-            .filter(
-                DocumentShare.shared_with_user_id == current_user.id,
-                DocumentShare.status == "approved",
-            )
-            .subquery()
-        )
-
         query = query.filter(
             or_(
                 Document.is_public.is_(True),
                 Document.uploader_id == current_user.id,
-                Document.id.in_(select(shared_document_ids.c.document_id)),
+                Document.id.in_(
+                    db.query(DocumentShare.document_id).filter(
+                        DocumentShare.shared_to_id == current_user.id,
+                        DocumentShare.status == "approved"
+                    )
+                ),
             )
         )
     else:
@@ -671,53 +667,36 @@ def share_document(
     if document.uploader_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the uploader can share this document")
 
-    if not payload.shared_with_user_id and not payload.shared_with_email:
-        raise HTTPException(status_code=400, detail="Provide shared_with_user_id or shared_with_email")
-
     target_user = None
-    if payload.shared_with_user_id:
-        target_user = db.query(User).filter(User.id == payload.shared_with_user_id).first()
-    elif payload.shared_with_email:
-        target_user = db.query(User).filter(User.email.ilike(str(payload.shared_with_email))).first()
+    if payload.shared_to_id:
+        target_user = db.query(User).filter(User.id == payload.shared_to_id).first()
+        if not target_user:
+            raise HTTPException(status_code=404, detail="Target user not found")
+        if target_user.id == current_user.id:
+            raise HTTPException(status_code=400, detail="You cannot share a document with yourself")
 
-    if not target_user:
-        raise HTTPException(status_code=404, detail="Target user not found")
-
-    if target_user.id == current_user.id:
-        raise HTTPException(status_code=400, detail="You cannot share a document with yourself")
-
-    existing = (
-        db.query(DocumentShare)
-        .filter(
-            DocumentShare.document_id == document.id,
-            DocumentShare.shared_with_user_id == target_user.id,
-        )
-        .first()
+    share = DocumentShare(
+        document_id=document.id,
+        shared_by_id=current_user.id,
+        shared_to_id=target_user.id if target_user else None,
+        permission=payload.permission,
+        status="approved",  # Auto-approve for now as per simple flow
+        message=payload.message,
     )
-
-    if existing:
-        existing.permission = payload.permission
-        existing.status = "approved"
-        share = existing
-    else:
-        share = DocumentShare(
-            document_id=document.id,
-            shared_with_user_id=target_user.id,
-            permission=payload.permission,
-            status="approved",
-        )
-        db.add(share)
-
+    db.add(share)
     db.commit()
     db.refresh(share)
 
     return DocumentShareOut(
         id=share.id,
         document_id=share.document_id,
-        shared_with_user_id=share.shared_with_user_id,
-        shared_with_email=target_user.email,
+        shared_by_id=share.shared_by_id,
+        shared_to_id=share.shared_to_id,
+        shared_to_name=target_user.full_name if target_user else None,
+        shared_to_email=target_user.email if target_user else None,
         permission=share.permission,
         status=share.status,
+        message=share.message,
         shared_at=share.shared_at,
     )
 
@@ -744,15 +723,16 @@ def list_document_shares(
 
     results = []
     for share in shares:
-        user = db.query(User).filter(User.id == share.shared_with_user_id).first()
+        target_user = db.query(User).filter(User.id == share.shared_to_id).first() if share.shared_to_id else None
         results.append(
             DocumentShareOut(
                 id=share.id,
                 document_id=share.document_id,
-                shared_with_user_id=share.shared_with_user_id,
-                shared_with_email=user.email if user else None,
-                permission=share.permission,
-                status=share.status,
+                shared_by_id=share.shared_by_id,
+                shared_to_id=share.shared_to_id,
+                shared_to_name=target_user.full_name if target_user else None,
+                shared_to_email=target_user.email if target_user else None,
+                message=share.message,
                 shared_at=share.shared_at,
             )
         )

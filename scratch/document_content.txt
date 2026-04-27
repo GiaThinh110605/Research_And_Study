@@ -1,0 +1,848 @@
+5/26/2026
+FIT -DS
+     
+Research And Study
+ĐỒ ÁN MÔN HỌC
+PHÁT TRIỂN ỨNG DỤNG WEB
+Tên đề tài: Research And Study
+Nhóm: 6
+Lớp: DHKHDL19A
+Giảng viên: Trương Vĩnh Linh
+Sinh viên:
+- 23703881 - Lâm Gia Thịnh
+- 23677361 - Nguyễn Tuấn Anh
+- 23637321 - Khưu Minh Nhật
+- 23634341 - Nguyễn Hà Mạnh Khang
+MỤC LỤC
+1. GIỚI THIỆU ĐỀ TÀI
+4
+1.1 Mô tả bài toán
+4
+1.2 Mục tiêu hệ thống
+4
+1.3 Phạm vi hệ thống
+4
+2. PHÂN TÍCH YÊU CẦU HỆ THỐNG
+4
+2.1 Actors
+4
+2.2 Danh sách Use Case
+4
+2.3 Use Case Diagram
+4
+2.4 Đặc tả Use Case
+4
+3. THIẾT KẾ HỆ THỐNG
+4
+3.1 System Architecture
+4
+3.2 Database Design
+4
+3.3 UI Design
+5
+4. TRIỂN KHAI HỆ THỐNG
+5
+4.1 Môi trường phát triển
+5
+4.2 Cấu trúc hệ thống
+5
+4.3 Chức năng đã triển khai
+5
+4.4 API thiết kế
+5
+4.5 Giao diện đã triển khai
+5
+4.6 Luồng hoạt động hệ thống
+5
+7. SỬ DỤNG AI TRONG ĐỒ ÁN
+6
+7.1 AI Tools
+6
+7.2 Prompt sử dụng
+6
+7.3 Đánh giá AI
+6
+8. PHÂN CÔNG NHÓM
+6
+9. KẾT LUẬN
+6
+10. TÀI LIỆU THAM KHẢO
+6
+1. GIỚI THIỆU ĐỀ TÀI
+1.1 Mô tả bài toán
+- Bối cảnh: 
+Sinh viên gặp khó khăn trong việc quản lý tài liệu học tập, thảo luận và theo dõi tiến độ học tập (GPA).
+- Vấn đề: 
+Các ứng dụng rời rạc, không tập trung, thiếu tính tương tác trực tiếp trên tài liệu.
+- Giải pháp
+: Xây dựng nền tảng học tập tập trung, thông minh và dễ sử dụng dành riêng cho sinh viên IUH.
+1.2 Mục tiêu hệ thống
+- Tập trung hóa:
+ Xây dựng nền tảng quản lý tài liệu và học tập tập trung cho sinh viên.
+- Thông minh hóa:
+ Ứng dụng AI để tóm tắt, tạo sơ đồ tư duy và giải đáp thắc mắc từ tài liệu.
+- Tăng cường tương tác:
+ Tạo môi trường thảo luận và chia sẻ tài liệu giữa người dùng.
+- Hỗ trợ đánh giá:
+ Cung cấp công cụ học Flashcard, làm bài test và theo dõi tiến độ học tập (GPA).
+- Tối ưu quản lý:
+ Giúp giảng viên và Admin quản lý người dùng, học liệu và kết quả hiệu quả.
+1.3 Phạm vi hệ thống 
+Bao gồm:
+Quản lý tài khoản:
+ Đăng ký, đăng nhập và phân quyền (Student, Lecturer, Admin).
+Xử lý tài liệu & AI:
+ Tải lên, xem tài liệu, tóm tắt, tạo sơ đồ tư duy và hỏi đáp AI.
+Công cụ học tập:
+ Hệ thống Flashcard, làm bài test trắc nghiệm và tính điểm GPA.
+Tương tác xã hội:
+ Thảo luận trực tiếp và chia sẻ tài liệu học tập.
+Quản trị hệ thống:
+ Quản lý người dùng, ngân hàng câu hỏi và thống kê kết quả.
+ 
+Không bao gồm:
+Thanh toán:
+ Không hỗ trợ các giao dịch mua bán tài liệu.
+Live Stream:
+ Không bao gồm tính năng giảng dạy trực tuyến qua video.
+Soạn thảo văn bản:
+ Không thay thế các trình soạn thảo chuyên sâu như MS Word/Google Docs.
+2. PHÂN TÍCH YÊU CẦU HỆ THỐNG
+2.1 Actors
+- User
+- Student (Kế thừa User)
+- Lecturer (Kế thừa User)
+- Admin
+2.2 Danh sách Use Case
+ID
+Use Case Name
+Actors
+Description
+UC01
+Đăng ký tài khoản
+Student, Lecturer
+Use Case mô tả quy trình Student hoặc Lecturer tạo tài khoản mới để truy cập vào hệ thống ứng dụng Web e-learning.
+Admin không được phép tự đăng ký
+ qua chức năng này.
+UC02
+Đăng nhập tài khoản
+Student, Lecturer, Admin
+Use Case mô tả quy trình người dùng (Student, Lecturer, Admin) đăng nhập vào hệ thống bằng tên đăng nhập và mật khẩu để truy cập các chức năng tương ứng.
+UC03
+Đăng xuất
+Student, Lecturer, Admin
+Use Case mô tả quy trình người dùng thoát khỏi phiên làm việc hiện tại và trở về trang đăng nhập.
+UC04
+Thảo luận tài liệu
+Student, Lecturer
+Use Case cho phép Student và Lecturer thảo luận, bình luận, trao đổi ý kiến về một tài liệu cụ thể trong hệ thống.
+UC05
+Chia sẻ tài liệu
+Student, Lecturer
+Use Case cho phép Student và Lecturer chia sẻ tài liệu (file, link, tài nguyên học tập) với người dùng khác trong hệ thống.
+UC06
+Upload tài liệu 
+Student, Lecturer 
+Use Case mô tả quy trình Student hoặc Lecturer tải tài liệu + metadata; hệ thống validate type/size, lưu file, tạo record CSDL và trả DocumentID/URL.
+UC07
+Xem tài liệu 
+Student, Lecturer
+Use Case mô tả quy trình Student/Lecturer tìm kiếm/lọc và mở tài liệu kèm metadata; hệ thống check quyền public/private/share, xem PDF hoặc tải tệp gốc.
+UC08
+Tóm tắt tài liệu 
+Student, Lecturer 
+Use Case mô tả quy trình Student/Lecturer yêu cầu AI tóm tắt; hệ thống extract/clean text, gọi LLM tạo summary theo tiêu chí và lưu CSDL theo DocumentID.
+UC09
+Tạo sơ đồ tư duy 
+Student, Lecturer 
+Use Case mô tả quy trình Student/Lecturer yêu cầu AI tạo mindmap; hệ thống extract text, phân tích chương-mục, sinh JSON tree và lưu CSDL theo DocumentID.
+UC10
+Đặt câu hỏi từ tài liệu 
+Student, Lecturer
+Use Case mô tả quy trình Student/Lecturer đặt câu hỏi theo DocumentID; hệ thống validate quyền/nội dung, lưu CSDL kèm người hỏi/thời điểm và hiển thị Q&A để GV phản hồi. 
+UC11
+Tạo flashcard
+Student
+Use case cho phép Student tạo flashcard phục vụ việc học, có thể nhập thủ công hoặc tạo tự động từ tài liệu bằng AI
+UC12
+Học flashcard
+Student
+Use Case cho phép Student học flashcard theo từng thẻ, lật thẻ để xem đáp án và theo dõi tiến độ ghi nhớ
+UC13
+Làm bài test trắc nghiệm
+Student
+Use case cho phép Student thực hiện bài kiểm tra trắc nghiệm từ hệ thống và nhận điểm số sau khi nộp bài
+UC14
+Xem kết quả bài test
+Student
+Use Case cho phép Student xem lại kết quả các bài test đã làm, bao gồm điểm số và chi tiết câu trả lời đúng/sai
+UC15
+Tính GPA
+Student
+Use Case cho phép Student nhập điểm các môn học và hệ thống tính toán GPA để theo dõi kết quả học tập
+UC16
+Tạo bài test / câu hỏi 
+Lecturer
+ 
+Cho phép Giảng viên tạo các bộ câu hỏi trắc nghiệm hoặc đề thi từ tài liệu học tập (áp dụng mô hình Document-to-Learning Kit) 
+UC17
+Xem kết quả sinh viên 
+Lecturer
+Giảng viên theo dõi điểm số, lịch sử làm bài và thống kê chi tiết kết quả của sinh viên đối với các bài kiểm tra đã tạo. 
+UC18
+Quản lý người dùng 
+Admin 
+Admin thực hiện các thao tác quản trị tài khoản như tìm kiếm, khóa/mở khóa hoặc cập nhật thông tin người dùng trong hệ thống. 
+UC19
+Quản lý Thảo luận 
+Admin 
+Admin kiểm duyệt và gỡ bỏ các bình luận, nội dung trao đổi độc hại/vi phạm nội quy trong diễn đàn học tập. 
+2.3 Use Case Diagram
+2.4 Đặc tả Use Case
+Use Case ID: UC01(Đăng ký tài khoản)
+Actors: Student, Lecturer
+Main Flow: 
+Người dùng chọn nút 
+“Đăng ký”
+ trên trang chủ hoặc trang đăng nhập.
+Hệ thống hiển thị form Đăng ký.
+Người dùng nhập thông tin: Họ và tên, Tên đăng nhập (Username), Email, Mật khẩu, Xác nhận mật khẩu, Vai trò (Student hoặc Lecturer).
+Người dùng tick đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.
+Người dùng nhấn nút 
+“Đăng ký”
+.
+Hệ thống kiểm tra dữ liệu hợp lệ.
+Hệ thống tạo tài khoản và lưu vào cơ sở dữ liệu.
+Hệ thống hiển thị thông báo “Đăng ký thành công!” và chuyển hướng đến trang Đăng nhập.
+Tiền điều kiện:
+Người dùng chưa có tài khoản trong hệ thống.
+Người dùng đang truy cập trang chủ hoặc trang đăng nhập của hệ thống.
+Hậu điều kiện
+:
+Tài khoản mới được tạo thành công và lưu vào cơ sở dữ liệu.
+Người dùng được tự động chuyển hướng đến trang Đăng nhập.
+Use Case ID: UC02(Đăng nhập tài khoản)
+Actors:
+ Student, Lecturer, Admin
+Main Flow:
+Người dùng truy cập trang chủ hoặc trang đăng nhập của hệ thống.
+Hệ thống hiển thị form Đăng nhập.
+Người dùng nhập 
+Tên đăng nhập (Username)
+ và 
+Mật khẩu
+.
+Người dùng nhấn nút 
+“Đăng nhập”
+.
+Hệ thống kiểm tra thông tin đăng nhập.
+Nếu thông tin hợp lệ, hệ thống xác thực thành công, tạo phiên làm việc (session) và chuyển hướng người dùng đến trang phù hợp theo vai trò (Dashboard của Student, Lecturer hoặc Admin).
+Hệ thống hiển thị thông báo “Đăng nhập thành công!”.
+Tiền điều kiện:
+Người dùng đã có tài khoản trong hệ thống.
+Người dùng đang truy cập trang chủ hoặc trang đăng nhập.
+Hậu điều kiện:
+Người dùng đã đăng nhập thành công và có thể truy cập các chức năng tương ứng với vai trò của mình.
+Hệ thống ghi nhận phiên đăng nhập.
+Use Case ID: UC03(Đăng xuất tài khoản)
+Actors:
+ Student, Lecturer, Admin
+Main Flow:
+Người dùng đang đăng nhập và chọn nút 
+“Đăng xuất”
+ 
+Hệ thống xác nhận yêu cầu đăng xuất.
+Hệ thống hủy phiên làm việc hiện tại (destroy session).
+Hệ thống chuyển hướng người dùng về trang chủ hoặc trang đăng nhập.
+Hệ thống hiển thị thông báo “Đăng xuất thành công”.
+Tiền điều kiện:
+Người dùng đang đăng nhập vào hệ thống.
+Hậu điều kiện:
+Phiên làm việc của người dùng đã bị hủy.
+Người dùng không còn truy cập được vào các chức năng yêu cầu đăng nhập.
+Use Case ID: UC04 (Thảo luận tài liệu)
+Actors:
+ Student, Lecturer
+Main Flow:
+Người dùng chọn một tài liệu cụ thể từ danh sách tài liệu hoặc trang chi tiết tài liệu.
+Hệ thống hiển thị phần 
+Thảo luận
+ (comment section) của tài liệu đó.
+Người dùng nhập nội dung bình luận/thảo luận vào ô văn bản.
+Người dùng có thể đính kèm file hoặc hình ảnh.
+Người dùng nhấn nút 
+“Gửi”
+ hoặc nhấn 
+phím Tab
+.
+Hệ thống kiểm tra và lưu bình luận vào cơ sở dữ liệu.
+Hệ thống hiển thị bình luận mới ngay lập tức (real-time hoặc refresh) kèm theo thông tin người đăng (tên, vai trò, thời gian).
+Các người dùng khác có thể xem và trả lời bình luận.
+Tiền điều kiện:
+Người dùng đã đăng nhập thành công.
+Tài liệu được chọn tồn tại trong hệ thống.
+Hậu điều kiện:
+Bình luận mới được lưu trữ và hiển thị công khai cho tất cả người dùng có quyền xem
+Use Case ID:
+ UC05
+Use Case Name:
+ Chia sẻ tài liệu
+Actors:
+ Student, Lecturer
+Main Flow:
+Người dùng chọn tài liệu muốn chia sẻ (có thể là tài liệu đã upload hoặc tài liệu công khai).
+Người dùng nhấn nút 
+“Chia sẻ”
+ trên trang chi tiết tài liệu hoặc trong danh sách.
+Hệ thống hiển thị form chia sẻ với các lựa chọn:
+Chia sẻ công khai
+Chia sẻ với người dùng cá nhân (theo username/email)
+Người dùng chọn đối tượng nhận và (tùy chọn) thêm lời nhắn.
+Người dùng nhấn nút 
+“Xác nhận chia sẻ”
+.
+Hệ thống lưu thông tin chia sẻ và gửi thông báo đến người nhận.
+Hệ thống hiển thị thông báo “Chia sẻ tài liệu thành công”.
+Tiền điều kiện:
+Người dùng đã đăng nhập thành công.
+Người dùng có quyền chia sẻ tài liệu (là chủ sở hữu hoặc có quyền chia sẻ).
+Hậu điều kiện:
+Tài liệu được chia sẻ thành công đến đối tượng đã chọn.
+Người nhận có thể xem tài liệu theo quyền được cấp.
+Use case ID: 
+UC06
+Use Case Name: 
+UC06 – Upload tài liệu 
+Actors:
+ Student/Lecturer 
+Main Flow:
+User: Truy cập chức năng “Upload tài liệu” từ hệ thống (ví dụ: trang Upload).
+System: Hiển thị form tải lên tài liệu (các trường: Tiêu đề, Mô tả, Môn học/Chủ đề, Công khai/Private, Chọn tệp).
+User: Nhập thông tin metadata của tài liệu và chọn trạng thái công khai (public/private).
+User: Chọn tệp tài liệu từ thiết bị (hoặc kéo-thả tệp vào vùng upload).
+System: Kiểm tra dữ liệu đầu vào:
+Tiêu đề không rỗng (sau khi chuẩn hoá khoảng trắng).
+Tệp có định dạng được hỗ trợ (ví dụ: PDF, DOC/DOCX, PPT/PPTX, XLS/XLSX, TXT).
+Tệp không vượt quá giới hạn dung lượng theo cấu hình hệ thống (ví dụ 10MB trong môi trường hiện tại).
+User: Nhấn nút “Tải lên/Upload”.
+System: Thực hiện tải lên: đọc nội dung tệp, sinh tên lưu trữ duy nhất, lưu tệp vào vùng lưu trữ của hệ thống.
+System: Tạo bản ghi tài liệu trong CSDL, gắn đường dẫn tệp (file URL), loại tệp (file type), người tải lên (uploader), và metadata đã nhập.
+System: Trả kết quả “Upload thành công”, cung cấp DocumentID và chuyển hướng người dùng đến trang chi tiết tài liệu (UC07).
+Tiền điều kiện:
+Người dùng đã đăng nhập hợp lệ với vai trò Student hoặc Lecturer.
+Người dùng có quyền sử dụng chức năng tải lên (không bị khóa/không bị hạn chế bởi chính sách hệ thống).
+Tệp nguồn tồn tại trên thiết bị người dùng và có thể được truy cập để tải lên.
+Hậu điều kiện:
+Nếu thành công:
+Tệp tài liệu được lưu vào hệ thống lưu trữ.
+Bản ghi tài liệu (metadata) được tạo trong CSDL với các thuộc tính: tiêu đề, mô tả, môn học/chủ đề, loại tệp, trạng thái công khai, người tải lên, thời điểm tạo.
+Nếu thất bại:
+Không tạo bản ghi tài liệu trong CSDL; không để lại tệp “mồ côi” không gắn metadata (hoặc hệ thống phải dọn dẹp tệp đã lưu nếu giao dịch CSDL thất bại).
+Use case ID: 
+UC07
+Use Case Name:
+ UC07 – Xem tài liệu 
+Actors: 
+Student/Lecturer 
+Main Flow:
+User: Chọn một tài liệu từ thư viện tài liệu hoặc từ liên kết trang chi tiết.
+System: Nhận DocumentID và truy vấn thông tin tài liệu từ CSDL.
+System: Kiểm tra tài liệu tồn tại.
+System: Kiểm tra quyền truy cập (authorization) dựa trên trạng thái public/private và quan hệ chia sẻ.
+System: Hiển thị trang chi tiết tài liệu, bao gồm: tiêu đề, mô tả, môn học/chủ đề, người đăng, loại tệp, thời điểm tạo/cập nhật.
+System: Hiển thị nội dung tài liệu theo loại  tệp:
+Nếu là PDF (hoặc định dạng hỗ trợ xem trực tiếp) → hiển thị trong trình xem (iframe/viewer).
+Nếu không hỗ trợ xem trực tiếp → hiển thị thông báo và cung cấp nút mở/tải tệp gốc.
+User: Thực hiện các thao tác tiếp theo từ trang chi tiết (ví dụ: chia sẻ, thảo luận, đặt câu hỏi…), hệ thống điều hướng đến Use Case tương ứng.
+Tiền điều kiện:
+Tài liệu (Document) tồn tại trong hệ thống.
+Người dùng có quyền truy cập tài liệu theo một trong các điều kiện:
+Tài liệu công khai; hoặc
+Người dùng là người tải lên; hoặc
+Tài liệu đã được chia sẻ hợp lệ cho người dùng (được phê duyệt/được cấp quyền xem).
+Hậu điều kiện:
+Không phát sinh thay đổi dữ liệu lõi của tài liệu (nếu chỉ xem).
+Hệ thống ghi nhận/hiển thị dữ liệu chi tiết tài liệu cho người dùng (có thể kèm log truy cập nếu hệ thống có cơ chế ghi log).
+Luồng sự kiện phụ:
+E1 – Không tìm thấy tài liệu: Ở bước 3 → System thông báo “Tài liệu không tồn tại”.
+E2 – Không đủ quyền truy cập: Ở bước 4 → System thông báo “Không có quyền xem tài liệu”.
+E3 – Lỗi tải/hiển thị nội dung: Ở bước 6 → System fallback sang phương án tải về/mở tệp gốc và thông báo lỗi hiển thị.
+Use case ID: 
+UC08
+Use Case Name:
+ UC08 – Tóm tắt tài liệu 
+Actors:
+ Student/Lecturer 
+Main Flow:
+User: Mở trang chi tiết tài liệu và chọn chức năng “Tóm tắt tài liệu”.
+System: Kiểm tra quyền truy cập tài liệu theo DocumentID.
+System: Kiểm tra trong CSDL xem tài liệu đã có bản tóm tắt hay chưa.
+System: Nếu chưa có (hoặc người dùng yêu cầu tạo lại), hệ thống trích xuất văn bản từ tệp tài liệu và chuẩn hoá dữ liệu (loại bỏ nhiễu, xử lý encoding).
+System: Gửi văn bản (và tham số cấu hình tóm tắt nếu có) tới AI Service để thực hiện NLP summarization.
+AI Service: Sinh nội dung tóm tắt và trả về kết quả cho hệ thống.
+System: Lưu bản tóm tắt vào CSDL (gắn DocumentID, đánh dấu nguồn tạo “AI”, thời điểm tạo).
+System: Hiển thị tóm tắt cho người dùng trên giao diện, đồng thời cho phép người dùng tiếp tục các thao tác học tập khác.
+Tiền điều kiện:
+Người dùng đã đăng nhập (tối thiểu để gắn hoạt động với tài khoản và kiểm soát truy cập).
+Tài liệu tồn tại và người dùng có quyền truy cập theo chính sách (public/owner/được chia sẻ).
+Hệ thống có khả năng trích xuất văn bản từ loại tệp tương ứng (hoặc có bản text đã được chuẩn bị trước).
+Dịch vụ AI sẵn sàng (hoặc hệ thống có cơ chế thay thế/caching).
+Hậu điều kiện:
+Nếu thành công:
+Bản tóm tắt được tạo và lưu trong CSDL, liên kết 1–1 với tài liệu (DocumentID).
+Kết quả tóm tắt hiển thị cho người dùng tại ngữ cảnh tài liệu.
+Nếu thất bại:
+Không tạo/cập nhật bản tóm tắt; hệ thống trả lỗi và giữ nguyên trạng thái dữ liệu.
+Luồng sự kiện phụ:
+Ở bước 3: Nếu thiếu nội dung -> hệ thống hiển thị lỗi và yêu cầu nhập đầy đủ.E1 – Không đủ quyền truy cập tài liệu: Ở bước 2 → System từ chối xử lý.
+E2 – Không trích xuất được văn bản: Ở bước 4 (tệp scan ảnh/không có text/định dạng không hỗ trợ) → System thông báo lỗi và khuyến nghị đổi định dạng hoặc cung cấp bản text.
+E3 – AI Service lỗi/timeout: Ở bước 5–6 → System trả lỗi “không thể tạo tóm tắt”, không lưu kết quả.
+E4 – Tài liệu quá lớn: Ở bước 5 → System áp dụng chính sách cắt đoạn/chunking hoặc từ chối và yêu cầu giới hạn phạm vi.
+Use case ID: 
+UC09
+Use Case Name:
+ UC09 – Tạo sơ đồ tư duy 
+Actors:
+ Student/Lecturer 
+Main Flow:
+User: Mở trang chi tiết tài liệu và chọn chức năng “Tạo sơ đồ tư duy”.
+System: Kiểm tra quyền truy cập tài liệu.
+System: Kiểm tra CSDL xem mindmap của tài liệu đã tồn tại chưa.
+System: Nếu chưa có (hoặc người dùng yêu cầu tạo lại), hệ thống trích xuất văn bản từ tài liệu và phân đoạn theo cấu trúc nội dung (tiêu đề, mục, các ý chính).
+System: Gửi dữ liệu đã cấu trúc sang AI Service để sinh mindmap (root topic, các nhánh chính/phụ, quan hệ phân cấp).
+AI Service: Trả về mindmap ở dạng cấu trúc (ví dụ JSON) hoặc outline có thể chuyển đổi.
+System: Kiểm tra tính hợp lệ của cấu trúc mindmap (không rỗng, không lỗi định dạng), lưu vào CSDL gắn DocumentID.
+System: Render và hiển thị mindmap cho người dùng; cho phép người dùng tiếp tục dùng làm tài liệu học tập/ôn tập.
+Tiền điều kiện:
+Người dùng đã đăng nhập.
+Tài liệu tồn tại và người dùng có quyền truy cập.
+Hệ thống có thể trích xuất/chuẩn hoá nội dung văn bản để làm đầu vào cho AI.
+AI Service sẵn sàng thực thi yêu cầu tạo mindmap.
+Hậu điều kiện:
+Nếu thành công:
+Mindmap được tạo và lưu trong CSDL, liên kết 1–1 với tài liệu (DocumentID).
+Mindmap hiển thị được trên giao diện (dạng sơ đồ hoặc dạng outline).
+Nếu thất bại:
+Không tạo/cập nhật mindmap; dữ liệu hệ thống giữ nguyên.
+Luồng sự kiện phụ:
+E1 – Không đủ quyền: Ở bước 2 → từ chối xử lý.
+E2 – Không trích xuất được nội dung: Ở bước 4 → thông báo lỗi và dừng.
+E3 – AI tạo cấu trúc không hợp lệ/timeout: Ở bước 5–6 → System không lưu kết quả và thông báo lỗi.
+E4 – Mindmap quá lớn/khó hiển thị: Ở bước 8 → System fallback sang hiển thị dạng outline và đề nghị giảm mức chi tiết.
+Use case ID: 
+UC10
+Use Case Name: 
+UC10 – Đặt câu hỏi từ tài liệu 
+Main Flow:
+User: Mở trang chi tiết một tài liệu và chuyển tới mục “Đặt câu hỏi”.
+System: Kiểm tra tài liệu tồn tại và quyền truy cập của người dùng.
+System: Hiển thị form nhập câu hỏi (text) và danh sách các câu hỏi hiện có của tài liệu.
+User: Nhập nội dung câu hỏi.
+System: Thực hiện validation: nội dung không rỗng, độ dài hợp lệ, loại bỏ khoảng trắng thừa.
+User: Nhấn nút “Gửi câu hỏi”.
+System: Lưu câu hỏi vào CSDL (DocumentID, UserID, content, created_at).
+System: Hiển thị thông báo “Gửi câu hỏi thành công” và cập nhật danh sách Q&A (hiển thị câu hỏi mới).
+User: (Tuỳ chọn) Lecturer hoặc người dùng khác nhập và gửi câu trả lời; hệ thống lưu và hiển thị câu trả lời theo chính sách hệ thống.
+Tiền điều kiện:
+Người dùng đã đăng nhập hợp lệ.
+Tài liệu tồn tại và người dùng có quyền xem tài liệu.
+Nội dung câu hỏi do người dùng nhập đáp ứng yêu cầu tối thiểu (không rỗng, không vượt giới hạn độ dài theo quy định).
+Hậu điều kiện:
+Nếu thành công: Câu hỏi được lưu vào CSDL, liên kết với DocumentID và UserID; danh sách Q&A cập nhật hiển thị câu hỏi mới.
+Nếu thất bại: Không lưu câu hỏi; hệ thống trả thông báo lỗi rõ ràng.
+Luồng sự kiện phụ:
+E1 – Chưa đăng nhập: Ở bước 1/6 → System yêu cầu đăng nhập trước khi gửi.
+E2 – Tài liệu không tồn tại: Ở bước 2 → System trả “Tài liệu không tồn tại”.
+E3 – Không đủ quyền xem tài liệu: Ở bước 2 → System từ chối, không cho tạo câu hỏi.
+E4 – Nội dung câu hỏi rỗng/không hợp lệ: Ở bước 5 → System hiển thị lỗi validation.
+E5 – Lỗi lưu CSDL: Ở bước 7 → System trả lỗi, không tạo bản ghi câu hỏi.
+E6 – Gợi ý AI thất bại (nếu bật AI suggestion): System chỉ tắt phần gợi ý và không ảnh hưởng luồng đặt câu hỏi chính.
+Use case ID: 
+UC11
+Use Case Name:
+ Tạo Flashcard
+Actors: 
+Student
+Main Flow:
+Student truy cập chức năng “Tạo flashcard”.
+Hệ thống hiển thị form tạo flashcard.
+Student nhập nội dung gồm: mặt trước (câu hỏi) và mặt sau (đáp án).
+Student có thể chọn tạo thủ công hoặc tạo từ tài liệu bằng AI (API của Gemini).
+Student nhấn nút “Lưu flashcard”.
+Hệ thống kiểm tra dữ liệu hợp lệ.
+Hệ thống lưu flashcard vào cơ sở dữ liệu
+Hệ thống hiển thị thông báo “Tạo flashcard thành công”
+Tiền điều kiện:
+Student đã đăng nhập hệ thống.
+Hậu điều kiện:
+Flashcard được lưu vào hệ thống và sẵn sàng để sử dụng.
+Luồng sự kiện phụ:
+Ở bước 3: Nếu thiếu nội dung -> hệ thống hiển thị lỗi và yêu cầu nhập đầy đủ.
+Use case ID: 
+UC12
+Use Case Name:
+ Học Flashcard
+Actors: 
+Student
+Main Flow:
+Student truy cập chức năng “Học flashcard”.
+Hệ thống hiển thị danh sách bộ flashcard.
+Student chọn một bộ flashcard.
+Hệ thống hiển thị từng thẻ (mặt trước).
+Student nhấn “Lật thẻ” để xem đáp án.
+Student đánh dấu mức độ ghi nhớ (Nhớ / Chưa nhớ).
+Hệ thống ghi nhận tiến độ học.
+Hệ thống chuyển sang thẻ tiếp theo cho đến khi hoàn thành.
+Hệ thống hiển thị thống kê kết quả học.
+Tiền điều kiện:
+Student đã đăng nhập hệ thống.
+Có ít nhất một bộ flashcard.
+Hậu điều kiện:
+Tiến độ học flashcard được lưu lại. 
+Luồng sự kiện phụ:
+Ở bước 2: Nếu không có flashcard -> hiển thị “Chưa có dữ liệu”.
+Use case ID: 
+UC13
+Use Case Name:
+ Làm bài test trắc nghiệm
+Actors: 
+Student
+Main Flow:
+Student truy cập danh sách bài test.
+Student chọn một bài test.
+Hệ thống hiển thị thông tin bài test (thời gian, số câu hỏi).
+Student nhấn “Bắt đầu”.
+Hệ thống hiển thị các câu hỏi và đáp án.
+Student chọn đáp án cho từng câu hỏi.
+Student nhấn “Nộp bài”.
+Hệ thống chấm điểm tự động.
+Hệ thống hiển thị kết quả bài test.
+Tiền điều kiện:
+Student đã đăng nhập hệ thống.
+Bài test tồn tại và khả dụng.
+Hậu điều kiện:
+Kết quả bài test được lưu vào hệ thống.
+Luồng sự kiện phụ:
+Ở bước 6: Nếu chưa trả lời hết -> hệ thống cảnh báo.
+Hết thời gian -> hệ thống tự động nộp bài.
+Use case ID: 
+UC14
+Use Case Name:
+ Xem kết quả bài test
+Actors: 
+Student
+Main Flow:
+Student truy cập mục “Kết quả học tập”.
+Hệ thống hiển thị danh sách bài test đã làm.
+Student chọn một bài test.
+Hệ thống hiển thị chi tiết:
+Điểm số
+Câu đúng/sai
+Đáp án đúng
+Thời gian làm bài
+Student xem lại kết quả.
+Tiền điều kiện:
+Student đã đăng nhập hệ thống.
+Có dữ liệu bài test đã làm.
+Hậu điều kiện:
+Không thay đổi dữ liệu hệ thống.
+Luồng sự kiện phụ:
+Ở bước 2: Nếu chưa có kết quả -> hiển thị “Chưa có dữ liệu”. 
+Use case ID: 
+UC15
+Use Case Name:
+ Tính GPA
+Actors: 
+Student
+Main Flow:
+Student truy cập chức năng “Tính GPA”.
+Hệ thống tự động lấy dữ liệu:
+Các bài test đã làm
+Điểm số tương ứng
+Hệ thống hiển thị danh sách môn học + điểm (mapping từ test)
+Student có thể chỉnh sửa hoặc bổ sung điểm môn
+Student nhấn “Tính GPA”.
+Hệ thống tính GPA dựa trên:
+Số tín chỉ
+Điểm từng môn
+Hệ thống hiển thị GPA hiện tại.
+Tiền điều kiện:
+Student đã đăng nhập hệ thống.
+Có dữ liệu học tập hoặc bài test
+Hậu điều kiện:
+GPA phản ánh đúng kết quả học tập tổng hợp
+Luồng sự kiện phụ:
+Nếu chưa có dữ liệu -> hiển thị  “Chưa có dữ liệu học tập
+Use Case ID: UC16 (Tạo bài test / câu hỏi)
+Actors: Lecturer
+Main Flow: 
+1. Giảng viên chọn chức năng "Tạo bài kiểm tra".
+2. Hệ thống hiển thị form điền thông tin cơ bản.
+3. Giảng viên nhập Tiêu đề, Môn học, Thời gian làm bài.
+4. Giảng viên chọn phương thức: tạo thủ công hoặc tự động bằng AI từ tài liệu.
+5. Giảng viên kiểm tra lại bộ câu hỏi, thiết lập đáp án đúng và nhấn "Lưu bài kiểm tra".
+6. Hệ thống lưu dữ liệu vào cơ sở dữ liệu và thông báo "Tạo bài kiểm tra thành công".
+Tiền điều kiện:
+Giảng viên đã đăng nhập hệ thống. 
+Hậu điều kiện:
+Bài kiểm tra và danh sách câu hỏi được lưu vào hệ thống và hiển thị trạng thái sẵn sàng.
+Mỗi bài kiểm tra sẽ tạo ra một mã số(random)
+Giảng viên có thể share mã số đó cho sinh viên
+Luồng sự kiện phụ:
+Ở bước 4: Nếu tài liệu bị lỗi hoặc AI không trích xuất được, hệ thống báo lỗi và yêu cầu giảng viên nhập câu hỏi thủ công.
+Ở bước 5: Nếu điền thiếu thông tin bắt buộc hoặc câu hỏi chưa có đáp án, hệ thống hiển thị cảnh báo đỏ tại trường bị thiếu.
+Use Case ID: UC17 (Xem kết quả sinh viên)
+Actors: Lecturer
+Main Flow: 
+1. Giảng viên truy cập mục "Bài kiểm tra đã tạo" và chọn một bài kiểm tra.
+2. Hệ thống hiển thị danh sách sinh viên đã nộp bài kèm điểm số.
+3. Giảng viên chọn xem chi tiết bài làm của một sinh viên.
+4. Hệ thống hiển thị chi tiết câu trả lời của sinh viên, thống kê câu đúng/sai và thời gian hoàn thành.
+Tiền điều kiện:
+Giảng viên đã đăng nhập hệ thống. Bài kiểm tra đã có ít nhất một sinh viên nộp bài.
+Hậu điều kiện:
+Không thay đổi dữ liệu của hệ thống.
+Luồng sự kiện phụ:
+Ở bước 2: Nếu chưa có sinh viên nào hoàn thành bài test, hệ thống hiển thị thông báo "Chưa có dữ liệu kết quả".
+Use Case ID: UC18 (Quản lý người dùng)
+Actors: Admin
+Main Flow: 
+1. Admin truy cập trang 
+Quản lý người dùng
+.
+2. Hệ thống hiển thị Dashboard quản lý gồm:
+- 
+Số liệu thống kê
+: Tổng số người dùng, số lượng Sinh viên và Giảng viên.
+- 
+Danh sách người dùng
+: Hiển thị Họ tên, Email, MSSV/MGV, Vai trò, Trạng thái và Ngày tạo.
+3. Admin thực hiện các thao tác mục tiêu:
+- 
+Tìm kiếm và Lọc
+: Nhập từ khóa (Tên/Email/MSSV) và chọn bộ lọc theo 
+Vai trò
+ (Sinh viên/Giảng viên/Admin) hoặc 
+Trạng thái
+ (Đang hoạt động/Đã khóa). Hệ thống cập nhật danh sách tức thì.
+- 
+Thêm người dùng mới
+: Nhấn nút 
+"+ Thêm người dùng mới"
+, hệ thống hiển thị form nhập liệu. Admin điền thông tin và nhấn "Lưu".
+- 
+Thao tác trên dòng
+: Admin chọn biểu tượng 
+Chỉnh sửa
+ (3 chấm) để cập nhật thông tin 
+4. Hệ thống yêu cầu xác nhận đối với các thay đổi quan trọng.
+5. Admin xác nhận, hệ thống cập nhật cơ sở dữ liệu và hiển thị thông báo thành công.
+Tiền điều kiện:
+Admin đã xác thực và đăng nhập hệ thống.
+Hậu điều kiện:
+Tài khoản mới được khởi tạo hoặc thông tin/trạng thái của người dùng hiện tại được cập nhật thành công trong bảng 
+users
+. 
+Luồng sự kiện phụ:
+Ở bước 3: Nếu không tìm thấy thông tin khớp với từ khóa, hệ thống thông báo "Không tìm thấy người dùng".
+Ở bước 5: Nếu Admin chọn "Hủy", hộp thoại đóng lại và không có thay đổi nào xảy ra.
+Use Case ID: UC19 (Quản lý Thảo luận)
+Actors: Admin
+Main Flow: 
+1. Admin truy cập menu "Quản lý Thảo luận".
+2. Hệ thống hiển thị danh sách các bình luận (ưu tiên hiển thị các bình luận bị user report).
+3. Admin đọc nội dung và chọn thao tác "Xóa bình luận" đối với nội dung độc hại/vi phạm.
+4. Hệ thống yêu cầu xác nhận thao tác.
+5. Admin xác nhận đồng ý.
+6. Hệ thống xóa bình luận khỏi cơ sở dữ liệu và thông báo "Đã xóa bình luận".
+Tiền điều kiện:
+Admin đã đăng nhập hệ thống. Có ít nhất một luồng thảo luận tồn tại.
+Hậu điều kiện:
+Bình luận vi phạm bị xóa vĩnh viễn khỏi hệ thống.
+3. THIẾT KẾ HỆ THỐNG
+3.1 System Architecture
+3.2 Database Design
+3.3 UI Design
+4. TRIỂN KHAI HỆ THỐNG
+4.1 Môi trường phát triển
+Frontend: React Js
+Backend: Fastapi
+Database: Postgres
+Tools: 
+IDE: Visual Studio Code, Antigrivity, Cursor, Codex, Windsurd
+Quản lý package: npm (Frontend), Poetry/Pip (Backend)
+Version Control: Git & GitHub
+API Testing: Swagger UI (tích hợp sẵn trong FastAPI) + Postman
+Text Extraction: PyMuPDF, python-docx
+AI Integration: Google Gemini API
+Containerization (tùy chọn): Docker & Docker Compose (dùng để chạy local)
+4.2 Cấu trúc hệ thống
+Cấu trúc thư mục Backend:
+Cấu trúc thư mục Frontend
+4.3 Chức năng đã triển khai
+Đăng ký
+Đăng nhập
+4.4 API thiết kế
+Method
+API
+Description
+POST
+/api/auth/register
+Đăng ký tài khoản mới (Student hoặc Lecturer) - UC01
+POST
+/api/auth/login
+Đăng nhập vào hệ thống và trả về JWT token - UC02
+POST
+/api/auth/logout
+Đăng xuất và hủy phiên làm việc hiện tại - UC03
+POST
+/api/documents/{document_id}/comments 
+(type=question)
+Thêm bình luận/thảo luận mới vào tài liệu - UC04
+GET
+/api/documents/{document_id}/comments
+Lấy danh sách bình luận của một tài liệu - UC04
+PUT
+/api/comments/{id}
+Cập nhật bình luận người dùng - UC04
+DELETE 
+/api/comments/{id}
+(Sinh viên và admin) Xóa bình luận người dùng - UC04
+POST
+/api/documents/{document_id}/share
+Chia sẻ tài liệu với người dùng khác hoặc công khai - UC05
+POST
+/api/v1/documents
+Tải tài liệu mới lên hệ thống, lưu trữ tệp vật lý và thông tin metadata (Tiêu đề, Môn học, Quyền riêng tư) - 
+UC06
+GET
+/api/v1/documents
+Lấy danh sách tài liệu với các bộ lọc tìm kiếm, môn học, loại file và phân trang - 
+UC07
+GET
+/api/v1/documents/{document_id}
+Lấy thông tin chi tiết của một tài liệu cụ thể theo ID để hiển thị nội dung và công cụ AI - 
+UC07
+POST
+/api/v1/flashcards/
+Tạo flashcard thủ công (front, back) cho một tài liệu - UC11
+POST
+/api/v1/flashcards/generate
+Tạo flashcard bằng AI từ nội dung tài liệu (Gemini) - UC11
+POST
+/api/v1/flashcards/bulk
+Lưu danh sách flashcard (kết hợp AI + manual) sau khi user review - UC11
+GET
+/api/v1/flashcards/?document_id={id}
+Lấy danh sách flashcard theo tài liệu - UC11
+DELETE
+/api/v1/flashcards/{flashcard_id}
+Xóa một flashcard trong danh sách nháp hoặc đã lưu - UC11
+PUT
+/api/v1/flashcards/{flashcard_id}
+Cập nhật nội dung flashcard (front/back) - UC11
+GET
+/api/v1/flashcards/?document_id={id}&skip=0&limit=100
+Lấy danh sách flashcard theo tài liệu để học - UC12
+GET
+/api/v1/flashcards/
+Lấy toàn bộ flashcard của user (khi không truyền document_id) - UC12
+GET
+/api/v1/tests/
+Lấy danh sách bài test (có filter, phân trang) - UC13
+GET
+/api/v1/tests/{test_id}
+Lấy chi tiết bài test và danh sách câu hỏi - UC13
+POST 
+/api/v1/tests/{test_id}/submit
+Nộp bài test và trả về kết quả (score, rank, thời gian) - UC13
+GET
+/api/v1/tests/result/{result_id}
+Xem chi tiết kết quả bài test (điểm, đáp án, thứ hạng) - UC14
+POST
+/api/v1/gpt/calculate
+Tính GPA thông qua các bài test - UC15
+POST
+/api/v1/tests/
+Tạo đề thi/bài kiểm tra mới kèm danh sách câu hỏi (chỉ dành cho Giảng viên/Admin) - 
+UC16
+GET
+/api/v1/tests/{test_id}
+Lấy thông tin chi tiết của một đề thi bao gồm danh sách câu hỏi để làm bài - 
+UC16
+GET
+/api/v1/tests/{test_id}/results
+Lecturer có thể xem kết quả - 
+UC17
+GET
+/api/v1/tests/my-results
+Lấy danh sách lịch sử kết quả các bài thi của cá nhân người dùng đang đăng nhập - 
+UC17
+GET
+/api/v1/tests/{test_id}/results
+Giảng viên xem danh sách kết quả của tất cả sinh viên đã tham gia đề thi đó - 
+UC17
+GET
+/api/v1/users/
+Admin lấy danh sách toàn bộ người dùng để quản lý tài khoản - 
+UC18
+GET
+/api/v1/users/me
+Lấy thông tin cá nhân của người dùng hiện tại đang đăng nhập - 
+UC18
+PUT
+/api/v1/users/{user_id}
+Admin cập nhật thông tin hoặc vai trò cho một người dùng bất kỳ - 
+UC18
+DELETE
+/api/v1/users/{user_id}
+Admin thực hiện xóa tài khoản người dùng khỏi hệ thống - 
+UC18
+GET
+/api/v1/documents/admin/list
+Admin truy xuất danh sách tài liệu đầy đủ để thực hiện kiểm soát nội dung - 
+UC19
+PATCH
+/api/v1/documents/admin/{id}/visibility
+Admin thay đổi trạng thái hiển thị (công khai/ẩn) của tài liệu - 
+UC19
+DELETE
+/api/v1/documents/admin/{id}
+Admin xóa tài liệu vi phạm hoặc không còn sử dụng - 
+UC19
+4.5 Giao diện đã triển khai
+[Chèn screenshot]
+4.6 Luồng hoạt động hệ thống
+[Mô tả sequence / flow]
+5. TEST CASE
+ID
+Use Case
+Input
+Expected
+Result
+6. DEMO HỆ THỐNG
+Demo link:
+User:
+Password:
+Admin:
+Password:
+7. SỬ DỤNG AI TRONG ĐỒ ÁN
+7.1 AI Tools
+Liệt kê công cụ và các trường hợp sử dụng
+7.2 Prompt sử dụng
+7.3 Đánh giá AI
+8. PHÂN CÔNG NHÓM
+Member
+Task
+Thịnh
+Viết báo cáo + hướng dẫn Github cho team
+Làm từ  UC01 -> UC05 (code và test, viết báo cáo)
+Anh
+Làm từ UC06 -> UC10 (code, test, viết báo cáo)
+Khang
+Làm từ UC11 -> UC15 (code, test, viết báo cáo)
+Nhật
+Làm từ UC16 -> UC21 (code, test, viết báo cáo)
+9. KẾT LUẬN
+10. TÀI LIỆU THAM KHẢO
+[1] ................................................

@@ -8,7 +8,7 @@ from app.models.document import Document
 from app.models.summary import Summary
 from app.models.mindmap import Mindmap
 from app.models.flashcard import Flashcard
-from app.schemas.ai import AIRequest, SummaryOut, MindmapOut, FlashcardOut, FlashcardGenerateRequest
+from app.schemas.ai import AIRequest, SummaryOut, MindmapOut, FlashcardGenerateRequest
 
 router = APIRouter()
 
@@ -79,7 +79,7 @@ def generate_mindmap(
     db.refresh(mindmap)
     return mindmap
 
-@router.post("/flashcards/generate/{document_id}", response_model=List[FlashcardOut])
+@router.post("/flashcards/generate/{document_id}")
 def generate_flashcards(
     document_id: int,
     payload: FlashcardGenerateRequest,
@@ -92,20 +92,16 @@ def generate_flashcards(
 
     # Mock AI generation of flashcards
     num_cards = payload.count or 5
-    flashcards = []
+    flashcards_data = []
     for i in range(num_cards):
-        card = Flashcard(
-            document_id=document_id,
-            user_id=current_user.id,
-            front=f"Câu hỏi {i+1} về {document.title}?",
-            back=f"Đáp án {i+1} chi tiết cho câu hỏi này.",
-            difficulty="medium"
-        )
-        db.add(card)
-        flashcards.append(card)
+        flashcard_data = {
+            "front": f"Câu hỏi {i+1} về {document.title}?",
+            "back": f"Đáp án {i+1} chi tiết cho câu hỏi này.",
+            "difficulty": "medium"
+        }
+        flashcards_data.append(flashcard_data)
     
-    db.commit()
-    for card in flashcards:
-        db.refresh(card)
-    
-    return flashcards
+    return {
+        "message": f"Generated {num_cards} flashcards for document '{document.title}'",
+        "flashcards": flashcards_data
+    }

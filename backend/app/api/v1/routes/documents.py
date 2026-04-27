@@ -15,10 +15,7 @@ from app.models.document import Document
 from app.models.document_share import DocumentShare
 from app.models.discussion import Discussion
 from app.models.flashcard import Flashcard
-from app.models.highlight import Highlight
 from app.models.mindmap import Mindmap
-from app.models.plagiarism_report import PlagiarismReport
-from app.models.question import Question
 from app.models.summary import Summary
 from app.models.test import Test
 from app.models.test_result import TestResult
@@ -128,13 +125,9 @@ def _delete_document_dependencies(db: Session, document_id: int) -> None:
             .all()
         ]
         if test_result_ids:
-            db.query(PlagiarismReport).filter(
-                PlagiarismReport.test_result_id.in_(test_result_ids)
+            db.query(TestResult).filter(
+                TestResult.id.in_(test_result_ids)
             ).delete(synchronize_session=False)
-
-        db.query(TestResult).filter(
-            TestResult.test_id.in_(test_ids)
-        ).delete(synchronize_session=False)
 
         db.query(Test).filter(
             Test.id.in_(test_ids)
@@ -148,14 +141,6 @@ def _delete_document_dependencies(db: Session, document_id: int) -> None:
     db.query(Discussion).filter(
         Discussion.document_id == document_id,
         Discussion.parent_id.is_(None),
-    ).delete(synchronize_session=False)
-
-    db.query(Question).filter(
-        Question.document_id == document_id
-    ).delete(synchronize_session=False)
-
-    db.query(Highlight).filter(
-        Highlight.document_id == document_id
     ).delete(synchronize_session=False)
 
     db.query(Flashcard).filter(

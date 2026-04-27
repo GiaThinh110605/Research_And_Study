@@ -23,17 +23,6 @@ class MindmapOut(BaseModel):
     class Config:
         from_attributes = True
 
-class FlashcardOut(BaseModel):
-    id: int
-    document_id: int
-    user_id: int
-    front: str
-    back: str
-    difficulty: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 class FlashcardGenerateRequest(BaseModel):
     count: Optional[int] = 5

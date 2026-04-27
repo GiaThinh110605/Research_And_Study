@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from app.api.v1.deps import get_current_user
 from app.models.base import get_db
 from app.models.document import Document
-from app.models.plagiarism_report import PlagiarismReport
 from app.models.test import Test
 from app.models.test_result import TestResult
 from app.models.user import User, UserRole
@@ -316,10 +315,6 @@ def delete_test(
 	test_result_ids = [
 		result_id for (result_id,) in db.query(TestResult.id).filter(TestResult.test_id == test_id).all()
 	]
-	if test_result_ids:
-		db.query(PlagiarismReport).filter(
-			PlagiarismReport.test_result_id.in_(test_result_ids)
-		).delete(synchronize_session=False)
 
 	db.query(TestResult).filter(TestResult.test_id == test_id).delete(synchronize_session=False)
 	db.delete(test)

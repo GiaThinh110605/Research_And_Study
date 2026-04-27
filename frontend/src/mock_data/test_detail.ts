@@ -3,7 +3,7 @@ import { TestOut } from '../services/test';
 export const mockTestDetail: TestOut = {
   id: 1,
   title: 'Kiểm tra giữa kỳ - Logic học',
-  type: 'TRẮC NGHIỆM',
+  subject: 'TRẮC NGHIỆM',
   created_at: '2023-10-15T08:00:00Z',
   questions_count: 5,
   duration_minutes: 45,

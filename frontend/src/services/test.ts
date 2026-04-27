@@ -11,7 +11,7 @@ export interface ITestQuestion {
 export interface TestOut {
   id: number;
   title: string;
-  type: string;
+  subject?: string;
   created_at: string;
   questions_count: number;
   duration_minutes?: number;
@@ -63,6 +63,17 @@ export const testService = {
       answers, 
       time_taken_seconds: timeTakenSeconds 
     });
+    return response.data;
+  },
+  createTest: async (data: any): Promise<TestOut> => {
+    const response = await api.post(`/api/v1/tests/`, data);
+    return response.data;
+  },
+  deleteTest: async (id: number): Promise<void> => {
+    await api.delete(`/api/v1/tests/${id}`);
+  },
+  getTestResults: async (id: number): Promise<TestResultOut[]> => {
+    const response = await api.get(`/api/v1/tests/${id}/results`);
     return response.data;
   }
 };

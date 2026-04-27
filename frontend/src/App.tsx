@@ -21,8 +21,9 @@ import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
 import LecturerDocumentsPage from './pages/LecturerDocumentsPage';
 import LecturerTestsPage from './pages/LecturerTestsPage';
+import LecturerCreateTestPage from './pages/LecturerCreateTestPage';
+import LecturerStudentResultsPage from './pages/LecturerStudentResultsPage';
 import LecturerFlashcardsPage from './pages/LecturerFlashcardsPage';
-import LecturerGPAPage from './pages/LecturerGPAPage';
 import TestListPage from './pages/TestListPage';
 import TakeTestPage from './pages/TakeTestPage';
 import TestResultPage from './pages/TestResultPage';
@@ -64,8 +65,8 @@ function App() {
           <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
           <Route path="/lecturer/tai-lieu" element={<LecturerDocumentsPage />} />
           <Route path="/lecturer/bai-kiem-tra" element={<LecturerTestsPage />} />
-          <Route path="/lecturer/flashcard" element={<LecturerFlashcardsPage />} />
-          <Route path="/lecturer/gpa" element={<LecturerGPAPage />} />
+          <Route path="/lecturer/bai-kiem-tra/tao" element={<LecturerCreateTestPage />} />
+          <Route path="/lecturer/ket-qua-sinh-vien" element={<LecturerStudentResultsPage />} />
           <Route path="/lecturer/thao-luan" element={<DiscussionPage />} />
         </Route>
         

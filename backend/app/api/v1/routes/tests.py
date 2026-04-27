@@ -17,7 +17,7 @@ router = APIRouter()
 
 class TestBase(BaseModel):
 	title: str
-	type: str
+	subject: str
 	document_id: Optional[int] = None
 	questions: List[Dict[str, Any]]
 	duration_minutes: Optional[int] = Field(default=None, gt=0)
@@ -29,7 +29,7 @@ class TestCreate(TestBase):
 
 class TestUpdate(BaseModel):
 	title: Optional[str] = None
-	type: Optional[str] = None
+	subject: Optional[str] = None
 	document_id: Optional[int] = None
 	questions: Optional[List[Dict[str, Any]]] = None
 	duration_minutes: Optional[int] = Field(default=None, gt=0)
@@ -38,7 +38,7 @@ class TestUpdate(BaseModel):
 class TestOut(BaseModel):
 	id: int
 	title: str
-	type: str
+	subject: Optional[str] = None
 	document_id: Optional[int] = None
 	duration_minutes: Optional[int] = None
 	creator_id: int
@@ -170,7 +170,7 @@ def get_test_stats(
 
 @router.get("/", response_model=List[TestOut])
 def list_tests(
-	test_type: Optional[str] = Query(default=None),
+	subject: Optional[str] = Query(default=None),
 	document_id: Optional[int] = Query(default=None),
 	creator_id: Optional[int] = Query(default=None),
 	skip: int = Query(default=0, ge=0),
@@ -179,8 +179,8 @@ def list_tests(
 	current_user: User = Depends(get_current_user),
 ) -> Any:
 	query = db.query(Test)
-	if test_type:
-		query = query.filter(Test.type == test_type)
+	if subject:
+		query = query.filter(Test.subject == subject)
 	if document_id is not None:
 		query = query.filter(Test.document_id == document_id)
 	if creator_id is not None:
@@ -207,7 +207,7 @@ def list_tests(
 		results.append({
 			"id": test.id,
 			"title": test.title,
-			"type": test.type,
+			"subject": test.subject,
 			"document_id": test.document_id,
 			"duration_minutes": test.duration_minutes,
 			"creator_id": test.creator_id,
@@ -234,7 +234,7 @@ def create_test(
 
 	test = Test(
 		title=payload.title,
-		type=payload.type,
+		subject=payload.subject,
 		creator_id=current_user.id,
 		document_id=payload.document_id,
 		questions=payload.questions,

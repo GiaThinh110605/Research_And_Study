@@ -21,8 +21,9 @@ from app.models.document import Document
 from app.models.user import User, UserRole
 
 
-TEST_DB_URL = "sqlite:///./test_documents_api.db"
-engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
+from sqlalchemy.pool import StaticPool
+TEST_DB_URL = "sqlite:///:memory:"
+engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -65,6 +66,7 @@ def db_session():
 
 def create_user(db_session, email: str, role: UserRole = UserRole.STUDENT, password: str = "password123") -> User:
     user = User(
+        username=email.split("@")[0],
         full_name=email.split("@")[0],
         email=email,
         password_hash=get_password_hash(password),
@@ -82,7 +84,7 @@ def create_document(
     title: str,
     is_public: bool = True,
     subject: str = "CNTT",
-    file_url: str = "/uploads/sample.pdf",
+    file_path: str = "/uploads/sample.pdf",
     file_type: str = "PDF",
 ) -> Document:
     document = Document(
@@ -90,7 +92,7 @@ def create_document(
         description="Tai lieu test",
         subject=subject,
         is_public=is_public,
-        file_url=file_url,
+        file_path=file_path,
         file_type=file_type,
         uploader_id=uploader_id,
     )
@@ -147,7 +149,7 @@ def test_private_document_access_requires_share(client: TestClient, db_session):
 
     share_response = client.post(
         f"/api/v1/documents/{private_doc.id}/share",
-        json={"shared_with_user_id": target.id, "permission": "view"},
+        json={"shared_to_id": target.id, "permission": "view"},
         headers=auth_headers(owner_token),
     )
     assert share_response.status_code == 200
@@ -171,12 +173,12 @@ def test_update_document_requires_edit_permission(client: TestClient, db_session
 
     client.post(
         f"/api/v1/documents/{doc.id}/share",
-        json={"shared_with_user_id": viewer.id, "permission": "view"},
+        json={"shared_to_id": viewer.id, "permission": "view"},
         headers=auth_headers(owner_token),
     )
     client.post(
         f"/api/v1/documents/{doc.id}/share",
-        json={"shared_with_user_id": editor.id, "permission": "edit"},
+        json={"shared_to_id": editor.id, "permission": "edit"},
         headers=auth_headers(owner_token),
     )
 

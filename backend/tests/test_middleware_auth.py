@@ -19,8 +19,9 @@ from app.models.base import get_db
 from app.models.user import User
 
 # Test Database Setup
-TEST_DB_URL = "sqlite:///./test_auth_middleware.db"
-engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
+from sqlalchemy.pool import StaticPool
+TEST_DB_URL = "sqlite:///:memory:"
+engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @pytest.fixture(scope="function")
@@ -54,6 +55,7 @@ def db_session():
 
 def create_user(db_session, email: str, password: str = "password123") -> User:
     user = User(
+        username=email.split("@")[0],
         full_name="Test User",
         email=email,
         password_hash=get_password_hash(password),

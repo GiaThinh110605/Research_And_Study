@@ -14,7 +14,7 @@ from app.models.base import get_db
 from app.models.document import Document
 from app.models.document_share import DocumentShare
 from app.models.discussion import Discussion
-from app.models.flashcard import Flashcard
+from app.models.flashcard import Flashcard, FlashcardSet
 from app.models.mindmap import Mindmap
 from app.models.summary import Summary
 from app.models.test import Test
@@ -55,7 +55,7 @@ def _to_document_out(document: Document) -> DocumentOut:
         description=document.description,
         subject=document.subject,
         is_public=bool(document.is_public),
-        file_url=document.file_url,
+        file_url=document.file_path,
         file_type=document.file_type,
         uploader_id=document.uploader_id,
         uploader_name=document.uploader.full_name if document.uploader else None,
@@ -102,8 +102,8 @@ def _can_edit_document(db: Session, document: Document, current_user: User) -> b
 
 
 def _remove_document_file(document: Document) -> None:
-    if document.file_url.startswith("/uploads/"):
-        file_name = document.file_url.replace("/uploads/", "", 1)
+    if document.file_path.startswith("/uploads/"):
+        file_name = document.file_path.replace("/uploads/", "", 1)
         local_file = os.path.join(settings.UPLOAD_DIR, file_name)
         if os.path.exists(local_file):
             os.remove(local_file)
@@ -143,9 +143,19 @@ def _delete_document_dependencies(db: Session, document_id: int) -> None:
         Discussion.parent_id.is_(None),
     ).delete(synchronize_session=False)
 
-    db.query(Flashcard).filter(
-        Flashcard.document_id == document_id
-    ).delete(synchronize_session=False)
+    flashcard_set_ids = [
+        fs_id
+        for (fs_id,) in db.query(FlashcardSet.id)
+        .filter(FlashcardSet.document_id == document_id)
+        .all()
+    ]
+    if flashcard_set_ids:
+        db.query(Flashcard).filter(
+            Flashcard.set_id.in_(flashcard_set_ids)
+        ).delete(synchronize_session=False)
+        db.query(FlashcardSet).filter(
+            FlashcardSet.id.in_(flashcard_set_ids)
+        ).delete(synchronize_session=False)
 
     db.query(Summary).filter(
         Summary.document_id == document_id
@@ -336,7 +346,7 @@ def admin_list_documents(
                 "description": document.description,
                 "subject": document.subject,
                 "is_public": bool(document.is_public),
-                "file_url": document.file_url,
+                "file_url": document.file_path,
                 "file_type": document.file_type,
                 "uploader_id": document.uploader_id,
                 "uploader_name": uploader.full_name if uploader else None,
@@ -574,7 +584,7 @@ async def upload_document(
         description=description,
         subject=subject,
         is_public=is_public,
-        file_url=f"/uploads/{saved_name}",
+        file_path=f"/uploads/{saved_name}",
         file_type=extension.replace(".", "").upper(),
         uploader_id=current_user.id,
     )

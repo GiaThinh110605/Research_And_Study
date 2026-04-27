@@ -17,10 +17,10 @@ const LecturerDashboard: React.FC = () => {
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               Xem lịch dạy
             </button>
-            <button className="flex items-center gap-2 bg-[#3B66F5] text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-blue-200/50 hover:bg-blue-700 transition">
+            <Link to="/lecturer/bai-kiem-tra/tao" className="flex items-center gap-2 bg-[#3B66F5] text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-blue-200/50 hover:bg-blue-700 transition">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               Tạo bài kiểm tra
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -53,18 +53,6 @@ const LecturerDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link to="/lecturer/flashcard" className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#3B66F5]">Giảng viên Flashcard</p>
-            <h4 className="mt-2 text-xl font-black text-gray-900">Tạo thẻ ôn tập từ tài liệu</h4>
-            <p className="mt-1 text-sm text-gray-500">Soạn bộ thẻ nhanh, quản lý và cập nhật trực tiếp theo từng tài liệu.</p>
-          </Link>
-          <Link to="/lecturer/gpa" className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#3B66F5]">Giảng viên GPA</p>
-            <h4 className="mt-2 text-xl font-black text-gray-900">Tính GPA hỗ trợ tư vấn học tập</h4>
-            <p className="mt-1 text-sm text-gray-500">Nhập học phần, tính hệ 10/hệ 4 và theo dõi lịch sử để tư vấn sinh viên.</p>
-          </Link>
-        </div>
 
         {/* Bottom Section */}
         <div className="grid grid-cols-12 gap-8">

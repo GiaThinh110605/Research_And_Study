@@ -11,7 +11,7 @@ export const mockTests: TestOut[] = [
   {
     id: 1,
     title: 'Kiểm tra giữa kỳ - Logic học',
-    type: 'TRẮC NGHIỆM',
+    subject: 'TRẮC NGHIỆM',
     created_at: '2023-10-15T08:00:00Z',
     questions_count: 20,
     duration_minutes: 45,
@@ -20,7 +20,7 @@ export const mockTests: TestOut[] = [
   {
     id: 2,
     title: 'Quiz ôn tập: Lập trình Java',
-    type: 'TRẮC NGHIỆM',
+    subject: 'TRẮC NGHIỆM',
     created_at: '2023-10-12T10:30:00Z',
     questions_count: 10,
     duration_minutes: 15,
@@ -29,7 +29,7 @@ export const mockTests: TestOut[] = [
   {
     id: 3,
     title: 'Final Mock Test: Tiếng Anh 3',
-    type: 'TOÀN DIỆN',
+    subject: 'TOÀN DIỆN',
     created_at: '2023-11-20T09:00:00Z',
     questions_count: 50,
     duration_minutes: 60,
@@ -38,7 +38,7 @@ export const mockTests: TestOut[] = [
   {
     id: 4,
     title: 'Đề thi thử Cơ sở dữ liệu',
-    type: 'TRẮC NGHIỆM',
+    subject: 'TRẮC NGHIỆM',
     created_at: '2023-11-25T14:00:00Z',
     questions_count: 40,
     duration_minutes: 50,

@@ -21,16 +21,28 @@ from app.models.document import Document
 from app.models.user import User, UserRole
 
 
-TEST_DB_URL = "sqlite:///./test_documents_api.db"
-engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Removed global engine
 
 
 @pytest.fixture(scope="function")
-def client(tmp_path):
-    Base.metadata.drop_all(bind=engine)
+def db_engine(tmp_path):
+    db_path = tmp_path / "test.db"
+    engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
+    yield engine
+    Base.metadata.drop_all(bind=engine)
 
+@pytest.fixture(scope="function")
+def db_session(db_engine):
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@pytest.fixture(scope="function")
+def client(tmp_path, db_engine, db_session):
     upload_dir = tmp_path / "uploads"
     os.makedirs(upload_dir, exist_ok=True)
 
@@ -38,11 +50,7 @@ def client(tmp_path):
     settings.UPLOAD_DIR = str(upload_dir)
 
     def override_get_db():
-        db = TestingSessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
+        yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
@@ -51,20 +59,13 @@ def client(tmp_path):
     app.dependency_overrides.clear()
     settings.UPLOAD_DIR = old_upload_dir
 
-    Base.metadata.drop_all(bind=engine)
 
-
-@pytest.fixture(scope="function")
-def db_session():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Removed old db_session
 
 
 def create_user(db_session, email: str, role: UserRole = UserRole.STUDENT, password: str = "password123") -> User:
     user = User(
+        username=email.split("@")[0],
         full_name=email.split("@")[0],
         email=email,
         password_hash=get_password_hash(password),
@@ -82,7 +83,7 @@ def create_document(
     title: str,
     is_public: bool = True,
     subject: str = "CNTT",
-    file_url: str = "/uploads/sample.pdf",
+    file_path: str = "/uploads/sample.pdf",
     file_type: str = "PDF",
 ) -> Document:
     document = Document(
@@ -90,7 +91,7 @@ def create_document(
         description="Tai lieu test",
         subject=subject,
         is_public=is_public,
-        file_url=file_url,
+        file_path=file_path,
         file_type=file_type,
         uploader_id=uploader_id,
     )
@@ -147,7 +148,7 @@ def test_private_document_access_requires_share(client: TestClient, db_session):
 
     share_response = client.post(
         f"/api/v1/documents/{private_doc.id}/share",
-        json={"shared_with_user_id": target.id, "permission": "view"},
+        json={"shared_to_id": target.id, "permission": "view"},
         headers=auth_headers(owner_token),
     )
     assert share_response.status_code == 200
@@ -171,12 +172,12 @@ def test_update_document_requires_edit_permission(client: TestClient, db_session
 
     client.post(
         f"/api/v1/documents/{doc.id}/share",
-        json={"shared_with_user_id": viewer.id, "permission": "view"},
+        json={"shared_to_id": viewer.id, "permission": "view"},
         headers=auth_headers(owner_token),
     )
     client.post(
         f"/api/v1/documents/{doc.id}/share",
-        json={"shared_with_user_id": editor.id, "permission": "edit"},
+        json={"shared_to_id": editor.id, "permission": "edit"},
         headers=auth_headers(owner_token),
     )
 

@@ -30,7 +30,8 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
         full_name=user_in.full_name,
         role=user_in.role,
         student_code=user_in.student_code,
-        lecturer_code=user_in.lecturer_code
+        lecturer_code=user_in.lecturer_code,
+        is_active=True
     )
     db.add(db_user)
     db.commit()

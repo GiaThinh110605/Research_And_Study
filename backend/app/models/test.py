@@ -13,13 +13,14 @@ class Test(Base):
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
     is_active = Column(Boolean, default=True)
+    questions = Column(JSON, nullable=True)  # Direct JSON storage for questions (used by routes)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
     creator = relationship("User", back_populates="created_tests")
     document = relationship("Document", back_populates="tests")
-    questions = relationship("TestQuestion", back_populates="test", cascade="all, delete-orphan")
+    test_questions = relationship("TestQuestion", back_populates="test", cascade="all, delete-orphan")  # Legacy - not used by current routes
     test_results = relationship("TestResult", back_populates="test")
 
 class TestQuestion(Base):
@@ -34,4 +35,4 @@ class TestQuestion(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
-    test = relationship("Test", back_populates="questions")
+    test = relationship("Test", back_populates="test_questions")

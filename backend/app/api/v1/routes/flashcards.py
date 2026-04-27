@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.v1.deps import get_current_user
 from app.models.base import get_db
 from app.models.document import Document
-from app.models.flashcard import Flashcard
+from app.models.flashcard import Flashcard, FlashcardSet
 from app.models.user import User
 
 router = APIRouter()
@@ -20,7 +20,7 @@ class FlashcardBase(BaseModel):
 
 
 class FlashcardCreate(FlashcardBase):
-	document_id: int
+	set_id: int
 
 
 class FlashcardUpdate(BaseModel):
@@ -30,26 +30,32 @@ class FlashcardUpdate(BaseModel):
 
 class FlashcardOut(FlashcardBase):
 	id: int
-	document_id: int
-	user_id: int
+	set_id: int
 	created_at: datetime
+	updated_at: Optional[datetime] = None
 
 	class Config:
-		orm_mode = True
+		from_attributes = True
 
 
 @router.get("/", response_model=List[FlashcardOut])
 def list_flashcards(
-	document_id: Optional[int] = Query(default=None),
+	set_id: Optional[int] = Query(default=None),
 	skip: int = Query(default=0, ge=0),
 	limit: int = Query(default=100, ge=1, le=200),
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	if document_id is not None:
-		query = db.query(Flashcard).filter(Flashcard.document_id == document_id)
+	if set_id is not None:
+		flashcard_set = db.query(FlashcardSet).filter(FlashcardSet.id == set_id, FlashcardSet.owner_id == current_user.id).first()
+		if not flashcard_set:
+			raise HTTPException(status_code=404, detail="Flashcard set not found")
+		query = db.query(Flashcard).filter(Flashcard.set_id == set_id)
 	else:
-		query = db.query(Flashcard).filter(Flashcard.user_id == current_user.id)
+		# Get all flashcards from user's sets
+		user_sets = db.query(FlashcardSet).filter(FlashcardSet.owner_id == current_user.id).all()
+		set_ids = [s.id for s in user_sets]
+		query = db.query(Flashcard).filter(Flashcard.set_id.in_(set_ids))
 	return query.order_by(Flashcard.created_at.desc()).offset(skip).limit(limit).all()
 
 
@@ -59,13 +65,12 @@ def create_flashcard(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	document = db.query(Document).filter(Document.id == payload.document_id).first()
-	if not document:
-		raise HTTPException(status_code=404, detail="Document not found")
+	flashcard_set = db.query(FlashcardSet).filter(FlashcardSet.id == payload.set_id, FlashcardSet.owner_id == current_user.id).first()
+	if not flashcard_set:
+		raise HTTPException(status_code=404, detail="Flashcard set not found")
 
 	flashcard = Flashcard(
-		document_id=payload.document_id,
-		user_id=current_user.id,
+		set_id=payload.set_id,
 		front=payload.front,
 		back=payload.back,
 	)
@@ -81,13 +86,15 @@ def get_flashcard(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	flashcard = (
-		db.query(Flashcard)
-		.filter(Flashcard.id == flashcard_id, Flashcard.user_id == current_user.id)
-		.first()
-	)
+	flashcard = db.query(Flashcard).filter(Flashcard.id == flashcard_id).first()
 	if not flashcard:
 		raise HTTPException(status_code=404, detail="Flashcard not found")
+	
+	# Check if user owns the flashcard set
+	flashcard_set = db.query(FlashcardSet).filter(FlashcardSet.id == flashcard.set_id, FlashcardSet.owner_id == current_user.id).first()
+	if not flashcard_set:
+		raise HTTPException(status_code=404, detail="Flashcard not found")
+	
 	return flashcard
 
 
@@ -98,15 +105,16 @@ def update_flashcard(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	flashcard = (
-		db.query(Flashcard)
-		.filter(Flashcard.id == flashcard_id, Flashcard.user_id == current_user.id)
-		.first()
-	)
+	flashcard = db.query(Flashcard).filter(Flashcard.id == flashcard_id).first()
 	if not flashcard:
 		raise HTTPException(status_code=404, detail="Flashcard not found")
+	
+	# Check if user owns the flashcard set
+	flashcard_set = db.query(FlashcardSet).filter(FlashcardSet.id == flashcard.set_id, FlashcardSet.owner_id == current_user.id).first()
+	if not flashcard_set:
+		raise HTTPException(status_code=404, detail="Flashcard not found")
 
-	update_data = payload.dict(exclude_unset=True)
+	update_data = payload.model_dump(exclude_unset=True)
 	for key, value in update_data.items():
 		setattr(flashcard, key, value)
 
@@ -121,12 +129,13 @@ def delete_flashcard(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	flashcard = (
-		db.query(Flashcard)
-		.filter(Flashcard.id == flashcard_id, Flashcard.user_id == current_user.id)
-		.first()
-	)
+	flashcard = db.query(Flashcard).filter(Flashcard.id == flashcard_id).first()
 	if not flashcard:
+		raise HTTPException(status_code=404, detail="Flashcard not found")
+	
+	# Check if user owns the flashcard set
+	flashcard_set = db.query(FlashcardSet).filter(FlashcardSet.id == flashcard.set_id, FlashcardSet.owner_id == current_user.id).first()
+	if not flashcard_set:
 		raise HTTPException(status_code=404, detail="Flashcard not found")
 
 	db.delete(flashcard)

@@ -1,6 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../../services/auth';
+import {
+  Home,
+  FileText,
+  BookOpen,
+  Users,
+  Target,
+  BarChart3,
+  Settings,
+  LogOut,
+  Bell,
+  Search,
+  Upload,
+  Menu,
+  X
+} from 'lucide-react';
 
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -100,165 +115,95 @@ const DashboardLayout: React.FC = () => {
   const menuItems = menuItemsMap[language];
 
   return (
-    <div className="flex h-screen bg-[#F4F7FE] font-sans overflow-hidden print-reset">
+    <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="no-print w-[280px] bg-white border-r flex flex-col h-full shrink-0">
-        <div className="p-6 flex items-center gap-3 border-b border-gray-50 pb-8">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl text-white flex items-center justify-center font-bold text-xl">
-            IUH
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-blue-900 leading-none mb-1">UNISTUDY</h1>
-            <p className="text-[10px] font-bold text-gray-500 tracking-wider">IUH STUDENT PORTAL</p>
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">UniStudy</h1>
+              <p className="text-xs text-gray-500">Học tập thông minh</p>
+            </div>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          {menuItems.map((item, idx) => {
-            const isActive = location.pathname === item.path || (item.isHome && location.pathname === '/dashboard');
-
-            if (item.external) {
-              return (
-                <a key={idx} href={item.path} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 px-4 py-3.5 text-gray-500 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} /></svg>
-                  {item.name}
-                </a>
-              );
-            }
-
-            return (
-              <Link
-                key={idx}
-                to={item.path}
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-medium transition-all ${isActive
-                    ? "bg-[#3B66F5] text-white shadow-md shadow-blue-200"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
-              >
-                {item.isHome ? (
-                  <svg className="w-5 h-5 opacity-90" fill="currentColor" viewBox="0 0 20 20"><path d={item.icon} /></svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} /></svg>
-                )}
-                {item.name}
-              </Link>
-            );
-          })}
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <div className="space-y-1">
+            <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-50 text-blue-600 font-medium">
+              <Home className="w-5 h-5" />
+              Dashboard
+            </Link>
+            <Link to="/tai-lieu" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
+              <FileText className="w-5 h-5" />
+              Tài liệu
+            </Link>
+            <Link to="/flashcard" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
+              <BookOpen className="w-5 h-5" />
+              Flashcards
+            </Link>
+            <Link to="/test-list" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
+              <Target className="w-5 h-5" />
+              Bài kiểm tra
+            </Link>
+            <Link to="/thao-luan" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
+              <Users className="w-5 h-5" />
+              Thảo luận
+            </Link>
+            <Link to="/gpa" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
+              <BarChart3 className="w-5 h-5" />
+              GPA
+            </Link>
+          </div>
         </nav>
 
-        <div className="p-4 bg-white mt-auto border-t border-gray-50">
-          <Link to="/tai-lieu/tai-len" className="flex items-center justify-center w-full gap-2 px-4 py-3 mb-6 font-semibold text-white transition-colors bg-[#3B66F5] rounded-xl hover:bg-blue-700 shadow-md shadow-blue-200">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            {currentT.upload}
-          </Link>
-
-          <div className="space-y-1">
-            <Link to="#" className="flex items-center gap-3 px-4 py-3 font-medium text-gray-500 transition-colors rounded-xl hover:bg-gray-50 hover:text-gray-900">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              {currentT.support}
-            </Link>
-            <button onClick={handleLogout} className="flex items-center w-full gap-3 px-4 py-3 font-medium text-gray-500 transition-colors rounded-xl hover:bg-red-50 hover:text-red-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              {currentT.logout}
-            </button>
+        {/* User Menu */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium cursor-pointer" onClick={handleLogout}>
+            <LogOut className="w-5 h-5" />
+            Đăng xuất
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Top Navbar */}
-        <nav className="no-print h-20 bg-white border-b flex justify-between items-center px-8 shrink-0 relative z-10 shadow-sm">
-          <div className="flex gap-8">
-            <Link to="/dashboard" className={`font-semibold pb-7 pt-7 relative top-[1px] transition-all ${location.pathname === '/dashboard' || location.pathname === '/' ? "text-[#3B66F5] border-b-2 border-[#3B66F5]" : "text-gray-500 hover:text-gray-900"}`}>{currentT.home}</Link>
-            <Link to="/tai-lieu" className={`font-semibold pb-7 pt-7 relative top-[1px] transition-all ${location.pathname.startsWith('/tai-lieu') ? "text-[#3B66F5] border-b-2 border-[#3B66F5]" : "text-gray-500 hover:text-gray-900"}`}>{currentT.library}</Link>
-            <Link to="/cong-dong" className={`font-semibold pb-7 pt-7 relative top-[1px] transition-all ${location.pathname.startsWith('/cong-dong') ? "text-[#3B66F5] border-b-2 border-[#3B66F5]" : "text-gray-500 hover:text-gray-900"}`}>{currentT.community}</Link>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <svg className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearch}
-                placeholder={currentT.searchPlaceholder}
-                className="bg-gray-50 pl-11 pr-4 py-2.5 rounded-full text-sm outline-none w-[280px] border border-gray-100 focus:border-[#3B66F5] focus:bg-white transition-all"
-              />
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="relative max-w-md flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm tài liệu, bài kiểm tra..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
             </div>
-
-            <div className="flex items-center gap-4 border-l pl-6 border-gray-100 relative">
-              {/* Notifications */}
-              <div className="relative">
-                <button onClick={() => setActiveMenu(activeMenu === 'notifications' ? null : 'notifications')} className={`transition-colors relative ${activeMenu === 'notifications' ? 'text-[#3B66F5]' : 'text-gray-400 hover:text-gray-600'}`}>
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                  <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></div>
-                </button>
-                {activeMenu === 'notifications' && (
-                  <div className="absolute right-0 top-10 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50 animate-in fade-in slide-in-from-top-2">
-                    <h3 className="font-bold text-gray-900 mb-3 text-sm">{currentT.notifications}</h3>
-                    <div className="space-y-2">
-                      <div className="p-3 bg-blue-50 rounded-xl cursor-pointer hover:bg-blue-100/50 transition-colors">
-                        <p className="text-sm font-bold text-blue-900">Tài liệu mới</p>
-                        <p className="text-xs text-blue-600 mt-1">Minh Anh vừa tải lên Cấu trúc dữ liệu K17</p>
-                      </div>
-                      <div className="p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
-                        <p className="text-sm font-bold text-gray-900">Nhắc nhở kiểm tra</p>
-                        <p className="text-xs text-gray-500 mt-1">Bạn có một bài kiểm tra sắp tới hạn.</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+            <div className="flex items-center gap-4">
+              <button className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">U</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">User Name</p>
+                  <p className="text-xs text-gray-500">Student</p>
+                </div>
               </div>
-
-              {/* Settings */}
-              <div className="relative">
-                <button onClick={() => setActiveMenu(activeMenu === 'settings' ? null : 'settings')} className={`transition-colors relative ${activeMenu === 'settings' ? 'text-[#3B66F5]' : 'text-gray-400 hover:text-gray-600'}`}>
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                </button>
-                {activeMenu === 'settings' && (
-                  <div className="absolute right-0 top-10 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-top-2">
-                    <button onClick={toggleTheme} className="flex justify-between items-center w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                      <span>{currentT.theme}</span>
-                      <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">{theme === 'light' ? currentT.light : currentT.dark}</span>
-                    </button>
-                    <button onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')} className="flex justify-between items-center w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                      <span>{currentT.language}</span>
-                      <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">{language === 'vi' ? 'VN' : 'EN'}</span>
-                    </button>
-                    <button onClick={() => setNotifEnabled(!notifEnabled)} className="flex justify-between items-center w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                      <span>{currentT.emailNotif}</span>
-                      <div className={`w-8 h-4 rounded-full flex items-center transition-colors ${notifEnabled ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                        <div className={`w-3 h-3 bg-white rounded-full mx-0.5 transition-transform ${notifEnabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                      </div>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Profile */}
-              <div className="relative">
-                <button onClick={() => setActiveMenu(activeMenu === 'profile' ? null : 'profile')} className={`w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center border-2 shadow-sm overflow-hidden transition-all ${activeMenu === 'profile' ? 'border-[#3B66F5] ring-2 ring-blue-100' : 'border-white'}`}>
-                  <img src={avatarUrl || `https://ui-avatars.com/api/?name=${localStorage.getItem('user_name') || 'User'}&background=EBF4FF&color=3B66F5`} alt="Avatar" className="w-full h-full object-cover" />
-                </button>
-                {activeMenu === 'profile' && (
-                  <div className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-top-2">
-                    <div className="px-4 py-3 border-b border-gray-100 mb-2">
-                      <div className="font-black text-gray-900">{localStorage.getItem('user_name') || currentT.student}</div>
-                      <div className="text-xs font-bold text-gray-400 mt-0.5">Sinh viên IUH</div>
-                    </div>
-                    <Link to="/profile" onClick={() => setActiveMenu(null)} className="block w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">{currentT.profile}</Link>
-                    <Link to="/profile" onClick={() => setActiveMenu(null)} className="block w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">{currentT.history}</Link>
-                    <div className="h-px bg-gray-100 my-1"></div>
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors">{currentT.logout}</button>
-                  </div>
-                )}
-              </div>
-
             </div>
           </div>
-        </nav>
+        </header>
 
         {/* Dynamic Content */}
         <div className="flex-1 overflow-y-auto">

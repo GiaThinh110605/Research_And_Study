@@ -1,0 +1,7 @@
+- Use FastAPI best practices
+- Always use Pydantic for validation
+- All endpoints must have response_model
+- Must include exception handling
+- No blocking code (use async)
+- Use dependency injection
+- All endpoints must be testable

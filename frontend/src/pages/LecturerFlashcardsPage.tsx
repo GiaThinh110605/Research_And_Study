@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { flashcardService, FlashcardItem } from '../services/flashcards';
+import { flashcardService, Flashcard as FlashcardItem } from '../services/flashcards';
 import { documentService, DocumentItem } from '../services/documents';
 
 const LecturerFlashcardsPage: React.FC = () => {
@@ -21,7 +21,7 @@ const LecturerFlashcardsPage: React.FC = () => {
     try {
       const [docRes, flashRes] = await Promise.all([
         documentService.list({ page: 1, page_size: 100 }),
-        flashcardService.list(),
+        flashcardService.listFlashcards(),
       ]);
       setDocuments(docRes.items);
       setFlashcards(flashRes);
@@ -59,8 +59,24 @@ const LecturerFlashcardsPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const created = await flashcardService.create({
-        document_id: selectedDocumentId,
+      // We need a set_id. For now, we'll try to find or create a set for this document.
+      // But for simplicity in this legacy page, we'll just use a placeholder set if none exists.
+      // Ideally this page should be updated to use the new Set-based UI.
+      const sets = await flashcardService.listSets(Number(selectedDocumentId));
+      let targetSetId: number;
+      
+      if (sets.length > 0) {
+        targetSetId = sets[0].id;
+      } else {
+        const newSet = await flashcardService.createSet({
+          title: `Bộ thẻ cho tài liệu ${selectedDocumentId}`,
+          document_id: Number(selectedDocumentId)
+        });
+        targetSetId = newSet.id;
+      }
+
+      const created = await flashcardService.createFlashcard({
+        set_id: targetSetId,
         front: front.trim(),
         back: back.trim(),
       });
@@ -79,7 +95,7 @@ const LecturerFlashcardsPage: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      await flashcardService.remove(id);
+      await flashcardService.deleteFlashcard(id);
       setFlashcards((prev) => prev.filter((item) => item.id !== id));
     } catch (e: any) {
       setError(e?.response?.data?.detail || 'Xoa flashcard that bai.');

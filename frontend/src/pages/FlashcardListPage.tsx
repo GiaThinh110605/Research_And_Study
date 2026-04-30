@@ -1,26 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { documentService, DocumentItem } from '../services/documents';
-import { Loader2, BookOpen, BrainCircuit } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { flashcardService, FlashcardSet } from '../services/flashcards';
+import { Loader2, Plus, Brain, BookOpen, Clock, ChevronRight, Trash2 } from 'lucide-react';
 
 const FlashcardListPage: React.FC = () => {
-  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const navigate = useNavigate();
+  const [sets, setSets] = useState<FlashcardSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const loadSets = async () => {
+    try {
+      const data = await flashcardService.listSets();
+      setSets(data);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Không thể tải danh sách bộ thẻ.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadDocuments = async () => {
-      try {
-        const res = await documentService.list({ page: 1, page_size: 100 });
-        setDocuments(res.items);
-      } catch (err: any) {
-        setError(err.response?.data?.detail || 'Không thể tải danh sách tài liệu.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadDocuments();
+    loadSets();
   }, []);
+
+  const handleDeleteSet = async (e: React.MouseEvent, id: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm('Bạn có chắc chắn muốn xóa bộ thẻ này?')) return;
+    try {
+      await flashcardService.deleteSet(id);
+      setSets(sets.filter(s => s.id !== id));
+    } catch (err) {
+      alert('Lỗi khi xóa bộ thẻ.');
+    }
+  };
 
   if (loading) {
     return (
@@ -31,11 +45,20 @@ const FlashcardListPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 space-y-8 bg-[#F4F7FE] min-h-full">
-      <div>
-        <p className="text-[10px] font-black tracking-widest text-[#3B66F5] uppercase mb-1">Học tập thông minh</p>
-        <h2 className="text-3xl font-black text-gray-900">Thư viện Flashcard</h2>
-        <p className="text-gray-500 font-medium mt-2">Chọn một tài liệu để bắt đầu ôn tập với bộ thẻ ghi nhớ 3D.</p>
+    <div className="p-8 space-y-8 bg-[#F4F7FE] min-h-screen">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-black tracking-widest text-[#3B66F5] uppercase mb-1">Học tập chủ động</p>
+          <h2 className="text-3xl font-black text-[#1B2559]">Thẻ ghi nhớ của tôi</h2>
+          <p className="text-[#A3AED0] font-medium mt-1">Ôn tập kiến thức hiệu quả với phương pháp Spaced Repetition.</p>
+        </div>
+        <button 
+          onClick={() => navigate('/flashcard/create')}
+          className="bg-[#3B66F5] text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:scale-105 transition-all flex items-center gap-2"
+        >
+          <Plus className="w-5 h-5" />
+          Tạo bộ thẻ mới
+        </button>
       </div>
 
       {error && (
@@ -44,37 +67,68 @@ const FlashcardListPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {documents.map((doc) => (
-          <div key={doc.id} className="bg-white rounded-[32px] p-6 shadow-sm border border-transparent hover:border-blue-200 transition-all group">
-            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-              <BookOpen className="w-6 h-6" />
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {sets.map((set) => (
+          <Link 
+            key={set.id}
+            to={`/flashcard/study/${set.id}`}
+            className="bg-white rounded-[40px] p-8 shadow-sm border border-transparent hover:border-blue-200 transition-all group relative overflow-hidden"
+          >
+            {/* Background Decorative Element */}
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 scale-150" />
             
-            <h3 className="text-lg font-black text-gray-900 line-clamp-2 min-h-[3.5rem] mb-2">{doc.title}</h3>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">{doc.subject || 'Chủ đề chung'}</p>
-            
-            <div className="flex items-center justify-between pt-6 border-t border-gray-50">
-              <div className="flex items-center gap-2 text-slate-400">
-                <BrainCircuit className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-widest">Học tập chủ động</span>
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                <Brain className="w-7 h-7" />
               </div>
-              <Link 
-                to={`/tai-lieu/${doc.id}?tab=flashcards`}
-                className="inline-flex items-center justify-center bg-[#3B66F5] text-white px-5 py-2.5 rounded-xl font-black text-xs hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
-              >
-                HỌC NGAY
-              </Link>
+              
+              <h3 className="text-xl font-black text-[#1B2559] mb-2 line-clamp-2 min-h-[3.5rem]">{set.title}</h3>
+              <p className="text-sm text-[#A3AED0] font-medium line-clamp-2 mb-6 h-10">{set.description || 'Chưa có mô tả cho bộ thẻ này.'}</p>
+              
+              <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-2 bg-[#F4F7FE] px-3 py-1.5 rounded-xl text-[10px] font-black text-[#3B66F5] uppercase tracking-wider">
+                  <BookOpen className="w-3 h-3" />
+                  {set.flashcards?.length || 0} thẻ
+                </div>
+                <div className="flex items-center gap-2 bg-[#F4F7FE] px-3 py-1.5 rounded-xl text-[10px] font-black text-orange-500 uppercase tracking-wider">
+                  <Clock className="w-3 h-3" />
+                  Học ngay
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between pt-6 border-t border-[#F4F7FE]">
+                <div className="flex items-center gap-2 text-[#3B66F5] font-black text-xs uppercase tracking-widest">
+                  Bắt đầu học
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+                <button 
+                  onClick={(e) => handleDeleteSet(e, set.id)}
+                  className="p-2 text-red-200 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
+          </Link>
         ))}
-      </div>
 
-      {documents.length === 0 && !error && (
-        <div className="bg-white rounded-[32px] p-12 text-center border border-dashed border-gray-200">
-          <p className="text-gray-500 font-bold">Chưa có tài liệu nào để học flashcard.</p>
-        </div>
-      )}
+        {/* Empty State */}
+        {sets.length === 0 && !loading && (
+          <div className="col-span-full py-20 bg-white rounded-[40px] text-center border-2 border-dashed border-[#E0E5F2]">
+             <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-6">
+                <Plus className="w-10 h-10" />
+             </div>
+             <h3 className="text-2xl font-black text-[#1B2559] mb-2">Chưa có bộ thẻ nào</h3>
+             <p className="text-[#A3AED0] font-medium mb-8">Hãy tạo bộ thẻ ghi nhớ đầu tiên của bạn để bắt đầu học tập.</p>
+             <button 
+                onClick={() => navigate('/flashcard/create')}
+                className="bg-[#3B66F5] text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:scale-105 transition-all"
+             >
+                TẠO BỘ THẺ ĐẦU TIÊN
+             </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

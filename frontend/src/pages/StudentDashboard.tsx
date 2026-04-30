@@ -25,149 +25,187 @@ import {
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
-  };
+  const stats = [
+    {
+      title: 'Tổng số tài liệu',
+      value: '128',
+      trend: '+12% tuần này',
+      icon: <FileText className="text-indigo-600" size={24} />,
+      bg: 'bg-indigo-50',
+      borderColor: 'border-indigo-500'
+    },
+    {
+      title: 'Bài kiểm tra đã làm',
+      value: '45',
+      trend: 'Hoàn thành',
+      icon: <Target className="text-emerald-600" size={24} />,
+      bg: 'bg-emerald-50',
+      borderColor: 'border-emerald-500'
+    },
+    {
+      title: 'Điểm GPA hiện tại',
+      value: '3.85',
+      trend: 'Top 5% lớp',
+      icon: <TrendingUp className="text-amber-600" size={24} />,
+      bg: 'bg-amber-50',
+      borderColor: 'border-amber-500'
+    }
+  ];
+
+  const recentDocs = [
+    { title: 'Giải tích 1 - Bài tập chương 4', info: 'PDF • 2.4 MB • Cập nhật 2 giờ trước' },
+    { title: 'Ghi chú Triết học Mác-Lênin', info: 'DOCX • 1.1 MB • Cập nhật hôm qua' },
+    { title: 'Cấu trúc dữ liệu và giải thuật', info: 'PDF • 5.8 MB • Cập nhật 3 ngày trước' },
+  ];
+
+  const semesterProgress = [
+    { name: 'Toán rời rạc', progress: 85, color: 'bg-indigo-600' },
+    { name: 'Lập trình Java', progress: 60, color: 'bg-emerald-500' },
+    { name: 'Anh văn chuyên ngành', progress: 40, color: 'bg-amber-500' },
+  ];
+
+  const upcomingTests = [
+    { day: 'TH2', date: '12', name: 'Kiểm tra Giữa kỳ', subject: 'Mạng máy tính', time: '09:00' },
+    { day: 'TH4', date: '14', name: 'Tiểu luận cuối khóa', subject: 'Kỹ năng mềm', time: 'Hạn chót' },
+  ];
 
   return (
-    <div className="p-6 bg-gray-50">
-      <div className="max-w-7xl mx-auto">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Chào mừng trở lại! 👋</h1>
-          <p className="text-gray-600">Đây là dashboard học tập của bạn. Hãy bắt đầu khám phá các tính năng.</p>
-        </div>
+    <div className="space-y-8 pb-20">
+      {/* Greeting */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Chào buổi sáng, Văn A!</h1>
+        <p className="text-slate-500 font-medium">Hôm nay bạn có 3 bài kiểm tra sắp tới và 5 tài liệu mới cần nghiên cứu.</p>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-              <span className="text-sm text-green-600 font-medium">+12%</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">24</h3>
-            <p className="text-sm text-gray-600">Tài liệu đã tải</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-green-600" />
-              </div>
-              <span className="text-sm text-green-600 font-medium">+8%</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">156</h3>
-            <p className="text-sm text-gray-600">Flashcards đã học</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Target className="w-6 h-6 text-purple-600" />
-              </div>
-              <span className="text-sm text-red-600 font-medium">-3%</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">8.5</h3>
-            <p className="text-sm text-gray-600">GPA trung bình</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                <Award className="w-6 h-6 text-orange-600" />
-              </div>
-              <span className="text-sm text-green-600 font-medium">+15%</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">12</h3>
-            <p className="text-sm text-gray-600">Bài kiểm tra hoàn thành</p>
-          </div>
-        </div>
-
-        {/* Recent Activity & Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Documents */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Tài liệu gần đây</h2>
-                <Link to="/documents" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                  Xem tất cả
-                </Link>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                {[1, 2, 3].map((item) => (
-                  <div key={item} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">Tài liệu học tập {item}</h3>
-                      <p className="text-sm text-gray-500">Cập nhật 2 giờ trước</p>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+      <div className="grid grid-cols-12 gap-8">
+        {/* Left Column */}
+        <div className="col-span-12 lg:col-span-8 space-y-8">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {stats.map((stat, idx) => (
+              <div 
+                key={idx} 
+                className={`bg-white p-6 rounded-3xl border-l-4 ${stat.borderColor} shadow-sm shadow-slate-200/50 flex flex-col gap-4 transition-transform hover:scale-[1.02] duration-200 cursor-default`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className={`w-12 h-12 ${stat.bg} rounded-2xl flex items-center justify-center shadow-inner`}>
+                    {stat.icon}
                   </div>
-                ))}
+                  <span className={`text-[11px] font-black px-2 py-1 rounded-lg ${stat.bg} ${stat.icon.props.className}`}>
+                    {stat.trend}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm font-bold">{stat.title}</p>
+                  <p className="text-3xl font-black text-slate-900 mt-1">{stat.value}</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Thao tác nhanh</h2>
-            <div className="space-y-3">
-              <button className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
-                <Upload className="w-5 h-5" />
-                Tải lên tài liệu
-              </button>
-              <button className="w-full flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium">
-                <Plus className="w-5 h-5" />
-                Tạo flashcard
-              </button>
-              <button className="w-full flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium">
-                <Target className="w-5 h-5" />
-                Bắt đầu bài kiểm tra
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Upcoming Tests */}
-        <div className="mt-6 bg-white rounded-xl border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Bài kiểm tra sắp tới</h2>
-              <Link to="/tests" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+          {/* Recent Documents */}
+          <div className="bg-white rounded-[32px] p-8 shadow-sm shadow-slate-200/50 border border-slate-100">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">Tài liệu gần đây</h2>
+              <Link to="/tai-lieu" className="text-indigo-600 hover:text-indigo-700 font-black text-sm transition-colors">
                 Xem tất cả
               </Link>
             </div>
-          </div>
-          <div className="p-6">
             <div className="space-y-4">
-              {[1, 2].map((item) => (
-                <div key={item} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
-                  <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-purple-600" />
+              {recentDocs.map((doc, idx) => (
+                <div 
+                  key={idx} 
+                  className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-all duration-200 cursor-pointer border border-transparent hover:border-slate-100"
+                >
+                  <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                    <FileText className="text-slate-400 group-hover:text-indigo-600 transition-colors" size={24} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">Kiểm tra cuối kỳ {item}</h3>
-                    <p className="text-sm text-gray-500">Vào lúc 14:00, ngày mai</p>
+                    <h3 className="text-slate-900 font-bold group-hover:text-indigo-900 transition-colors">{doc.title}</h3>
+                    <p className="text-slate-400 text-xs font-semibold mt-0.5">{doc.info}</p>
                   </div>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
-                    Bắt đầu
+                  <button className="p-2 text-slate-300 hover:text-slate-600 transition-colors">
+                    <ChevronRight size={20} />
                   </button>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* Research Banner */}
+          <div className="relative overflow-hidden bg-indigo-50 rounded-[32px] p-10 flex items-center justify-between group cursor-default border border-indigo-100 shadow-sm shadow-indigo-100/20">
+            <div className="max-w-md space-y-4 z-10">
+              <h3 className="text-xl font-black text-indigo-900">Đề xuất nghiên cứu</h3>
+              <p className="text-indigo-600/70 font-bold leading-relaxed">
+                Dựa trên lịch sử học tập, bạn có thể quan tâm đến các bài báo về Trí tuệ nhân tạo trong giáo dục.
+              </p>
+              <button 
+                onClick={() => navigate('/tai-lieu')}
+                className="bg-indigo-600 text-white px-8 py-3.5 rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-95"
+              >
+                Khám phá ngay
+              </button>
+            </div>
+            <div className="absolute right-[-20px] bottom-[-20px] w-64 h-64 bg-indigo-100 rounded-full opacity-50 group-hover:scale-110 transition-transform duration-700" />
+            <div className="absolute right-[40px] bottom-[40px] w-32 h-32 bg-indigo-200 rounded-full opacity-30 group-hover:scale-125 transition-transform duration-500" />
+            <Settings size={120} className="absolute right-[-10px] bottom-[-10px] text-indigo-200/50 rotate-12 group-hover:rotate-45 transition-transform duration-1000" />
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="col-span-12 lg:col-span-4 space-y-8">
+          {/* Semester Progress */}
+          <div className="bg-white rounded-[32px] p-8 shadow-sm shadow-slate-200/50 border border-slate-100">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Tiến độ học kỳ</h2>
+            <div className="space-y-8">
+              {semesterProgress.map((item, idx) => (
+                <div key={idx} className="space-y-3">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-slate-600 text-sm">{item.name}</span>
+                    <span className="text-indigo-600 text-sm">{item.progress}%</span>
+                  </div>
+                  <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${item.color} rounded-full transition-all duration-1000 shadow-sm`}
+                      style={{ width: `${item.progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Upcoming Tests */}
+          <div className="bg-white rounded-[32px] p-8 shadow-sm shadow-slate-200/50 border border-slate-100">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Lịch thi sắp tới</h2>
+            <div className="space-y-6 mb-8">
+              {upcomingTests.map((test, idx) => (
+                <div key={idx} className="flex items-center gap-4 group cursor-default">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex flex-col items-center justify-center shrink-0 border border-indigo-100 group-hover:bg-indigo-600 transition-colors duration-300">
+                    <span className="text-[10px] font-black text-indigo-400 group-hover:text-indigo-200 uppercase">{test.day}</span>
+                    <span className="text-lg font-black text-indigo-600 group-hover:text-white leading-tight">{test.date}</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-black text-slate-900 line-clamp-1">{test.name}</h3>
+                    <p className="text-slate-400 text-[11px] font-bold uppercase tracking-wider">{test.subject} • {test.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="w-full py-4 rounded-2xl border-2 border-slate-100 text-slate-500 font-black text-sm hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 transition-all">
+              Xem lịch chi tiết
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Floating Action Button */}
+      <button 
+        className="fixed bottom-10 right-10 w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all z-20"
+      >
+        <Plus size={32} />
+      </button>
     </div>
   );
 };

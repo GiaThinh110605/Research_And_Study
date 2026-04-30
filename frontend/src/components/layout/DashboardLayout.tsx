@@ -20,195 +20,135 @@ import {
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeMenu, setActiveMenu] = useState<'notifications' | 'settings' | 'profile' | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Settings State
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [language, setLanguage] = useState<'vi' | 'en'>('vi');
-  const [notifEnabled, setNotifEnabled] = useState(true);
-  const [avatarUrl] = useState<string>(localStorage.getItem('user_avatar') || '');
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    if (newTheme === 'dark') {
-      document.documentElement.style.filter = "invert(1) hue-rotate(180deg)";
-    } else {
-      document.documentElement.style.filter = "none";
-    }
-  };
-
-  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      navigate('/tai-lieu');
-      // Can add query parameters here in the future
-    }
-  };
+  const [user] = useState({
+    name: 'Nguyễn Văn A',
+    role: 'Sinh viên',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
+  });
 
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
   };
 
-  const menuItemsMap = {
-    vi: [
-      { name: "TRANG CHỦ", icon: "M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z", path: "/dashboard", isHome: true },
-      { name: "THƯ VIỆN", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253", path: "/tai-lieu" },
-      { name: "BÀI KIỂM TRA", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", path: "/test-list" },
-      { name: "FLASHCARD", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10", path: "/flashcard" },
-      { name: "THẢO LUẬN", icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", path: "/thao-luan" },
-      { name: "GPA", icon: "M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z", path: "/gpa" },
-      { name: "LIÊN KẾT IUH", icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1", path: "https://iuh.edu.vn", external: true }
-    ],
-    en: [
-      { name: "DASHBOARD", icon: "M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z", path: "/dashboard", isHome: true },
-      { name: "LIBRARY", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253", path: "/tai-lieu" },
-      { name: "TESTS", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", path: "/test-list" },
-      { name: "FLASHCARD", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10", path: "/flashcard" },
-      { name: "GPA", icon: "M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z", path: "/gpa" },
-      { name: "COMMUNITY", icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", path: "/cong-dong" },
-      { name: "IUH LINKS", icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1", path: "https://iuh.edu.vn", external: true }
-    ]
-  };
+  const navItems = [
+    { name: 'Trang chủ', icon: <Home size={20} />, path: '/dashboard' },
+    { name: 'Tài liệu', icon: <FileText size={20} />, path: '/tai-lieu' },
+    { name: 'Bài kiểm tra', icon: <Target size={20} />, path: '/test-list' },
+    { name: 'Flashcard', icon: <BookOpen size={20} />, path: '/flashcard' },
+    { name: 'Điểm số', icon: <BarChart3 size={20} />, path: '/gpa' },
+  ];
 
-  const t = {
-    vi: {
-      upload: "Tải tài liệu lên",
-      support: "HỖ TRỢ",
-      logout: "ĐĂNG XUẤT",
-      home: "Trang chủ",
-      library: "Thư viện",
-      community: "Cộng đồng",
-      searchPlaceholder: "Tìm kiếm tài liệu... (Nhấn Enter)",
-      notifications: "Thông báo mới",
-      theme: "Giao diện",
-      light: "Sáng",
-      dark: "Tối",
-      language: "Ngôn ngữ",
-      emailNotif: "Thông báo gửi Email",
-      student: "Sinh Viên",
-      profile: "Hồ sơ cá nhân",
-      history: "Lịch sử hoạt động"
-    },
-    en: {
-      upload: "Upload Document",
-      support: "SUPPORT",
-      logout: "LOGOUT",
-      home: "Home",
-      library: "Library",
-      community: "Community",
-      searchPlaceholder: "Search documents... (Press Enter)",
-      notifications: "New Notifications",
-      theme: "Theme",
-      light: "Light",
-      dark: "Dark",
-      language: "Language",
-      emailNotif: "Email Notifications",
-      student: "Student",
-      profile: "My Profile",
-      history: "Activity Log"
-    }
-  };
-
-  const currentT = t[language];
-  const menuItems = menuItemsMap[language];
+  const bottomNavItems = [
+    { name: 'Cài đặt', icon: <Settings size={20} />, path: '/profile' },
+  ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#F8FAFC]">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-200">
+      <aside className="w-[280px] bg-white border-r border-slate-200 flex flex-col shrink-0">
+        <div className="p-8 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+              <BookOpen className="text-white" size={24} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">UniStudy</h1>
-              <p className="text-xs text-gray-500">Học tập thông minh</p>
+              <h1 className="text-xl font-black text-indigo-900 tracking-tight">Nghiên cứu</h1>
+              <p className="text-[10px] font-bold text-indigo-400 tracking-widest uppercase">Học tập thông minh</p>
             </div>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <div className="space-y-1">
-            <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-50 text-blue-600 font-medium">
-              <Home className="w-5 h-5" />
-              Dashboard
-            </Link>
-            <Link to="/tai-lieu" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
-              <FileText className="w-5 h-5" />
-              Tài liệu
-            </Link>
-            <Link to="/flashcard" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
-              <BookOpen className="w-5 h-5" />
-              Flashcards
-            </Link>
-            <Link to="/test-list" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
-              <Target className="w-5 h-5" />
-              Bài kiểm tra
-            </Link>
-            <Link to="/thao-luan" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
-              <Users className="w-5 h-5" />
-              Thảo luận
-            </Link>
-            <Link to="/gpa" className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
-              <BarChart3 className="w-5 h-5" />
-              GPA
-            </Link>
-          </div>
+        <nav className="flex-1 px-4 space-y-2">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
+                  isActive 
+                    ? 'bg-indigo-50 text-indigo-600 shadow-sm' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <span className={`${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                  {item.icon}
+                </span>
+                <span className="font-semibold text-sm">{item.name}</span>
+                {isActive && <div className="ml-auto w-1.5 h-6 bg-indigo-600 rounded-full" />}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* User Menu */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium cursor-pointer" onClick={handleLogout}>
-            <LogOut className="w-5 h-5" />
+        <div className="p-4 border-t border-slate-100 space-y-2">
+          {bottomNavItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 transition-all font-semibold text-sm"
+            >
+              <span className="text-slate-400">{item.icon}</span>
+              {item.name}
+            </Link>
+          ))}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-rose-500 hover:bg-rose-50 transition-all font-semibold text-sm"
+          >
+            <LogOut size={20} />
             Đăng xuất
-          </div>
+          </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Top Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1">
-              <div className="relative max-w-md flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm tài liệu, bài kiểm tra..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 shrink-0 z-10">
+          <div className="flex-1 max-w-2xl">
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
+              <input
+                type="text"
+                placeholder="Tìm kiếm tài liệu, bài giảng..."
+                className="w-full h-12 bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    navigate(`/tai-lieu?q=${searchQuery}`);
+                  }
+                }}
+              />
             </div>
-            <div className="flex items-center gap-4">
-              <button className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-lg">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">U</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">User Name</p>
-                  <p className="text-xs text-gray-500">Student</p>
-                </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 pl-6 border-l border-slate-200">
+              <div className="text-right">
+                <p className="text-sm font-black text-slate-900 leading-tight">{user.name}</p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{user.role}</p>
               </div>
+              <img
+                src={user.avatar}
+                alt="Avatar"
+                className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100"
+              />
+              <button className="relative p-2.5 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-xl transition-all">
+                <Bell size={20} />
+                <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white shadow-sm" />
+              </button>
             </div>
           </div>
         </header>
 
-        {/* Dynamic Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Viewport */}
+        <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );

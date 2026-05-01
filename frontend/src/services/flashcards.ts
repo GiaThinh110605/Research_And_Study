@@ -1,45 +1,126 @@
-import api from './api';
+import axios from 'axios';
 
-export interface FlashcardItem {
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+export interface Flashcard {
   id: number;
-  document_id: number;
-  user_id: number;
+  set_id: number;
+  document_id?: number; // Optional for compatibility with older code
   front: string;
   back: string;
   created_at: string;
+  updated_at?: string;
 }
 
-export interface CreateFlashcardPayload {
-  document_id: number;
+export interface FlashcardSet {
+  id: number;
+  title: string;
+  description?: string;
+  subject?: string;
+  document_id?: number;
+  owner_id: number;
+  is_ai_generated: boolean;
+  created_at: string;
+  updated_at?: string;
+  flashcards: Flashcard[];
+}
+
+export interface FlashcardSetCreate {
+  title: string;
+  description?: string;
+  subject?: string;
+  document_id?: number;
+}
+
+export interface FlashcardCreate {
+  set_id: number;
   front: string;
   back: string;
 }
 
-export interface UpdateFlashcardPayload {
-  front?: string;
-  back?: string;
-}
+export type FlashcardItem = Flashcard;
 
 export const flashcardService = {
-  async list(documentId?: number): Promise<FlashcardItem[]> {
-    const response = await api.get('/api/v1/flashcards/', {
-      params: (documentId !== undefined && documentId !== null) ? { document_id: documentId } : undefined,
+  // Sets
+  listSets: async (documentId?: number) => {
+    const token = localStorage.getItem('token');
+    const params = documentId ? { document_id: documentId } : {};
+    const res = await axios.get<FlashcardSet[]>(`${API_URL}/api/v1/flashcards/sets/`, {
+      params,
+      headers: { Authorization: `Bearer ${token}` }
     });
-    return response.data;
+    return res.data;
   },
 
-  async create(payload: CreateFlashcardPayload): Promise<FlashcardItem> {
-    const response = await api.post('/api/v1/flashcards/', payload);
-    return response.data;
+  getSet: async (setId: number) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.get<FlashcardSet>(`${API_URL}/api/v1/flashcards/sets/${setId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
   },
 
-  async update(flashcardId: number, payload: UpdateFlashcardPayload): Promise<FlashcardItem> {
-    const response = await api.put(`/api/v1/flashcards/${flashcardId}`, payload);
-    return response.data;
+  createSet: async (data: FlashcardSetCreate) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.post<FlashcardSet>(`${API_URL}/api/v1/flashcards/sets/`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
   },
 
-  async remove(flashcardId: number): Promise<{ message: string }> {
-    const response = await api.delete(`/api/v1/flashcards/${flashcardId}`);
-    return response.data;
+  deleteSet: async (setId: number) => {
+    const token = localStorage.getItem('token');
+    await axios.delete(`${API_URL}/api/v1/flashcards/sets/${setId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
   },
+
+  // Flashcards
+  listFlashcards: async (params: { set_id?: number; document_id?: number; skip?: number; limit?: number } = {}) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.get<Flashcard[]>(`${API_URL}/api/v1/flashcards/`, {
+      params,
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  createFlashcard: async (data: FlashcardCreate) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.post<Flashcard>(`${API_URL}/api/v1/flashcards/`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  bulkCreate: async (setId: number, flashcards: { front: string; back: string }[]) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.post<Flashcard[]>(`${API_URL}/api/v1/flashcards/bulk`, {
+      set_id: setId,
+      flashcards
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  updateFlashcard: async (id: number, data: Partial<FlashcardCreate>) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.put<Flashcard>(`${API_URL}/api/v1/flashcards/${id}`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  deleteFlashcard: async (id: number) => {
+    const token = localStorage.getItem('token');
+    await axios.delete(`${API_URL}/api/v1/flashcards/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  // Aliases for backward compatibility
+  list: async (params: any = {}) => flashcardService.listFlashcards(params),
+  create: async (data: any) => flashcardService.createFlashcard(data),
+  remove: async (id: number) => flashcardService.deleteFlashcard(id)
 };

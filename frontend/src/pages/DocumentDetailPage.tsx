@@ -3,7 +3,7 @@ import { Link, useParams, useLocation } from 'react-router-dom';
 import ShareModal from '../components/documents/ShareModal';
 import { authService } from '../services/auth';
 import { documentService, DocumentItem, ShareItem } from '../services/documents';
-import { FlashcardItem } from '../services/flashcards';
+import { Flashcard as FlashcardItem } from '../services/flashcards';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { aiService } from '../services/ai';
@@ -141,24 +141,24 @@ const DocumentDetailPage: React.FC = () => {
   const sampleFlashcards: FlashcardItem[] = [
     {
       id: -1,
+      set_id: 0,
       document_id: parsedId,
-      user_id: 0,
       front: "Độ phức tạp thời gian (Time Complexity) của thuật toán Quick Sort trong trường hợp trung bình là gì?",
       back: "O(n log n). Quick Sort sử dụng chiến thuật chia để trị, phân chia mảng dựa trên phần tử chốt (pivot).",
       created_at: new Date().toISOString()
     },
     {
       id: -2,
+      set_id: 0,
       document_id: parsedId,
-      user_id: 0,
       front: "Nguyên lý ACID trong hệ quản trị cơ sở dữ liệu (DBMS) là gì?",
       back: "Atomicity (Nguyên tử), Consistency (Nhất quán), Isolation (Cô lập), Durability (Bền vững).",
       created_at: new Date().toISOString()
     },
     {
       id: -3,
+      set_id: 0,
       document_id: parsedId,
-      user_id: 0,
       front: "Sự khác biệt giữa REST và GraphQL là gì?",
       back: "REST dựa trên tài nguyên với các endpoint cố định. GraphQL cho phép client yêu cầu chính xác dữ liệu họ cần thông qua một endpoint duy nhất.",
       created_at: new Date().toISOString()

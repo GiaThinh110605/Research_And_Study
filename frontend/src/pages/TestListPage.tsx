@@ -1,8 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../services/auth';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Search, 
+  Filter, 
+  Grid as GridIcon, 
+  List as ListIcon, 
+  Plus, 
+  ClipboardCheck, 
+  TrendingUp, 
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  BookOpen,
+  Award,
+  CheckCircle2
+} from 'lucide-react';
 import { testService, TestOut, TestStats } from '../services/test';
 import { mockTests, mockTestStats } from '../mock_data/test_list';
+import { authService } from '../services/auth';
+
+const PAGE_SIZE = 8;
 
 const TestListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,10 +28,10 @@ const TestListPage: React.FC = () => {
   const [stats, setStats] = useState<TestStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterStatus, setFilterStatus] = useState<string>('Tất cả');
-  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [subjectFilter, setSubjectFilter] = useState('Tất cả');
+  const [statusFilter, setStatusFilter] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
-  const ITEMS_PER_PAGE = 10;
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,297 +54,311 @@ const TestListPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
-  };
+  const subjects = useMemo(() => {
+    const uniqueSubjects = Array.from(new Set(tests.map(t => t.subject).filter((s): s is string => !!s)));
+    return ['Tất cả', ...uniqueSubjects];
+  }, [tests]);
 
-  const filteredTests = tests.filter((test: TestOut) => {
-    // Search filter
-    const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
+  const filteredTests = useMemo(() => {
+    return tests.filter(test => {
+      const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSubject = subjectFilter === 'Tất cả' || test.subject === subjectFilter;
+      const matchesStatus = statusFilter === 'Tất cả' || 
+                           (statusFilter === 'Mới' && test.status === 'MỚI') ||
+                           (statusFilter === 'Đang làm' && test.status === 'ĐANG LÀM') ||
+                           (statusFilter === 'Hoàn thành' && test.status === 'HOÀN THÀNH');
+      return matchesSearch && matchesSubject && matchesStatus;
+    });
+  }, [tests, searchQuery, subjectFilter, statusFilter]);
 
-    // Status filter
-    if (filterStatus === 'Tất cả') return true;
-    if (filterStatus === 'Mới') return test.status === 'MỚI';
-    if (filterStatus === 'Đang làm') return test.status === 'ĐANG LÀM';
-    if (filterStatus === 'Hoàn thành') return test.status === 'HOÀN THÀNH';
-    return true;
-  });
+  const totalPages = Math.ceil(filteredTests.length / PAGE_SIZE);
+  const paginatedTests = filteredTests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const totalPages = Math.ceil(filteredTests.length / ITEMS_PER_PAGE);
-  const paginatedTests = filteredTests.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push('...');
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-      for (let i = start; i <= end; i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push('...');
-      pages.push(totalPages);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'HOÀN THÀNH': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'ĐANG LÀM': return 'bg-amber-100 text-amber-700 border-amber-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
-    return pages;
   };
+
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-8 rounded-3xl flex flex-col">
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">HỆ THỐNG / <span className="text-[#3B66F5]">BÀI KIỂM TRA</span></div>
-          <h2 className="text-3xl font-black text-gray-900">Danh sách Bài kiểm tra</h2>
+    <div className="space-y-8 pb-20 max-w-[1600px] mx-auto">
+      {/* Hero Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-[#3B66F5] to-[#6366F1] rounded-[40px] p-10 text-white shadow-2xl shadow-indigo-200/50">
+          <div className="relative z-10 max-w-lg space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 backdrop-blur-xl rounded-full text-[10px] font-black tracking-widest uppercase">
+              <ClipboardCheck size={14} />
+              Hệ thống ôn luyện
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-4xl font-black tracking-tight leading-tight">Chinh phục mọi kỳ thi với kho đề chất lượng</h1>
+              <p className="text-indigo-100 font-medium leading-relaxed opacity-90">
+                Luyện tập hàng ngàn đề thi từ các khóa học, giúp bạn nắm vững kiến thức và tự tin hơn khi bước vào phòng thi thực tế.
+              </p>
+            </div>
+            <div className="flex gap-4 pt-2">
+              <button onClick={() => navigate('/community')} className="bg-white text-[#3B66F5] px-8 py-4 rounded-2xl font-black text-sm hover:bg-indigo-50 transition-all flex items-center gap-2 shadow-xl shadow-black/10 active:scale-95">
+                <TrendingUp size={18} />
+                Xem bảng xếp hạng
+              </button>
+            </div>
+          </div>
+          <ClipboardCheck size={320} className="absolute right-[-60px] bottom-[-60px] text-white/10 -rotate-12" />
         </div>
 
-        <div className="flex gap-4">
-          <div className="flex items-center gap-3 bg-blue-50/50 border border-blue-100 px-5 py-3 rounded-2xl">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-[#3B66F5]">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">ĐÃ HOÀN THÀNH</div>
-              <div className="text-lg font-black text-gray-900 leading-tight">
-                {stats ? `${stats.completed_tests}/${stats.total_tests}` : "0/0"}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+          <div className="bg-white p-8 rounded-[36px] border border-slate-100 shadow-sm group hover:border-indigo-100 transition-all cursor-default">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Award className="text-indigo-600" size={28} />
               </div>
+              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Trung bình</span>
+            </div>
+            <p className="text-slate-400 text-sm font-bold">GPA của bạn</p>
+            <div className="flex items-baseline gap-2 mt-1">
+              <p className="text-4xl font-black text-slate-900">{stats?.average_score.toFixed(2) || '0.00'}</p>
+              <span className="text-emerald-500 font-black text-xs">/ 10.0</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 border border-gray-100 px-5 py-3 rounded-2xl">
-            <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center text-orange-500">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">GPA TRUNG BÌNH</div>
-              <div className="text-lg font-black text-gray-900 leading-tight">
-                {stats ? stats.average_score.toFixed(2) : "0.00"}
+          <div className="bg-slate-900 p-8 rounded-[36px] shadow-2xl shadow-slate-200/50 group cursor-default relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <CheckCircle2 className="text-emerald-400" size={28} />
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiến độ</span>
               </div>
+              <p className="text-slate-400 text-sm font-bold">Bài tập hoàn thành</p>
+              <p className="text-4xl font-black text-white mt-1">{stats?.completed_tests || 0} <span className="text-lg text-slate-500 font-bold">/ {stats?.total_tests || 0}</span></p>
             </div>
+            <div className="absolute right-[-20px] top-[-20px] w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-4 mb-6">
-        <div className="relative flex-1">
-          <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-          <input
-            type="text"
-            placeholder="Tìm kiếm bài kiểm tra..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full bg-gray-50 pl-11 pr-4 py-3 rounded-xl text-sm outline-none border border-transparent focus:border-[#3B66F5] focus:bg-white transition-all text-gray-700 font-medium"
-          />
-        </div>
-        <div className="relative">
-          <button
-            onClick={() => setShowStatusMenu(!showStatusMenu)}
-            className="bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl text-sm transition-colors border border-transparent flex items-center gap-2"
-          >
-            {filterStatus}
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-          </button>
 
-          {showStatusMenu && (
-            <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
-              {['Tất cả', 'Mới', 'Đang làm', 'Hoàn thành'].map((status) => (
+      {/* Main Content Area */}
+      <div className="bg-white rounded-[48px] p-8 md:p-10 shadow-sm border border-slate-100 space-y-10">
+        {/* Header & Controls */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
+          <div className="space-y-1">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Kho đề kiểm tra</h2>
+            <p className="text-slate-500 font-medium">Khám phá và luyện tập tất cả các bài kiểm tra được thiết kế riêng cho bạn.</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative group flex-1 min-w-[300px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tiêu đề đề thi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 pl-12 pr-6 py-4 rounded-[20px] text-sm font-bold outline-none border border-transparent focus:border-indigo-500 focus:bg-white transition-all text-slate-700 placeholder:text-slate-400"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={`p-3 rounded-xl transition-all active:scale-90 ${viewMode === 'grid' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <GridIcon size={20} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`p-3 rounded-xl transition-all active:scale-90 ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <ListIcon size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Categories Pills */}
+        <div className="flex flex-wrap gap-3">
+          {subjects.map((subject) => (
+            <button
+              key={subject}
+              onClick={() => {
+                setSubjectFilter(subject);
+                setCurrentPage(1);
+              }}
+              className={`px-8 py-3.5 rounded-2xl text-xs font-black transition-all active:scale-95 ${
+                subjectFilter === subject
+                  ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200'
+                  : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100 hover:border-slate-200'
+              }`}
+            >
+              {subject}
+            </button>
+          ))}
+          
+          <div className="ml-auto flex items-center gap-2">
+             <button className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-xs font-black text-slate-700 hover:bg-slate-50 transition-all">
+                <Filter size={16} />
+                Bộ lọc nâng cao
+             </button>
+          </div>
+        </div>
+
+        {/* Progress Bar Horizontal */}
+        <div className="bg-gradient-to-r from-indigo-50/50 to-white rounded-[32px] p-8 border border-indigo-100/50 flex flex-col md:flex-row items-center gap-8">
+           <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-600 shrink-0">
+              <TrendingUp size={32} />
+           </div>
+           <div className="flex-1 space-y-3 w-full">
+              <div className="flex justify-between items-end">
+                 <div>
+                    <h4 className="font-black text-slate-900 text-lg">Tiến độ ôn tập</h4>
+                    <p className="text-slate-500 text-sm font-medium">Bạn đã hoàn thành {stats?.progress_percent.toFixed(0)}% mục tiêu tuần này.</p>
+                 </div>
+                 <span className="text-indigo-600 font-black text-xl">{stats?.progress_percent.toFixed(0)}%</span>
+              </div>
+              <div className="h-4 bg-slate-100 rounded-full overflow-hidden p-1">
+                 <div 
+                   className="h-full bg-indigo-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(79,70,229,0.3)]"
+                   style={{ width: `${stats?.progress_percent}%` }}
+                 />
+              </div>
+           </div>
+        </div>
+
+        {/* Tests Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-[300px] bg-slate-50 rounded-[32px] animate-pulse border border-slate-100" />
+            ))}
+          </div>
+        ) : paginatedTests.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {paginatedTests.map((test) => (
+              <div 
+                key={test.id} 
+                className="group bg-white rounded-[32px] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-indigo-100/50 hover:border-indigo-100 transition-all duration-300 p-6 flex flex-col relative overflow-hidden"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                    <BookOpen size={24} />
+                  </div>
+                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black border uppercase tracking-wider ${getStatusColor(test.status)}`}>
+                    {test.status}
+                  </span>
+                </div>
+
+                <div className="space-y-1 mb-6 flex-1">
+                  <h3 className="font-black text-slate-900 text-lg leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                    {test.title}
+                  </h3>
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{test.subject}</p>
+                </div>
+
+                <div className="flex items-center gap-4 py-4 border-t border-slate-50">
+                   <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
+                      <Clock size={14} className="text-slate-400" />
+                      75 Phút
+                   </div>
+                   <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
+                      <ClipboardCheck size={14} className="text-slate-400" />
+                      {test.questions_count} Câu
+                   </div>
+                </div>
+
+                <div className="flex items-center justify-between mt-2">
+                   <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 border border-white shadow-sm flex items-center justify-center text-[10px] font-black text-slate-500 uppercase">
+                         GV
+                      </div>
+                      <span className="text-xs font-bold text-slate-600">Giảng viên</span>
+                   </div>
+                   <button 
+                     onClick={() => navigate(`/take-test/${test.id}`)}
+                     className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-600 hover:text-white transition-all active:scale-90"
+                   >
+                     <ChevronRight size={20} />
+                   </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Add New Test Placeholder */}
+            <div 
+              onClick={() => navigate('/lecturer/create-test')}
+              className="group border-2 border-dashed border-slate-200 rounded-[32px] p-8 flex flex-col items-center justify-center text-center space-y-4 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all cursor-pointer min-h-[300px]"
+            >
+              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 group-hover:text-indigo-500 group-hover:bg-white group-hover:shadow-lg transition-all">
+                <Plus size={32} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-black text-slate-800">Tạo đề thi mới</h4>
+                <p className="text-slate-400 text-xs font-bold">Thêm đề kiểm tra vào kho</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="py-20 bg-slate-50 rounded-[40px] border border-dashed border-slate-200 flex flex-col items-center justify-center text-center space-y-6">
+             <div className="w-24 h-24 bg-white rounded-3xl shadow-sm flex items-center justify-center text-slate-200">
+                <Search size={48} />
+             </div>
+             <div className="space-y-2">
+                <h3 className="text-2xl font-black text-slate-800">Không tìm thấy bài kiểm tra</h3>
+                <p className="text-slate-500 font-medium">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+             </div>
+             <button 
+               onClick={() => {
+                 setSearchQuery('');
+                 setSubjectFilter('Tất cả');
+                 setStatusFilter('Tất cả');
+               }}
+               className="text-indigo-600 font-black text-sm hover:underline"
+             >
+               Xóa tất cả bộ lọc
+             </button>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 pt-8">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="p-4 rounded-2xl border border-slate-100 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            <div className="flex items-center gap-2">
+              {Array.from({ length: totalPages }).map((_, i) => (
                 <button
-                  key={status}
-                  onClick={() => {
-                    setFilterStatus(status);
-                    setShowStatusMenu(false);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-5 py-3 text-left text-sm font-bold text-gray-700 hover:bg-blue-50 hover:text-[#3B66F5] transition-colors"
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-12 h-12 rounded-2xl text-sm font-black transition-all ${
+                    currentPage === i + 1
+                      ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200'
+                      : 'bg-white border border-slate-100 text-slate-500 hover:border-indigo-100 hover:text-indigo-600'
+                  }`}
                 >
-                  {status}
+                  {i + 1}
                 </button>
               ))}
             </div>
-          )}
-        </div>
-        <button className="bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl text-sm transition-colors border border-transparent flex items-center gap-2">
-          Học kỳ gần nhất
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-        </button>
-      </div>
-      <div className="flex-1 bg-white border border-gray-100 rounded-3xl shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="text-[11px] font-bold tracking-widest text-gray-400 uppercase border-b border-gray-100 bg-gray-50/50">
-              <th className="py-4 px-6 rounded-tl-2xl">TÊN BÀI KIỂM TRA</th>
-              <th className="py-4 px-6 text-center">NGÀY TẠO</th>
-              <th className="py-4 px-6 text-center">SỐ CÂU HỎI</th>
-              <th className="py-4 px-6">TRẠNG THÁI</th>
-              <th className="py-4 px-6 text-right rounded-tr-2xl">HÀNH ĐỘNG</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="py-10 text-center text-gray-500 font-medium">Đang tải dữ liệu...</td>
-              </tr>
-            ) : paginatedTests.map((test, idx) => {
-              const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
 
-              // Format Date & Time
-              const dateObj = new Date(test.created_at);
-              const formattedDate = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-              const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-              // Setup Icon and Color based on type
-              let iconBg = "bg-blue-50 text-blue-500";
-              let svgPath = "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z";
-
-              if (test.subject === 'database') {
-                iconBg = "bg-indigo-50 text-indigo-500";
-                svgPath = "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4";
-              } else if (test.subject === 'exam') {
-                iconBg = "bg-gray-100 text-gray-500";
-                svgPath = "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9";
-              } else if (test.subject === 'document') {
-                iconBg = "bg-green-50 text-green-500";
-                svgPath = "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z";
-              }
-
-              // Setup Status Tags
-              let statusTag = <span className="px-3 py-1.5 border border-gray-200 text-gray-500 text-[11px] font-bold rounded-lg uppercase tracking-wider">{test.status}</span>;
-              if (test.status === 'HOÀN THÀNH') statusTag = <span className="px-3 py-1.5 bg-green-100/60 text-green-600 text-[11px] font-bold rounded-lg uppercase tracking-wider">{test.status}</span>;
-              else if (test.status === 'ĐANG LÀM') statusTag = <span className="px-3 py-1.5 bg-orange-50 text-orange-600 text-[11px] font-bold rounded-lg uppercase tracking-wider">{test.status}</span>;
-
-              // Generate pseudo code
-              const hpCode = `Mã HP: 21100${globalIdx.toString().padStart(2, '0')}`;
-
-              return (
-                <tr key={test.id} className="group hover:bg-gray-50/50 transition-colors">
-                  <td className="py-5 px-6">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center shrink-0`}>
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={svgPath} /></svg>
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-[15px] mb-0.5">{test.title}</h4>
-                        <div className="text-gray-400 text-[11px] font-medium tracking-wide">{hpCode}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-5 px-6 text-center">
-                    <div className="font-bold text-gray-700 text-sm mb-0.5">{formattedDate}</div>
-                    <div className="text-gray-400 text-xs">{formattedTime}</div>
-                  </td>
-                  <td className="py-5 px-6 text-center font-black text-gray-700 text-lg">{test.questions_count}</td>
-                  <td className="py-5 px-6">{statusTag}</td>
-                  <td className="py-5 px-6 text-right">
-                    {test.status !== 'HOÀN THÀNH' && (
-                      <button
-                        onClick={() => navigate(`/take-test/${test.id}`)}
-                        className="bg-[#3B66F5] hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg text-sm transition-colors shadow-md shadow-blue-200"
-                      >
-                        Làm bài
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        {/* Pagination */}
-        <div className="flex justify-between items-center py-4 border-t border-gray-100 mt-2 px-2">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-            {filteredTests.length > 0 &&
-              `HIỂN THỊ ${(currentPage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, filteredTests.length)} TRÊN ${filteredTests.length} BÀI KIỂM TRA`
-            }
-          </div>
-          <div className="flex gap-1">
-            {/* Previous */}
             <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded border border-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="p-4 rounded-2xl border border-slate-100 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </button>
-
-            {/* Page numbers */}
-            {getPageNumbers().map((page, i) =>
-              page === '...' ? (
-                <span key={`ellipsis-${i}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">…</span>
-              ) : (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page as number)}
-                  className={`w-8 h-8 flex items-center justify-center rounded font-bold text-sm transition-colors ${currentPage === page
-                    ? 'bg-[#3B66F5] text-white shadow-sm shadow-blue-200'
-                    : 'text-gray-600 hover:bg-gray-100 border border-transparent'
-                    }`}
-                >
-                  {page}
-                </button>
-              )
-            )}
-
-            {/* Next */}
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded border border-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <ChevronRight size={20} />
             </button>
           </div>
-        </div>
-      </div>
-      {/* Bottom Area */}
-      <div className="grid grid-cols-[1fr_280px] gap-6 mt-4">
-        <div className="rounded-2xl overflow-hidden bg-gradient-to-r from-[#E6EFFF] to-[#DCEHFF] relative p-8 flex items-center" style={{ background: 'linear-gradient(90deg, #E6EFFF 0%, #E8F0FF 50%, #C9DBFB 100%)' }}>
-          <div className="relative z-10 w-2/3">
-            <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Sẵn sàng cho kỳ thi cuối kỳ?</h3>
-            <p className="text-gray-500 mb-5 font-medium leading-relaxed">Bạn đã hoàn thành {stats ? Math.round(stats.progress_percent) : 0}% lộ trình ôn tập. Hãy thử sức với bài kiểm tra mô phỏng để củng cố kiến thức tốt nhất.</p>
-            <button className="bg-white text-[#3B66F5] font-bold py-2.5 px-6 rounded-xl hover:shadow-lg transition-shadow text-sm border border-transparent">
-              Bắt đầu mô phỏng ngay
-            </button>
-          </div>
-          <div className="absolute right-0 bottom-0 h-full w-1/3 opacity-80" style={{
-            backgroundImage: 'radial-gradient(circle at right, #A7C5FB 0%, transparent 70%)'
-          }}>
-            {/* Visual element placeholder for the box in image */}
-            <div className="absolute right-8 bottom-4 w-16 h-20 bg-white/40 rounded-xl rounded-b-none backdrop-blur-sm border-t border-r border-white/50"></div>
-            <div className="absolute right-28 top-8 w-12 h-12 bg-white/40 rounded-full backdrop-blur-sm border border-white/50"></div>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-gray-100 p-6 flex flex-col items-center justify-center bg-white">
-          <div className="relative w-24 h-24 mb-4">
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="#F3F4F6" strokeWidth="8" fill="none" />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke="#3B66F5"
-                strokeWidth="8"
-                fill="none"
-                strokeDasharray="251.2"
-                strokeDashoffset={251.2 * (1 - (stats?.progress_percent || 0) / 100)}
-                strokeLinecap="round"
-                className="transition-all duration-1000 ease-out"
-              />
-            </svg>
-            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-              <span className="text-2xl font-black text-gray-900">{stats ? Math.round(stats.progress_percent) : 0}%</span>
-            </div>
-          </div>
-          <h4 className="font-bold text-gray-900 text-center mb-1">Tiến độ hoàn thành</h4>
-          <p className="text-gray-400 text-xs font-medium text-center">Học kỳ 1 - Năm học 2023</p>
-        </div>
+        )}
       </div>
     </div>
   );
 };
+
 export default TestListPage;

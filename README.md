@@ -24,13 +24,9 @@
 ## 📊 Statistic contribute in this project: 
 ![Contributors](https://contrib.rocks/image?repo=GiaThinh110605/AI_Research)
 
-# Plan for team 
-- File: Ke_Hoach_PTUD.pdf
-
 
 ## Documentation: 
-- https://docs.google.com/document/d/1LkhnjzN_mmDqaUTBHCFEWkGqwIwrBkFJ6_aK33HSfuw/edit?usp=sharing
-- https://docs.google.com/document/d/1OJcgUKaQy-MyRZJ03KKA_HniUWSYaatJVzldgQS7JdA/edit?usp=sharing
+- https://docs.google.com/document/d/1VK-sPX6wGNsVy-2yWqqd7CMiBh_2E9FE/edit?usp=sharing&ouid=116261595522292024849&rtpof=true&sd=true
 
 ## Start all services (Database, Backend, Frontend)
 ```bash

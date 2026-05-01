@@ -68,6 +68,9 @@ class AdminDocumentOverview(BaseModel):
     pending_shares: int
     approved_shares: int
     rejected_shares: int
+    total_users: int = 0
+    weekly_uploads: List[int] = [0] * 7
+    recent_activities: List[dict] = []
 
 
 class AdminDocumentItem(BaseModel):

@@ -21,11 +21,28 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [user] = useState({
-    name: 'Nguyễn Văn A',
-    role: 'Sinh viên',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
+  const [user, setUser] = useState({
+    name: 'Đang tải...',
+    role: '...',
+    avatar: 'https://ui-avatars.com/api/?name=User&background=random'
   });
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const me = await authService.getCurrentUser();
+        const storedAvatar = localStorage.getItem('user_avatar');
+        setUser({
+          name: me.full_name || me.username || 'Người dùng',
+          role: me.role === 'admin' ? 'Quản trị viên' : (me.role === 'lecturer' ? 'Giảng viên' : 'Sinh viên'),
+          avatar: storedAvatar || me.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(me.full_name || me.username || 'U')}&background=EBF4FF&color=3B66F5&size=128`
+        });
+      } catch (err) {
+        console.error('Không thể lấy thông tin user:', err);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleLogout = () => {
     authService.logout();

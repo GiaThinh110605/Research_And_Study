@@ -144,7 +144,7 @@ def get_test_stats(
 ) -> Any:
 	try:
 		total_tests = db.query(Test).count()
-		user_results = db.query(TestResult).filter(TestResult.user_id == current_user.id).all()
+		user_results = db.query(TestResult).filter(TestResult.student_id == current_user.id).all()
 		
 		completed_tests = len(user_results)
 		
@@ -194,7 +194,7 @@ def list_tests(
 	for test in tests:
 		test_res = db.query(TestResult).filter(
 			TestResult.test_id == test.id, 
-			TestResult.user_id == current_user.id
+			TestResult.student_id == current_user.id
 		).first()
 		
 		status = "MỚI"
@@ -255,7 +255,7 @@ def list_my_results(
 ) -> Any:
 	return (
 		db.query(TestResult)
-		.filter(TestResult.user_id == current_user.id)
+		.filter(TestResult.student_id == current_user.id)
 		.order_by(TestResult.completed_at.desc())
 		.offset(skip)
 		.limit(limit)
@@ -337,21 +337,22 @@ def submit_test(
 
 	result = (
 		db.query(TestResult)
-		.filter(TestResult.test_id == test_id, TestResult.user_id == current_user.id)
+		.filter(TestResult.test_id == test_id, TestResult.student_id == current_user.id)
 		.first()
 	)
 
 	if result:
 		result.score = score
-		result.answers = payload.answers
-		result.time_taken_seconds = payload.time_taken_seconds
+		result.submitted_answers = payload.answers
+		result.time_taken = payload.time_taken_seconds
 	else:
 		result = TestResult(
 			test_id=test_id,
-			user_id=current_user.id,
+			student_id=current_user.id,
 			score=score,
-			answers=payload.answers,
-			time_taken_seconds=payload.time_taken_seconds
+			max_score=10.0,
+			submitted_answers=payload.answers,
+			time_taken=payload.time_taken_seconds
 		)
 		db.add(result)
 	
@@ -365,11 +366,11 @@ def submit_test(
 	return {
 		"id": result.id,
 		"test_id": result.test_id,
-		"user_id": result.user_id,
+		"user_id": result.student_id,
 		"score": result.score,
-		"time_taken_seconds": result.time_taken_seconds,
+		"time_taken_seconds": result.time_taken,
 		"completed_at": result.completed_at,
-		"answers": result.answers,
+		"answers": result.submitted_answers,
 		"test_title": test.title,
 		"full_name": current_user.full_name,
 		"rank": rank,
@@ -395,11 +396,11 @@ def get_result(
 	return {
 		"id": result.id,
 		"test_id": result.test_id,
-		"user_id": result.user_id,
+		"user_id": result.student_id,
 		"score": result.score,
-		"time_taken_seconds": result.time_taken_seconds,
+		"time_taken_seconds": result.time_taken,
 		"completed_at": result.completed_at,
-		"answers": result.answers,
+		"answers": result.submitted_answers,
 		"test_title": test.title if test else "Unknown Test",
 		"full_name": current_user.full_name,
 		"rank": rank,

@@ -3,23 +3,63 @@ import { validateName, validateStudentId, validateEmail, validatePhone } from '.
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'info' | 'activity' | 'security'>('info');
-  const [userName, setUserName] = useState(localStorage.getItem('user_name') || 'Sinh Viên');
+  const [userName, setUserName] = useState('Đang tải...');
+  const [userRole, setUserRole] = useState('Sinh viên');
 
   // Edit Profile State
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   
   const [profileData, setProfileData] = useState({
-    name: userName,
-    studentId: '21100000',
-    email: 'student@student.iuh.edu.vn',
+    name: 'Đang tải...',
+    studentId: '',
+    email: 'Đang tải...',
     phone: '',
-    major: 'Khoa CNTT - Kỹ thuật Phần mềm (K17)'
+    major: ''
   });
 
   // Avatar Upload State
-  const [avatarUrl, setAvatarUrl] = useState<string>(localStorage.getItem('user_avatar') || '');
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Activities State
+  const [activities, setActivities] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const { authService } = await import('../services/auth');
+        const api = (await import('../services/api')).default;
+        
+        const me = await authService.getCurrentUser();
+        const name = me.full_name || me.username || 'Người dùng';
+        
+        setUserName(name);
+        setUserRole(me.role === 'admin' ? 'Quản trị viên' : (me.role === 'lecturer' ? 'Giảng viên' : 'Sinh viên'));
+        
+        setProfileData(prev => ({
+          ...prev,
+          name: name,
+          studentId: me.username || '', // Use username as studentId initially
+          email: me.email || ''
+        }));
+
+        const storedAvatar = localStorage.getItem('user_avatar');
+        setAvatarUrl(storedAvatar || me.avatar_url || '');
+
+        try {
+          const actRes = await api.get('/api/v1/activities/me/activities');
+          setActivities(actRes.data);
+        } catch (actErr) {
+          console.error('Lỗi tải hoạt động', actErr);
+        }
+
+      } catch (err) {
+        console.error('Lỗi tải thông tin cá nhân', err);
+      }
+    };
+    loadProfile();
+  }, []);
+
   const handleAvatarClick = () => fileInputRef.current?.click();
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -108,7 +148,7 @@ const ProfilePage: React.FC = () => {
           <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">{userName}</h1>
           <p className="text-blue-600 font-semibold mb-4 text-sm flex items-center justify-center md:justify-start gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
-            Sinh viên Đại học Công nghiệp TP.HCM (IUH)
+            {userRole} Đại học Công nghiệp TP.HCM (IUH)
           </p>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-sm font-medium text-gray-500">
             <div className="flex items-center gap-2">
@@ -243,36 +283,6 @@ const ProfilePage: React.FC = () => {
                     </>
                   ) : (
                     <div className="px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-900 border border-gray-100">{profileData.email}</div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Số điện thoại</label>
-                  {isEditing ? (
-                    <>
-                      <input 
-                        type="tel" 
-                        value={profileData.phone} 
-                        onChange={e => {
-                          setProfileData({...profileData, phone: e.target.value});
-                          if (errors.phone) setErrors({...errors, phone: ''});
-                        }} 
-                        placeholder="Nhập SĐT..." 
-                        className={`w-full px-4 py-3 bg-white border-2 ${errors.phone ? 'border-red-500 focus:border-red-500' : 'border-blue-100 focus:border-blue-500'} rounded-xl font-medium text-gray-900 outline-none transition-all`} 
-                      />
-                      {errors.phone && <p className="text-rose-500 text-[10px] font-bold mt-1 px-1">{errors.phone}</p>}
-                    </>
-                  ) : (
-                    <div className={`px-4 py-3 rounded-xl font-medium border border-gray-100 ${profileData.phone ? 'bg-gray-50 text-gray-900' : 'bg-gray-50 text-gray-400 italic'}`}>
-                      {profileData.phone || 'Chưa cập nhật'}
-                    </div>
-                  )}
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Chuyên ngành</label>
-                  {isEditing ? (
-                    <input type="text" value={profileData.major} onChange={e => setProfileData({...profileData, major: e.target.value})} className="w-full px-4 py-3 bg-white border-2 border-blue-100 focus:border-blue-500 rounded-xl font-medium text-gray-900 outline-none transition-all" />
-                  ) : (
-                    <div className="px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-900 border border-gray-100">{profileData.major}</div>
                   )}
                 </div>
               </div>

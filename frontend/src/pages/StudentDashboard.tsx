@@ -23,40 +23,57 @@ import {
   BarChart3
 } from 'lucide-react';
 
+import { dashboardService, StudentDashboardData } from '../services/dashboard';
+
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [data, setData] = useState<StudentDashboardData | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [dashboardData, userData] = await Promise.all([
+          dashboardService.getStudentDashboard(),
+          authService.getCurrentUser()
+        ]);
+        setData(dashboardData);
+        setUser(userData);
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu dashboard", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const statsList = [
     {
       title: 'Tổng số tài liệu',
-      value: '128',
-      trend: '+12% tuần này',
+      value: data?.stats.total_documents || '0',
+      trend: 'Tài liệu hệ thống',
       icon: <FileText className="text-indigo-600" size={24} />,
       bg: 'bg-indigo-50',
       borderColor: 'border-indigo-500'
     },
     {
       title: 'Bài kiểm tra đã làm',
-      value: '45',
-      trend: 'Hoàn thành',
+      value: data?.stats.completed_tests || '0',
+      trend: `${data?.stats.progress_percent || 0}% tiến độ`,
       icon: <Target className="text-emerald-600" size={24} />,
       bg: 'bg-emerald-50',
       borderColor: 'border-emerald-500'
     },
     {
       title: 'Điểm GPA hiện tại',
-      value: '3.85',
-      trend: 'Top 5% lớp',
+      value: data?.stats.gpa.toFixed(2) || '0.00',
+      trend: 'Trên thang 4.0',
       icon: <TrendingUp className="text-amber-600" size={24} />,
       bg: 'bg-amber-50',
       borderColor: 'border-amber-500'
     }
-  ];
-
-  const recentDocs = [
-    { title: 'Giải tích 1 - Bài tập chương 4', info: 'PDF • 2.4 MB • Cập nhật 2 giờ trước' },
-    { title: 'Ghi chú Triết học Mác-Lênin', info: 'DOCX • 1.1 MB • Cập nhật hôm qua' },
-    { title: 'Cấu trúc dữ liệu và giải thuật', info: 'PDF • 5.8 MB • Cập nhật 3 ngày trước' },
   ];
 
   const semesterProgress = [
@@ -65,17 +82,14 @@ const StudentDashboard: React.FC = () => {
     { name: 'Anh văn chuyên ngành', progress: 40, color: 'bg-amber-500' },
   ];
 
-  const upcomingTests = [
-    { day: 'TH2', date: '12', name: 'Kiểm tra Giữa kỳ', subject: 'Mạng máy tính', time: '09:00' },
-    { day: 'TH4', date: '14', name: 'Tiểu luận cuối khóa', subject: 'Kỹ năng mềm', time: 'Hạn chót' },
-  ];
-
   return (
     <div className="space-y-8 pb-20">
       {/* Greeting */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Chào buổi sáng, Văn A!</h1>
-        <p className="text-slate-500 font-medium">Hôm nay bạn có 3 bài kiểm tra sắp tới và 5 tài liệu mới cần nghiên cứu.</p>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+          Chào buổi sáng, {user?.full_name || 'Bạn'}!
+        </h1>
+        <p className="text-slate-500 font-medium">Hôm nay bạn có {data?.upcoming_tests.length || 0} bài kiểm tra sắp tới và {data?.recent_documents.length || 0} tài liệu mới cần nghiên cứu.</p>
       </div>
 
       <div className="grid grid-cols-12 gap-8">
@@ -83,7 +97,7 @@ const StudentDashboard: React.FC = () => {
         <div className="col-span-12 lg:col-span-8 space-y-8">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {stats.map((stat, idx) => (
+            {statsList.map((stat, idx) => (
               <div 
                 key={idx} 
                 className={`bg-white p-6 rounded-3xl border-l-4 ${stat.borderColor} shadow-sm shadow-slate-200/50 flex flex-col gap-4 transition-transform hover:scale-[1.02] duration-200 cursor-default`}
@@ -113,7 +127,7 @@ const StudentDashboard: React.FC = () => {
               </Link>
             </div>
             <div className="space-y-4">
-              {recentDocs.map((doc, idx) => (
+              {data?.recent_documents.map((doc, idx) => (
                 <div 
                   key={idx} 
                   className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-all duration-200 cursor-pointer border border-transparent hover:border-slate-100"
@@ -130,6 +144,9 @@ const StudentDashboard: React.FC = () => {
                   </button>
                 </div>
               ))}
+              {data?.recent_documents.length === 0 && (
+                <p className="text-center py-10 text-slate-400 font-medium italic">Chưa có tài liệu mới</p>
+              )}
             </div>
           </div>
 
@@ -180,18 +197,21 @@ const StudentDashboard: React.FC = () => {
           <div className="bg-white rounded-[32px] p-8 shadow-sm shadow-slate-200/50 border border-slate-100">
             <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Lịch thi sắp tới</h2>
             <div className="space-y-6 mb-8">
-              {upcomingTests.map((test, idx) => (
+              {data?.upcoming_tests.map((test, idx) => (
                 <div key={idx} className="flex items-center gap-4 group cursor-default">
                   <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex flex-col items-center justify-center shrink-0 border border-indigo-100 group-hover:bg-indigo-600 transition-colors duration-300">
-                    <span className="text-[10px] font-black text-indigo-400 group-hover:text-indigo-200 uppercase">{test.day}</span>
-                    <span className="text-lg font-black text-indigo-600 group-hover:text-white leading-tight">{test.date}</span>
+                    <span className="text-[10px] font-black text-indigo-400 group-hover:text-indigo-200 uppercase">SẮP</span>
+                    <span className="text-lg font-black text-indigo-600 group-hover:text-white leading-tight">TỚI</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-black text-slate-900 line-clamp-1">{test.name}</h3>
-                    <p className="text-slate-400 text-[11px] font-bold uppercase tracking-wider">{test.subject} • {test.time}</p>
+                    <h3 className="text-sm font-black text-slate-900 line-clamp-1">{test.title}</h3>
+                    <p className="text-slate-400 text-[11px] font-bold uppercase tracking-wider">{test.subject} • {test.created_at}</p>
                   </div>
                 </div>
               ))}
+              {data?.upcoming_tests.length === 0 && (
+                 <p className="text-center py-4 text-slate-400 text-sm italic font-medium">Không có lịch thi mới</p>
+              )}
             </div>
             <button className="w-full py-4 rounded-2xl border-2 border-slate-100 text-slate-500 font-black text-sm hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 transition-all">
               Xem lịch chi tiết

@@ -17,7 +17,6 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { testService, TestOut, TestStats } from '../services/test';
-import { mockTests, mockTestStats } from '../mock_data/test_list';
 import { authService } from '../services/auth';
 
 const PAGE_SIZE = 8;
@@ -37,16 +36,16 @@ const TestListPage: React.FC = () => {
     const fetchData = async () => {
       try {
         const [testsData, statsData] = await Promise.all([
-          testService.getTests().catch(() => null),
+          testService.getTests().catch(() => []),
           testService.getTestStats().catch(() => null)
         ]);
         
-        setTests(testsData && testsData.length > 0 ? testsData : mockTests);
-        setStats(statsData && statsData.total_tests > 0 ? statsData : mockTestStats);
+        setTests(testsData || []);
+        setStats(statsData);
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu", error);
-        setTests(mockTests);
-        setStats(mockTestStats);
+        setTests([]);
+        setStats(null);
       } finally {
         setLoading(false);
       }

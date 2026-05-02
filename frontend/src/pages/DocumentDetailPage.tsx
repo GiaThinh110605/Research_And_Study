@@ -5,7 +5,6 @@ import { authService } from '../services/auth';
 import { documentService, DocumentItem, ShareItem } from '../services/documents';
 import { Flashcard as FlashcardItem } from '../services/flashcards';
 import api from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
 import { aiService } from '../services/ai';
 
 interface DiscussionUser {
@@ -116,6 +115,14 @@ const DocumentDetailPage: React.FC = () => {
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [discLoading, setDiscLoading] = useState(false);
+  const [reactions, setReactions] = useState<Record<number, string>>({});
+
+  const handleReaction = (discId: number, emoji: string) => {
+    setReactions(prev => ({
+      ...prev,
+      [discId]: prev[discId] === emoji ? '' : emoji
+    }));
+  };
 
   const [isQuestionInput, setIsQuestionInput] = useState(false);
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
@@ -461,600 +468,278 @@ const DocumentDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#F4F7FE] font-sans text-slate-900 border-t-4 border-[#3B66F5]">
-      <main className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex h-[calc(100vh)] bg-white font-sans text-slate-900 overflow-hidden">
+      <main className="flex-1 flex flex-col h-full overflow-hidden">
 
-        <div className="h-[72px] bg-white border-b px-6 flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-xl font-black text-slate-900">{document.title}</h1>
-            <p className="text-xs text-slate-500">Cập nhật {new Date(document.created_at).toLocaleDateString('vi-VN')} • {document.file_type}</p>
+        {/* Top Header */}
+        <div className="h-[72px] bg-white border-b border-gray-100 px-8 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 text-sm text-gray-500 font-bold">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+            Tài liệu
+            <span className="text-gray-300">›</span>
+            <span className="text-gray-900">{document.title}</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button onClick={openShare} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Chia sẻ</button>
-            {isOwner && (
-              <button onClick={() => setIsEditOpen(true)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Chỉnh sửa</button>
-            )}
-            <a href={fileUrl} target="_blank" rel="noreferrer" className="rounded-lg bg-[#3B66F5] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Tải về</a>
+          <div className="flex items-center gap-4">
+            <button onClick={openShare} className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-[#3B66F5] hover:bg-blue-50 rounded-xl transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+              Chia sẻ
+            </button>
+            <a href={fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-[#5E6AD2] hover:bg-[#4d57b5] px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-colors shadow-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Tải về PDF
+            </a>
           </div>
         </div>
 
-        <div className="h-12 bg-white border-b px-6 flex items-center gap-8 text-sm font-semibold text-slate-500 shrink-0">
-          <button onClick={() => setActiveTab('info')} className={activeTab === 'info' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Thông tin</button>
-          <button onClick={() => setActiveTab('questions')} className={activeTab === 'questions' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Đặt câu hỏi</button>
-          <button onClick={() => setActiveTab('discussion')} className={activeTab === 'discussion' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Thảo luận</button>
-          <button onClick={() => setActiveTab('highlight')} className={activeTab === 'highlight' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Highlight</button>
-          <button onClick={() => setActiveTab('flashcards')} className={activeTab === 'flashcards' ? 'text-[#3B66F5]' : 'hover:text-slate-800'}>Flashcards</button>
-        </div>
-
-        <div className="flex-1 overflow-hidden grid grid-cols-1 xl:grid-cols-12">
-          <section className="xl:col-span-9 h-full overflow-y-auto p-6">
-            {activeTab === 'info' && (
-              <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        {/* Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left: Document Viewer */}
+          <div className="flex-1 h-full overflow-y-auto p-8 bg-[#F8FAFF]">
+             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 h-full overflow-hidden">
                 {document.file_type.toUpperCase() === 'PDF' ? (
-                  <iframe title="PDF Viewer" src={fileUrl} className="h-[580px] w-full rounded-xl border border-slate-100" />
+                  <iframe title="PDF Viewer" src={fileUrl} className="w-full h-full" />
                 ) : (
-                  <div className="h-[420px] rounded-xl border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-center px-8">
+                  <div className="h-full flex items-center justify-center text-center p-8">
                     <div>
                       <p className="text-lg font-bold text-slate-700">Tài liệu không phải PDF</p>
                       <p className="mt-2 text-sm text-slate-500">Hệ thống vẫn hỗ trợ tải về và đọc bằng ứng dụng tương ứng.</p>
-                      <a href={fileUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-lg bg-[#3B66F5] px-4 py-2 text-sm font-semibold text-white">Mở tài liệu gốc</a>
+                      <a href={fileUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-xl bg-[#3B66F5] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-600 transition-colors">Tải tài liệu gốc</a>
                     </div>
                   </div>
                 )}
+             </div>
+          </div>
 
-                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="rounded-xl bg-slate-50 p-3">
-                    <p className="text-xs uppercase text-slate-400">Môn học</p>
-                    <p className="font-semibold text-slate-800">{document.subject || 'Chưa phân loại'}</p>
-                  </div>
-                  <div className="rounded-xl bg-slate-50 p-3">
-                    <p className="text-xs uppercase text-slate-400">Người đăng</p>
-                    <p className="font-semibold text-slate-800">{document.uploader_name || 'Người dùng UniStudy'}</p>
-                  </div>
-                  <div className="rounded-xl bg-slate-50 p-3 md:col-span-2">
-                    <p className="text-xs uppercase text-slate-400">Mô tả</p>
-                    <p className="font-medium text-slate-700">{document.description || 'Không có mô tả.'}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* Right: Sidebar */}
+          <div className="w-[400px] bg-white h-full overflow-hidden border-l border-gray-100 flex flex-col shrink-0">
+            {/* Tabs */}
+            <div className="flex items-center justify-between px-6 pt-5 border-b border-gray-100">
+               <button 
+                  onClick={() => setActiveTab('info')} 
+                  className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'info' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+               >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                  Tóm tắt
+               </button>
+               <button 
+                  onClick={() => setActiveTab('flashcards')} 
+                  className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'flashcards' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+               >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                  Sơ đồ
+               </button>
+               <button 
+                  onClick={() => setActiveTab('discussion')} 
+                  className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'discussion' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+               >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                  Thảo luận
+               </button>
+            </div>
 
-            {activeTab === 'questions' && (
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-900">Đặt câu hỏi về tài liệu</h3>
-                  <p className="mt-1 text-sm text-slate-500">Đặt câu hỏi để giảng viên hoặc sinh viên khác giúp bạn giải đáp cặn kẽ hơn.</p>
-                  <textarea
-                    rows={3}
-                    value={questionInput}
-                    onChange={(event) => setQuestionInput(event.target.value)}
-                    placeholder="Ví dụ: Giảng viên cho hỏi công thức này có được mang vào phòng thi không ạ?"
-                    className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#3B66F5] focus:bg-white transition-colors"
-                  />
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={handleQuestionSubmit}
-                      disabled={!questionInput.trim()}
-                      className="rounded-lg bg-[#3B66F5] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      Gửi câu hỏi
-                    </button>
-                  </div>
-                </div>
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+               {/* Summary View */}
+               {activeTab === 'info' && (
+                  <>
+                     <div className="bg-[#F8FAFF] rounded-2xl p-6 border border-blue-50">
+                        <div className="flex justify-between items-center mb-5">
+                           <h4 className="text-sm font-bold text-gray-800">AI Tóm tắt nội dung</h4>
+                           <span className="bg-[#5E6AD2] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Premium</span>
+                        </div>
+                        <ul className="space-y-4 text-[13px] text-gray-600 font-medium leading-relaxed">
+                           <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Định nghĩa đạo hàm riêng theo từng biến số khi các biến còn lại được giữ nguyên.</li>
+                           <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Quy tắc tính đạo hàm tương tự hàm một biến nhưng cần chú ý biến hằng.</li>
+                           <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Công thức vi phân toàn phần và ứng dụng trong tính gần đúng.</li>
+                        </ul>
+                     </div>
 
-                {questionsLoading ? (
-                  <div className="text-center text-slate-500 text-sm py-10">Đang tải danh sách câu hỏi...</div>
-                ) : questions.length > 0 ? (
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-slate-800">Q&A ({questions.length})</h3>
-                    {questions.map((q) => (
-                      <div key={q.id} className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-                        <div className="p-5">
-                          <div className="flex justify-between items-start">
-                            <div className="flex gap-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm ${q.user?.role === 'lecturer' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                                {q.user ? getInitials(q.user.full_name) : '?'}
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-slate-900 text-sm">{q.user?.full_name || 'Người dùng'} {q.user?.role === 'lecturer' && <span className="bg-blue-100 text-blue-700 text-[10px] uppercase px-1.5 py-0.5 rounded ml-1">GV</span>}</h4>
-                                <span className="text-[11px] text-slate-500">{timeAgo(q.created_at)}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <p className="mt-4 text-[14px] text-slate-800 font-medium">Q: {q.content}</p>
+                     <div>
+                        <h4 className="text-sm font-bold text-gray-800 mb-4">Khái niệm trọng tâm</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-[#3B66F5] transition-colors cursor-pointer group">
+                              <p className="text-[10px] font-black text-[#3B66F5] uppercase tracking-wider mb-1.5 group-hover:text-[#2A52D5]">Cơ bản</p>
+                              <p className="font-bold text-gray-900 text-[13px]">Biến hằng</p>
+                           </div>
+                           <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-orange-500 transition-colors cursor-pointer group">
+                              <p className="text-[10px] font-black text-orange-500 uppercase tracking-wider mb-1.5 group-hover:text-orange-600">Nâng cao</p>
+                              <p className="font-bold text-gray-900 text-[13px]">Vi phân TP</p>
+                           </div>
+                           <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-emerald-500 transition-colors cursor-pointer group">
+                              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider mb-1.5 group-hover:text-emerald-600">Ứng dụng</p>
+                              <p className="font-bold text-gray-900 text-[13px]">Cực trị</p>
+                           </div>
+                           <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-purple-500 transition-colors cursor-pointer group">
+                              <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1.5 group-hover:text-purple-600">Đồ thị</p>
+                              <p className="font-bold text-gray-900 text-[13px]">Mặt cong</p>
+                           </div>
+                        </div>
+                     </div>
 
-                          {q.answer ? (
-                            <div className="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100 group relative">
-                              <div className="flex justify-between items-start mb-1">
-                                <p className="text-sm font-bold text-emerald-800">A: Trả lời</p>
-                                <button onClick={() => { setAnsweringTo(answeringTo === q.id ? null : q.id); setAnswerContent(q.answer || ''); }} className="text-[10px] px-2 py-1 bg-emerald-100 uppercase font-bold text-emerald-700 hover:bg-emerald-200 rounded transition-colors">Chỉnh sửa</button>
-                              </div>
-                              <p className="text-[13px] text-emerald-900 leading-relaxed whitespace-pre-wrap">{q.answer}</p>
-                            </div>
-                          ) : (
-                            <div className="mt-4 flex flex-col gap-3">
-                              <span className="inline-block px-3 py-1 bg-yellow-50 text-yellow-700 text-xs font-semibold rounded-full w-fit">Chưa có câu trả lời</span>
-                              {(isOwner || (currentUserId && document.uploader_id === currentUserId) || true) && (
-                                <button onClick={() => { setAnsweringTo(answeringTo === q.id ? null : q.id); setAnswerContent(''); }} className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors self-start">VIẾT CÂU TRẢ LỜI</button>
+                     <div className="flex-1 flex flex-col min-h-[160px]">
+                        <h4 className="text-sm font-bold text-gray-800 mb-3">Ghi chú của bạn</h4>
+                        <div className="flex-1 border border-gray-200 rounded-2xl bg-gray-50/50 p-4 flex flex-col focus-within:border-[#3B66F5] focus-within:bg-white transition-all shadow-sm">
+                           <textarea 
+                              placeholder="Viết ghi chú nhanh về trang này..."
+                              className="w-full flex-1 bg-transparent resize-none outline-none text-[13px] text-gray-700 placeholder:text-gray-400 font-medium"
+                           />
+                           <button className="self-end text-[#3B66F5] text-sm font-bold hover:text-blue-700">Lưu</button>
+                        </div>
+                     </div>
+                  </>
+               )}
+
+               {/* Discussion View */}
+               {activeTab === 'discussion' && (
+                  <div className="flex flex-col h-full bg-white relative">
+                     {!(document.is_public || isOwner || true) ? (
+                        <div className="flex-1 flex items-center justify-center">
+                           <p className="text-sm text-slate-500">Bạn không có quyền tham gia thảo luận.</p>
+                        </div>
+                     ) : (
+                        <>
+                           {/* List */}
+                           <div className="flex-1 overflow-y-auto p-4 space-y-5 min-h-[300px]">
+                              {discLoading ? (
+                                 <div className="flex justify-center items-center h-full">
+                                    <div className="w-6 h-6 border-2 border-[#3B66F5] border-t-transparent rounded-full animate-spin"></div>
+                                 </div>
+                              ) : discussions.length === 0 ? (
+                                 <div className="flex flex-col items-center justify-center h-full text-center opacity-70">
+                                    <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                    <p className="text-sm text-slate-500 font-medium">Chưa có bình luận nào.<br/>Hãy bắt đầu thảo luận!</p>
+                                 </div>
+                              ) : (
+                                 discussions.map(disc => (
+                                    <div key={disc.id} className="flex gap-3 group animate-fade-in">
+                                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
+                                          {disc.user ? getInitials(disc.user.full_name) : 'A'}
+                                       </div>
+                                       <div className="flex-1">
+                                          <div className="bg-[#F8FAFF] rounded-2xl rounded-tl-sm px-4 py-2.5 inline-block w-full">
+                                             <div className="flex justify-between items-baseline mb-1">
+                                                <span className="font-bold text-[13px] text-slate-800">{disc.user?.full_name || 'Ẩn danh'}</span>
+                                             </div>
+                                             <p className="text-[13px] text-slate-700 leading-relaxed">{disc.content}</p>
+                                          </div>
+                                          
+                                          {/* Actions */}
+                                          <div className="flex items-center gap-4 mt-1.5 ml-2 text-[11px] font-bold text-slate-500 relative">
+                                             <span className="font-normal opacity-70">{timeAgo(disc.created_at)}</span>
+                                             
+                                             <div className="relative group/reaction">
+                                                <button onClick={() => handleReaction(disc.id, '👍')} className={`hover:text-[#3B66F5] transition-colors py-1 ${reactions[disc.id] ? 'text-[#3B66F5]' : ''}`}>
+                                                   {reactions[disc.id] ? `${reactions[disc.id]} Thích` : 'Thích'}
+                                                </button>
+                                                {/* Facebook style reactions */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-1 hidden group-hover/reaction:block z-10">
+                                                   <div className="flex bg-white shadow-[0_5px_15px_rgba(0,0,0,0.15)] rounded-full px-2 py-1 gap-1 border border-slate-100 animate-slide-up">
+                                                      <button onClick={() => handleReaction(disc.id, '👍')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">👍</button>
+                                                      <button onClick={() => handleReaction(disc.id, '❤️')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">❤️</button>
+                                                      <button onClick={() => handleReaction(disc.id, '😂')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😂</button>
+                                                      <button onClick={() => handleReaction(disc.id, '😮')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😮</button>
+                                                      <button onClick={() => handleReaction(disc.id, '😢')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😢</button>
+                                                   </div>
+                                                </div>
+                                             </div>
+
+                                             <button onClick={() => setReplyingTo(replyingTo === disc.id ? null : disc.id)} className="hover:text-[#3B66F5] transition-colors">Phản hồi</button>
+                                          </div>
+
+                                          {/* Replies */}
+                                          {disc.replies && disc.replies.length > 0 && (
+                                             <div className="mt-3 space-y-3">
+                                                {disc.replies.map(reply => (
+                                                   <div key={reply.id} className="flex gap-2.5">
+                                                      <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[10px] shrink-0">
+                                                         {reply.user ? getInitials(reply.user.full_name) : 'A'}
+                                                      </div>
+                                                      <div className="flex-1">
+                                                         <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-3 py-2 inline-block">
+                                                            <span className="font-bold text-xs text-slate-800 mr-2">{reply.user?.full_name || 'Ẩn danh'}</span>
+                                                            <span className="text-[13px] text-slate-700">{reply.content}</span>
+                                                         </div>
+                                                         <div className="flex items-center gap-3 mt-1 ml-2 text-[10px] font-bold text-slate-500">
+                                                            <span className="font-normal opacity-70">{timeAgo(reply.created_at)}</span>
+                                                            <button className="hover:text-[#3B66F5]">Thích</button>
+                                                         </div>
+                                                      </div>
+                                                   </div>
+                                                ))}
+                                             </div>
+                                          )}
+
+                                          {/* Reply Input */}
+                                          {replyingTo === disc.id && (
+                                             <div className="mt-3 flex gap-2">
+                                                <input
+                                                   autoFocus
+                                                   placeholder="Viết phản hồi..."
+                                                   className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-[13px] outline-none focus:border-[#3B66F5] focus:bg-white transition-all"
+                                                   value={replyContent}
+                                                   onChange={(e) => setReplyContent(e.target.value)}
+                                                   onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(disc.id)}
+                                                />
+                                                <button
+                                                   onClick={() => handleReplySubmit(disc.id)}
+                                                   disabled={!replyContent.trim()}
+                                                   className="bg-[#3B66F5] text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                                                >
+                                                   <svg className="w-4 h-4 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                                                </button>
+                                             </div>
+                                          )}
+                                       </div>
+                                    </div>
+                                 ))
                               )}
-                            </div>
-                          )}
+                           </div>
 
-                          {answeringTo === q.id && (
-                            <div className="mt-3 flex gap-2">
-                              <input
-                                className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                                placeholder="Nhập câu trả lời chuyên môn..."
-                                value={answerContent}
-                                onChange={e => setAnswerContent(e.target.value)}
-                                autoFocus
-                              />
-                              <button onClick={() => handleAnswerSubmit(q.id)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Lưu lại</button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-slate-500 py-10 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    Chưa có câu hỏi nào. Đặt câu hỏi đầu tiên!
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'discussion' && (
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">Thảo luận môn học</h3>
-                  <div className="flex gap-4">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold shrink-0 shadow-sm">
-                      {currentUserId ? 'Me' : 'U'}
-                    </div>
-                    <div className="flex-1">
-                      <textarea
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Hỏi đáp, trao đổi với những người cùng học tài liệu này..."
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 outline-none focus:border-[#3B66F5] focus:bg-white transition-all text-[15px]"
-                        rows={3}
-                      />
-                      <div className="mt-4 flex items-center justify-between">
-                        <label className="flex items-center gap-2 cursor-pointer group">
-                          <div className={`w-10 h-5 rounded-full transition-colors relative ${isQuestionInput ? 'bg-indigo-600' : 'bg-slate-300'}`}>
-                            <input
-                              type="checkbox"
-                              className="hidden"
-                              checked={isQuestionInput}
-                              onChange={e => setIsQuestionInput(e.target.checked)}
-                            />
-                            <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${isQuestionInput ? 'translate-x-5' : ''}`} />
-                          </div>
-                          <span className="text-xs font-bold text-slate-500 group-hover:text-indigo-600 transition-colors">Đánh dấu là câu hỏi</span>
-                        </label>
-                        <button
-                          onClick={() => handleCommentSubmit(isQuestionInput)}
-                          disabled={!newComment.trim()}
-                          className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-indigo-300 disabled:opacity-50 transition-all active:scale-95"
-                        >
-                          Đăng bài
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {discLoading ? (
-                  <div className="text-center text-slate-500 text-sm py-12">
-                    <div className="inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="font-medium">Đang tải thảo luận...</p>
-                  </div>
-                ) : discussions.length > 0 ? (
-                  <div className="space-y-6">
-                    {discussions.map((disc: any) => (
-                      <div key={disc.id} className={`rounded-2xl bg-white border shadow-sm overflow-hidden transition-all hover:shadow-md ${disc.is_question ? 'border-indigo-200 ring-1 ring-indigo-50' : 'border-slate-100'}`}>
-                        <div className="p-6">
-                          <div className="flex gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold shadow-sm shrink-0 text-lg ${disc.user?.role === 'lecturer' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                              {disc.user ? getInitials(disc.user.full_name) : '?'}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h4 className="font-bold text-slate-900">{disc.user?.full_name || 'Người dùng Ẩn danh'}</h4>
-                                {disc.user?.role === 'lecturer' && (
-                                  <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">Giảng viên</span>
-                                )}
-                                {disc.is_question && (
-                                  <span className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1">
-                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" /></svg>
-                                    Câu hỏi
-                                  </span>
-                                )}
-                                <span className="text-[11px] font-bold text-slate-400 ml-auto">{timeAgo(disc.created_at)}</span>
+                           {/* Main Input */}
+                           <div className="p-4 border-t border-slate-100 bg-white shrink-0">
+                              <div className="flex items-center gap-2 relative">
+                                 <input 
+                                    type="text" 
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(false)}
+                                    placeholder="Thêm bình luận..." 
+                                    className="w-full bg-[#F4F7FE] rounded-full border border-transparent px-4 py-3 pr-12 text-[13px] font-medium outline-none focus:border-[#3B66F5] focus:bg-white transition-all placeholder:text-slate-400"
+                                 />
+                                 <button 
+                                    onClick={() => handleCommentSubmit(false)}
+                                    disabled={!newComment.trim()}
+                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-[#3B66F5] text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:bg-slate-300"
+                                 >
+                                    <svg className="w-4 h-4 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                                 </button>
                               </div>
-                              <p className="text-[15px] text-slate-700 leading-relaxed whitespace-pre-wrap font-medium">{disc.content}</p>
-
-                              <div className="mt-4 flex items-center gap-6">
-                                <button
-                                  onClick={() => {
-                                    setReplyingTo(replyingTo === disc.id ? null : disc.id);
-                                    setReplyContent('');
-                                  }}
-                                  className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1.5"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                  {disc.replies?.length > 0 ? `Bình luận (${disc.replies.length})` : 'Trả lời ngay'}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Replies */}
-                          {disc.replies && disc.replies.length > 0 && (
-                            <div className="mt-6 ml-16 space-y-4 border-l-2 border-slate-100 pl-6">
-                              {disc.replies.map((reply: any) => (
-                                <div key={reply.id} className="group">
-                                  <div className="flex gap-3">
-                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-[10px] shrink-0 shadow-sm ${reply.user?.role === 'lecturer' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
-                                      {reply.user ? getInitials(reply.user.full_name) : '?'}
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-bold text-sm text-slate-900">{reply.user?.full_name || 'Ẩn danh'}</span>
-                                        {reply.user?.role === 'lecturer' && (
-                                          <span className="bg-indigo-600 text-white text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-sm">GV</span>
-                                        )}
-                                        <span className="text-[10px] font-bold text-slate-400 ml-auto">{timeAgo(reply.created_at)}</span>
-                                      </div>
-                                      <p className="text-[13px] text-slate-600 leading-relaxed font-medium">{reply.content}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Reply Input */}
-                          {replyingTo === disc.id && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="mt-6 ml-16 bg-slate-50 rounded-2xl p-2 flex items-center gap-2 border border-slate-200"
-                            >
-                              <input
-                                type="text"
-                                autoFocus
-                                placeholder="Viết phản hồi của bạn..."
-                                className="bg-transparent flex-1 outline-none text-sm px-3 py-2 text-slate-800 placeholder:text-slate-400"
-                                value={replyContent}
-                                onChange={(e) => setReplyContent(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(disc.id)}
-                              />
-                              <button
-                                onClick={() => handleReplySubmit(disc.id)}
-                                disabled={!replyContent.trim()}
-                                className="bg-indigo-600 text-white p-2 rounded-xl shadow-md shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-50 transition-all"
-                              >
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
-                              </button>
-                            </motion.div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                           </div>
+                        </>
+                     )}
                   </div>
-                ) : (
-                  <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm border-dashed">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                    </div>
-                    <p className="text-slate-400 font-bold tracking-wide">Chưa có thảo luận nào cho tài liệu này.</p>
+               )}
+
+               {/* Flashcards View */}
+               {activeTab === 'flashcards' && (
+                  <div className="flex flex-col h-full">
+                     <div className="text-center text-gray-500 text-sm mt-10">
+                        Tính năng Sơ đồ / Flashcards đang được phát triển...
+                     </div>
                   </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'highlight' && (
-              <>
-                <div className="space-y-6">
-                  <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-900">Ghi chú & Nổi bật (Highlight)</h3>
-                    <p className="mt-1 text-sm text-slate-500">Lưu lại những đoạn văn quan trọng từ tài liệu (trang cụ thể) kèm ghi chú cá nhân của bạn.</p>
-
-                    <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Đoạn văn quan trọng *</label>
-                        <textarea
-                          value={highText}
-                          onChange={e => setHighText(e.target.value)}
-                          rows={3}
-                          placeholder="Ví dụ: Công thức tính năng lượng E = mc^2..."
-                          className="mt-1.5 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Trang số</label>
-                        <input
-                          type="number"
-                          value={highPage}
-                          onChange={e => setHighPage(Number(e.target.value))}
-                          min={1}
-                          className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Phân loại màu</label>
-                        <select
-                          value={highColor}
-                          onChange={e => setHighColor(e.target.value)}
-                          className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-[9px] text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
-                        >
-                          <option value="yellow">🟡 Vàng (Quan trọng)</option>
-                          <option value="blue">🔵 Xanh dương (Ví dụ)</option>
-                          <option value="green">🟢 Xanh lá (Định nghĩa)</option>
-                          <option value="red">🔴 Đỏ (Cần hỏi lại)</option>
-                        </select>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ghi chú thêm (Tùy chọn)</label>
-                        <input
-                          value={highNote}
-                          onChange={e => setHighNote(e.target.value)}
-                          placeholder="Nhập ghi chú ý hiểu của bạn cho đoạn văn này..."
-                          className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex justify-end">
-                      <button
-                        onClick={handleHighlightSubmit}
-                        disabled={!highText.trim()}
-                        className="bg-[#3B66F5] text-white px-5 py-2.5 rounded-lg font-bold text-[13px] hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm shadow-blue-200"
-                      >
-                        Lưu Highlight
-                      </button>
-                    </div>
-                  </div>
-
-                  {highLoading ? (
-                    <div className="text-center py-10 text-slate-500 text-sm font-medium">Đang tải ghi chú...</div>
-                  ) : highlights.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4">
-                      {highlights.map(h => (
-                        <div key={h.id} className={`rounded-xl border p-5 shadow-sm relative transition-all hover:shadow-md ${h.color === 'yellow' ? 'bg-[#FFFBEB] border-[#FEF3C7]' : h.color === 'blue' ? 'bg-[#EFF6FF] border-[#DBEAFE]' : h.color === 'green' ? 'bg-[#F0FDF4] border-[#DCFCE7]' : 'bg-[#FEF2F2] border-[#FEE2E2]'}`}>
-                          <button onClick={() => handleDeleteHighlight(h.id)} className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-md bg-white bg-opacity-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors text-xs font-black">✕</button>
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="font-extrabold text-[10px] uppercase px-2.5 py-1 rounded-full bg-white bg-opacity-70 tracking-wider text-slate-700">Trang {h.page_number}</span>
-                            <span className="text-[11px] text-slate-500 font-medium">{timeAgo(h.created_at)}</span>
-                          </div>
-
-                          <div className="relative">
-                            <div className={`absolute left-0 top-1 bottom-1 w-1 rounded-full ${h.color === 'yellow' ? 'bg-amber-400' : h.color === 'blue' ? 'bg-blue-400' : h.color === 'green' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
-                            <p className={`pl-4 font-semibold text-[14px] leading-relaxed ${h.color === 'yellow' ? 'text-amber-900' : h.color === 'blue' ? 'text-blue-900' : h.color === 'green' ? 'text-emerald-900' : 'text-red-900'}`}>{h.text_content}</p>
-                          </div>
-
-                          {h.note && (
-                            <div className="mt-4 pt-3 border-t border-slate-300 border-opacity-30">
-                              <p className="text-[13px] text-slate-700 font-semibold"><span className="opacity-70">💡 Ghi chú: </span>{h.note}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-500 text-sm font-medium">Bạn chưa lưu đoạn nổi bật nào.<br /><span className="text-xs font-normal opacity-70 mt-1 block">Tạo highlight để ghi nhớ bài tốt hơn!</span></div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {activeTab === 'flashcards' && (
-              <>
-                <div className="flex flex-col gap-6 lg:flex-row h-full">
-                  {/* Left Sidebar - Stats & Tips */}
-                  <div className="lg:w-80 flex flex-col gap-6 shrink-0">
-                    {/* Progress Card */}
-                    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 flex flex-col items-center">
-                      <p className="text-[10px] font-black tracking-widest text-blue-500 uppercase mb-6 self-start">Tiến độ hôm nay</p>
-                      <div className="relative w-40 h-40 flex items-center justify-center">
-                        <svg className="w-full h-full -rotate-90">
-                          <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-blue-50" />
-                          <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={440} strokeDashoffset={440 - (440 * progressPercent) / 100} strokeLinecap="round" className="text-[#3B66F5] transition-all duration-1000" />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-3xl font-black text-slate-800">{progressPercent}%</span>
-                          <span className="text-[10px] font-bold text-slate-400">Hoàn thành</span>
-                        </div>
-                      </div>
-                      <div className="w-full mt-8 flex justify-between gap-4">
-                        <div className="flex-1 bg-slate-50 rounded-2xl p-3 text-center">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Đã học</p>
-                          <p className="text-xl font-black text-slate-800">{studyIndex}</p>
-                        </div>
-                        <div className="flex-1 bg-slate-50 rounded-2xl p-3 text-center">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Còn lại</p>
-                          <p className="text-xl font-black text-slate-800">{effectiveFlashcards.length - studyIndex}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Achievement Card */}
-                    <div className="bg-[#0A1A3F] rounded-[32px] p-8 text-white">
-                      <div className="flex justify-between items-center mb-6">
-                        <p className="text-[10px] font-black tracking-widest text-blue-300 uppercase">Thành tích</p>
-                        <span className="text-lg">🔥</span>
-                      </div>
-                      <div className="space-y-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">⚡</div>
-                          <div>
-                            <p className="text-[13px] font-black">Chuỗi ngày</p>
-                            <p className="text-[11px] font-semibold text-blue-200">12 Ngày liên tiếp <span className="bg-emerald-500 text-white text-[8px] px-1.5 py-0.5 rounded-full ml-1">MỚI</span></p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">🏆</div>
-                          <div>
-                            <p className="text-[13px] font-black">Điểm số</p>
-                            <p className="text-[11px] font-semibold text-blue-200">1,450 XP</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Tips Card */}
-                    <div className="bg-[#EEF2FF] rounded-[32px] p-6 border border-blue-100 flex gap-4">
-                      <div className="w-10 h-10 bg-[#3B66F5] rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-200">💡</div>
-                      <div>
-                        <p className="text-[13px] font-black text-slate-800"><span className="text-[#3B66F5]">Mẹo học:</span> Việc ôn lại các thẻ "Không biết" ngay lập tức giúp tăng khả năng ghi nhớ lên 40%.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Main Content - Study Mode */}
-                  <div className="flex-1 bg-white rounded-[32px] p-12 shadow-sm border border-gray-100 flex flex-col items-center relative overflow-hidden">
-                    <div className="absolute top-8 left-12 flex items-center gap-4">
-                      <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Câu hỏi #{studyIndex + 1}</p>
-                    </div>
-
-                    {/* Flashcard Component */}
-                    <div className="mt-16 w-full max-w-2xl h-96 perspective-1000 group cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
-                      <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-                        {/* Front */}
-                        <div className="absolute inset-0 backface-hidden flex items-center justify-center p-12 bg-white rounded-[40px] shadow-2xl shadow-blue-100 border border-slate-50 border-b-4 border-b-slate-100">
-                          <div className="flex flex-col items-center">
-                            <h3 className="text-2xl font-black text-center text-slate-800 leading-tight">
-                              {currentFlashcard?.front}
-                            </h3>
-                            <div className="mt-12 flex items-center gap-2 text-slate-400">
-                              <span className="text-xs">👆</span>
-                              <span className="text-[10px] font-black uppercase tracking-widest">Nhấn để xem đáp án</span>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Back */}
-                        <div className="absolute inset-0 backface-hidden rotate-y-180 flex items-center justify-center p-12 bg-[#F8FAFC] rounded-[40px] shadow-2xl shadow-slate-200 border border-slate-100">
-                          <div className="flex flex-col items-center">
-                            <p className="text-lg font-bold text-center text-slate-700 leading-relaxed whitespace-pre-wrap">
-                              {currentFlashcard?.back}
-                            </p>
-                            <div className="mt-12 flex items-center gap-2 text-blue-400">
-                              <span className="text-xs">🔙</span>
-                              <span className="text-[10px] font-black uppercase tracking-widest">Quay lại mặt trước</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="mt-16 flex items-end gap-12">
-                      <div className="flex flex-col items-center gap-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setStudyStats(prev => ({ ...prev, unknown: prev.unknown + 1 }));
-                            setStudyIndex((studyIndex + 1) % effectiveFlashcards.length);
-                            setIsFlipped(false);
-                          }}
-                          className="w-16 h-16 rounded-full border-2 border-red-50 text-red-500 hover:bg-red-50 transition-all flex items-center justify-center text-2xl font-black shadow-lg shadow-red-100/50 hover:scale-110 active:scale-95"
-                        >
-                          ✕
-                        </button>
-                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Không biết</p>
-                      </div>
-
-                      <div className="flex flex-col items-center gap-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setStudyStats(prev => ({ ...prev, review: prev.review + 1 }));
-                            setStudyIndex((studyIndex + 1) % effectiveFlashcards.length);
-                            setIsFlipped(false);
-                          }}
-                          className="w-20 h-20 rounded-full border-2 border-amber-50 text-amber-500 hover:bg-amber-50 transition-all flex items-center justify-center text-2xl font-black shadow-lg shadow-amber-100/50 hover:scale-110 active:scale-95"
-                        >
-                          <svg className="w-8 h-8 rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                        </button>
-                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Ôn lại</p>
-                      </div>
-
-                      <div className="flex flex-col items-center gap-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setStudyStats(prev => ({ ...prev, known: prev.known + 1 }));
-                            setStudyIndex((studyIndex + 1) % effectiveFlashcards.length);
-                            setIsFlipped(false);
-                          }}
-                          className="w-16 h-16 rounded-full border-2 border-emerald-50 text-emerald-500 hover:bg-emerald-50 transition-all flex items-center justify-center text-2xl font-black shadow-lg shadow-emerald-100/50 hover:scale-110 active:scale-95"
-                        >
-                          ✓
-                        </button>
-                        <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Biết</p>
-                      </div>
-                    </div>
-
-                    {/* Footer - Social Proof */}
-                    <div className="mt-auto pt-16 flex items-center gap-4 text-slate-400">
-                      <div className="flex -space-x-2">
-                        <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-200"></div>
-                        <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-100"></div>
-                        <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-300"></div>
-                        <div className="w-8 h-8 rounded-full border-2 border-white bg-[#3B66F5] text-[10px] font-black text-white flex items-center justify-center">+12</div>
-                      </div>
-                      <p className="text-[12px] font-semibold">14 bạn khác đang học cùng bạn</p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </section>
-
-          <aside className="xl:col-span-3 border-l border-slate-100 bg-white h-full overflow-y-auto p-4">
-            <h3 className="text-sm font-black uppercase tracking-wider text-[#3B66F5]">Công cụ AI</h3>
-
-            <div className="mt-4 space-y-3">
-              {aiTools.map((tool) => (
-                <button
-                  key={tool.id}
-                  type="button"
-                  onClick={() => handleGenerateAi(tool.id)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-blue-300 hover:bg-blue-50"
-                >
-                  <p className="text-sm font-bold text-slate-900">{tool.title}</p>
-                  <p className="mt-1 text-xs text-slate-500">{tool.description}</p>
-                </button>
-              ))}
+               )}
             </div>
 
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-bold uppercase text-slate-500">Kết quả AI</p>
-              <pre className="mt-2 whitespace-pre-wrap text-xs text-slate-700 font-sans">{aiResult}</pre>
-            </div>
-
-            <div className="mt-4 flex gap-2">
-              <input
-                placeholder="Đặt câu hỏi về tài liệu này..."
-                value={discussionInput}
-                onChange={(event) => setDiscussionInput(event.target.value)}
-                className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setAiResult(discussionInput ? `Trả lời trợ lý học tập: ${discussionInput}` : aiResult)}
-                className="rounded-lg bg-[#3B66F5] px-3 py-2 text-sm font-semibold text-white"
-              >
-                ➤
-              </button>
-            </div>
-
-            <p className="mt-3 text-[11px] text-emerald-600">• AI đang trực tuyến - UniGPT v4.0</p>
-          </aside>
+            {/* Bottom action */}
+            {activeTab === 'info' && (
+               <div className="p-6 border-t border-gray-100 bg-white">
+                  <button className="w-full flex items-center justify-center gap-2 border-2 border-gray-100 rounded-2xl py-3.5 text-sm font-bold text-[#3B66F5] hover:border-[#3B66F5] hover:bg-blue-50/50 transition-colors">
+                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                     Tạo Flashcard từ nội dung này
+                  </button>
+               </div>
+            )}
+          </div>
         </div>
       </main>
 
@@ -1062,52 +747,8 @@ const DocumentDetailPage: React.FC = () => {
         isOpen={isShareOpen}
         document={document}
         onClose={() => setIsShareOpen(false)}
-        onShareSuccess={() => {
-          // Success callback if needed
-        }}
+        onShareSuccess={() => {}}
       />
-
-      {isEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-slate-900">Chỉnh sửa tài liệu</h3>
-            <form onSubmit={handleUpdateDocument} className="mt-4 space-y-3">
-              <input
-                value={editTitle}
-                onChange={(event) => setEditTitle(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2"
-                placeholder="Tiêu đề"
-              />
-              <input
-                value={editSubject}
-                onChange={(event) => setEditSubject(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2"
-                placeholder="Môn học"
-              />
-              <textarea
-                value={editDescription}
-                onChange={(event) => setEditDescription(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-4 py-2"
-                rows={4}
-                placeholder="Mô tả"
-              />
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" checked={editIsPublic} onChange={(event) => setEditIsPublic(event.target.checked)} />
-                Cho phép công khai tài liệu
-              </label>
-
-              {editError && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{editError}</div>}
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setIsEditOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm">Hủy</button>
-                <button type="submit" disabled={isUpdating} className="rounded-lg bg-[#3B66F5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-                  {isUpdating ? 'Đang cập nhật...' : 'Lưu thay đổi'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

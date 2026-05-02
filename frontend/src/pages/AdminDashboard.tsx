@@ -19,7 +19,6 @@ const AdminDashboard: React.FC = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Tổng quan', path: '/admin' },
     { icon: Users, label: 'Quản lý người dùng', path: '/admin/users' },
-    { icon: FileText, label: 'Quản lý tài liệu', path: '/admin/docs' },
     { icon: MessageSquare, label: 'Kiểm duyệt bình luận', path: '/admin/moderation' },
   ];
 

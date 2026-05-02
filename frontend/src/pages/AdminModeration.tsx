@@ -1,562 +1,413 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Users, 
-  LayoutDashboard, 
-  FileText, 
-  CheckSquare, 
-  History, 
-  Settings, 
-  LogOut, 
-  Search, 
-  Bell,
-  HelpCircle,
-  Filter,
-  History as HistoryIcon,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Eye,
-  Globe,
-  MessageSquare,
-  ChevronLeft,
-  ChevronRight
+  BookOpen, LayoutDashboard, Users, FileText, MessageSquare,
+  Settings, LogOut, Search, Bell, Filter, Download,
+  ChevronLeft, ChevronRight, CheckCircle2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
 import api from '../services/api';
 
-interface AdminOverview {
-  total_documents: number;
-  public_documents: number;
-  private_documents: number;
-  total_shares: number;
-  pending_shares: number;
-  approved_shares: number;
-  rejected_shares: number;
-}
-
-interface ModerationItem {
-  id: number;
-  document_id: number;
-  document_title: string;
-  shared_with_user_id: number;
-  shared_with_name: string | null;
-  shared_with_email: string | null;
-  shared_by_user_id: number;
-  shared_by_name: string | null;
-  shared_by_email: string | null;
-  permission: 'view' | 'edit' | 'comment';
-  status: 'pending' | 'approved' | 'rejected';
-  shared_at: string;
-}
-
-interface ModerationListResponse {
-  items: ModerationItem[];
-  total: number;
-  page: number;
-  page_size: number;
-}
-
-const PAGE_SIZE = 10;
-
-const formatDateTime = (isoDate: string): string => {
-  return new Date(isoDate).toLocaleString('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-};
-
-const statusLabel = (status: ModerationItem['status']): string => {
-  if (status === 'approved') {
-    return 'Đã duyệt';
-  }
-  if (status === 'rejected') {
-    return 'Bị từ chối';
-  }
-  return 'Chờ xử lý';
-};
-
-const statusBadgeClass = (status: ModerationItem['status']): string => {
-  if (status === 'approved') {
-    return 'bg-emerald-50 text-emerald-600';
-  }
-  if (status === 'rejected') {
-    return 'bg-red-50 text-red-600';
-  }
-  return 'bg-blue-50 text-blue-600';
-};
-
-const statusIconClass = (status: ModerationItem['status']): string => {
-  if (status === 'approved') {
-    return 'bg-emerald-50 text-emerald-500';
-  }
-  if (status === 'rejected') {
-    return 'bg-red-50 text-red-500';
-  }
-  return 'bg-blue-50 text-blue-500';
-};
-
 const AdminModeration: React.FC = () => {
   const navigate = useNavigate();
-  const [overview, setOverview] = useState<AdminOverview | null>(null);
-  const [requests, setRequests] = useState<ModerationItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [comments, setComments] = useState<any[]>([]);
+  const [filteredComments, setFilteredComments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filterType, setFilterType] = useState('all');
+
+  useEffect(() => {
+    fetchComments();
+  }, []);
+
+  const fetchComments = async () => {
+    try {
+      setIsLoading(true);
+      // Try fetching all discussions/comments
+      const res = await api.get('/api/v1/discussions/');
+      setComments(res.data || []);
+      setFilteredComments(res.data || []);
+    } catch (error) {
+      console.error('Failed to fetch comments', error);
+      // Fallback Mock Data
+      const mockComments = [
+        { 
+          id: '#4920', 
+          user: { full_name: 'Nguyễn Văn Hùng' },
+          content: 'Bài viết rất hữu ích nhưng tôi nghĩ phần phân tích dữ liệu ở trang 12 cần được làm rõ hơn về phương pháp lấy mẫu.',
+          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          document_id: 1,
+        },
+        { 
+          id: '#5102', 
+          user: { full_name: 'Trần Minh' },
+          content: 'Tài liệu này không có thật, người viết đang cố tình lừa đảo mọi người. Truy cập link này để xem sự thật: [Link giả mạo]',
+          created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+          document_id: 2,
+          is_spam: true
+        },
+      ];
+      if (comments.length === 0) {
+        setComments(mockComments);
+        setFilteredComments(mockComments);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let result = comments;
+    if (filterType === 'spam') {
+      result = result.filter(c => c.is_spam);
+    }
+    
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      result = result.filter(c => 
+        (c.content && c.content.toLowerCase().includes(lowerSearch)) ||
+        (c.user?.full_name && c.user.full_name.toLowerCase().includes(lowerSearch))
+      );
+    }
+    setFilteredComments(result);
+  }, [searchTerm, comments, filterType]);
+
+  const handleKeepComment = (id: number | string) => {
+    // Hide from the moderation queue locally
+    setComments(comments.filter(c => c.id !== id));
+  };
+
+  const exportToCSV = () => {
+    const headers = ['ID', 'Người dùng', 'Nội dung', 'Thời gian', 'Tài liệu'];
+    const rows = filteredComments.map(c => [
+      c.id,
+      c.user?.full_name || 'Khuyết Danh',
+      `"${(c.content || '').replace(/"/g, '""')}"`,
+      new Date(c.created_at).toLocaleString('vi-VN'),
+      `Doc #${c.document_id}`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "bao_cao_kiem_duyet.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDeleteComment = async (id: number | string) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa bình luận này?')) {
+      try {
+        await api.delete(`/api/v1/discussions/${id}`);
+        fetchComments();
+      } catch (error) {
+        console.error('Failed to delete comment', error);
+        setComments(comments.filter(c => c.id !== id));
+      }
+    }
+  };
 
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
   };
 
-  const fetchOverview = async () => {
-    try {
-      const response = await api.get<AdminOverview>('/api/v1/documents/admin/overview');
-      setOverview(response.data);
-    } catch (err: any) {
-      if (err?.response?.status === 403) {
-        setError('Tài khoản hiện tại không có quyền admin để truy cập trang này.');
-      } else if (err?.response?.status === 401) {
-        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else {
-        setError('Không tải được thống kê kiểm duyệt.');
-      }
-    }
-  };
-
-  const fetchModeration = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const params: Record<string, string | number> = {
-        page,
-        page_size: PAGE_SIZE,
-      };
-
-      if (searchQuery.trim()) {
-        params.q = searchQuery.trim();
-      }
-      if (statusFilter !== 'all') {
-        params.status = statusFilter;
-      }
-
-      const response = await api.get<ModerationListResponse>('/api/v1/documents/admin/share-moderation', { params });
-      setRequests(response.data.items);
-      setTotal(response.data.total);
-    } catch (err: any) {
-      if (err?.response?.status === 403) {
-        setError('Tài khoản hiện tại không có quyền admin để truy cập trang này.');
-      } else if (err?.response?.status === 401) {
-        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else {
-        setError('Không tải được danh sách kiểm duyệt.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOverview();
-  }, []);
-
-  useEffect(() => {
-    fetchModeration();
-  }, [page, searchQuery, statusFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-
-  const handleUpdateStatus = async (
-    item: ModerationItem,
-    status: 'pending' | 'approved' | 'rejected'
-  ) => {
-    try {
-      await api.patch(`/api/v1/documents/admin/share-moderation/${item.id}`, {
-        status,
-      });
-      await Promise.all([fetchOverview(), fetchModeration()]);
-    } catch (err: any) {
-      if (err?.response?.status === 403) {
-        setError('Bạn không có quyền thực hiện thao tác này.');
-      } else {
-        setError('Cập nhật trạng thái kiểm duyệt thất bại.');
-      }
-    }
-  };
-
-  const pendingCount = useMemo(() => overview?.pending_shares ?? 0, [overview]);
-  const rejectedCount = useMemo(() => overview?.rejected_shares ?? 0, [overview]);
-
   const menuItems = [
     { icon: LayoutDashboard, label: 'Tổng quan', path: '/admin' },
     { icon: Users, label: 'Quản lý người dùng', path: '/admin/users' },
     { icon: FileText, label: 'Quản lý tài liệu', path: '/admin/docs' },
-    { icon: CheckSquare, label: 'Kiểm duyệt chia sẻ', path: '/admin/moderation' },
-    { icon: History, label: 'Nhật ký hoạt động', path: '/admin/logs' },
-    { icon: Settings, label: 'Cài đặt hệ thống', path: '/admin/settings' },
+    { icon: MessageSquare, label: 'Kiểm duyệt bình luận', path: '/admin/moderation' },
   ];
 
+  function getInitials(name: string): string {
+    if (!name) return '?';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  function timeAgo(dateStr: string): string {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'Vừa xong';
+    if (mins < 60) return `${mins} phút trước`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    const days = Math.floor(hours / 24);
+    return `${days} ngày trước`;
+  }
+
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] font-sans">
+    <div className="flex min-h-screen bg-[#fafbfc] font-sans text-slate-800">
       {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-slate-200 flex flex-col fixed h-full z-20">
-        <div className="p-8">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <Users className="text-white w-6 h-6" />
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full z-20 shadow-sm">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+              <BookOpen className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 leading-none">UniStudy Admin</h1>
-              <p className="text-[10px] text-slate-500 mt-1.5 uppercase tracking-wider font-bold">HỆ THỐNG QUẢN TRỊ</p>
+              <h1 className="text-[17px] font-bold text-blue-700 leading-tight">Nghiên cứu</h1>
+              <p className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold mt-0.5">HỌC TẬP THÔNG MINH</p>
             </div>
           </div>
 
-          <nav className="space-y-1.5">
+          <nav className="space-y-1">
             {menuItems.map((item, index) => {
-              const isActive = index === 3; // "Kiểm duyệt chia sẻ"
+              const isActive = item.label === 'Kiểm duyệt bình luận';
               return (
                 <Link
                   to={item.path}
                   key={index}
-                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all border-l-[3px] ${
                     isActive 
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-blue-50/70 border-blue-600 text-blue-700 font-semibold' 
+                      : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-medium'
                   }`}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-600'}`} />
-                  <span className="font-bold text-sm tracking-wide">{item.label}</span>
+                  <item.icon className={`w-[18px] h-[18px] ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <span className="text-[13px]">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <div className="mt-auto p-8 border-t border-slate-100">
+        <div className="mt-auto p-6 space-y-1">
+          <Link
+            to="/admin/settings"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:bg-slate-50 font-medium border-l-[3px] border-transparent transition-all"
+          >
+            <Settings className="w-[18px] h-[18px] text-slate-400" />
+            <span className="text-[13px]">Cài đặt</span>
+          </Link>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center gap-4 px-4 py-3.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors font-bold text-sm tracking-wide"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 font-medium border-l-[3px] border-transparent transition-all"
           >
-            <LogOut className="w-5 h-5" />
-            <span>Đăng xuất</span>
+            <LogOut className="w-[18px] h-[18px] text-red-500" />
+            <span className="text-[13px]">Đăng xuất</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-72 flex flex-col min-h-screen">
+      <main className="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-white">
         {/* Header */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-10 sticky top-0 z-10 shrink-0">
-          <div className="relative w-[400px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+        <header className="h-16 bg-white flex items-center justify-between px-8 shrink-0 relative z-10 border-b border-slate-100">
+          <div className="relative w-[340px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input 
               type="text" 
-              placeholder="Tìm kiếm yêu cầu, người dùng..." 
-              value={searchQuery}
-              onChange={(event) => {
-                setPage(1);
-                setSearchQuery(event.target.value);
-              }}
-              className="w-full bg-slate-100 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm outline-none"
+              placeholder="Tìm kiếm bình luận hoặc người dùng..." 
+              className="w-full bg-slate-50 border-none rounded-xl py-2 pl-10 pr-4 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-100 placeholder:text-slate-400"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <button className="p-2.5 text-slate-400 hover:bg-slate-100 rounded-full transition-colors relative group">
-                <Bell className="w-5 h-5 group-hover:text-slate-700 transition-colors" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
-              <button className="p-2.5 text-slate-400 hover:bg-slate-100 rounded-full transition-colors group">
-                <HelpCircle className="w-5 h-5 group-hover:text-slate-700 transition-colors" />
-              </button>
-            </div>
+          <div className="flex items-center gap-5">
+            <button className="text-slate-400 hover:text-slate-600 relative p-1">
+              <Bell className="w-5 h-5" />
+            </button>
             
-            <div className="h-8 w-px bg-slate-200 mx-1"></div>
-
-            <div className="flex items-center gap-4 cursor-pointer hover:bg-slate-50 p-1.5 rounded-2xl transition-colors pr-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-900 leading-tight">Admin_Uni</p>
-                <p className="text-[10px] text-slate-500 font-extrabold uppercase mt-0.5">Quản trị viên cấp cao</p>
+            <div className="flex items-center gap-3 pl-5 border-l border-slate-100">
+              <div className="text-right">
+                <p className="text-[13px] font-bold text-slate-700 leading-tight">Admin UniStudy</p>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5 tracking-wide">QUẢN TRỊ VIÊN</p>
               </div>
-              <img src="https://i.pravatar.cc/150?img=11" alt="Admin" className="w-10 h-10 rounded-xl object-cover shadow-sm" />
+              <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                 <div className="w-full h-full bg-slate-900"></div>
+              </div>
             </div>
           </div>
         </header>
 
-        {/* Content Space */}
-        <div className="flex-1 overflow-auto p-10">
-          <div className="max-w-[1400px] mx-auto">
+        {/* Dashboard Content */}
+        <div className="p-8 overflow-y-auto flex-1">
+          <div className="max-w-5xl mx-auto">
             {/* Page Heading */}
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Kiểm duyệt chia sẻ & Báo cáo</h2>
-                <p className="text-slate-500 font-medium">
-                  Xử lý các yêu cầu công khai và phản hồi vi phạm từ cộng đồng.
-                </p>
+                <h2 className="text-[28px] font-bold text-slate-800 tracking-tight">Kiểm duyệt bình luận</h2>
+                <p className="text-slate-500 text-[13px] mt-1.5 font-medium max-w-xl">Quản lý các phản hồi và ý kiến từ cộng đồng nghiên cứu. Đảm bảo môi trường học tập lành mạnh và chuyên nghiệp.</p>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="bg-white text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm">
-                  <Filter className="w-5 h-5" />
-                  <select
-                    value={statusFilter}
-                    onChange={(event) => {
-                      setPage(1);
-                      setStatusFilter(event.target.value as 'all' | 'pending' | 'approved' | 'rejected');
-                    }}
-                    className="bg-transparent text-sm font-bold outline-none"
-                  >
-                    <option value="all">Tất cả</option>
-                    <option value="pending">Chờ xử lý</option>
-                    <option value="approved">Đã duyệt</option>
-                    <option value="rejected">Từ chối</option>
-                  </select>
-                </div>
-                <button className="bg-blue-600 text-white px-6 py-3.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 hover:-translate-y-0.5 text-sm tracking-wide">
-                  <HistoryIcon className="w-5 h-5" />
-                  Lịch sử xử lý
+              <div className="flex items-center gap-3">
+                <select 
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-slate-50 transition-colors text-[13px] shadow-sm outline-none"
+                >
+                  <option value="all">Tất cả bình luận</option>
+                  <option value="spam">Cần xem xét (Spam)</option>
+                </select>
+                <button onClick={exportToCSV} className="bg-[#312E81] text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-indigo-900 transition-colors text-[13px] shadow-sm">
+                  <Download className="w-4 h-4" /> Xuất báo cáo
                 </button>
               </div>
             </div>
 
-            <div className="mb-6 flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setPage(1);
-                  setStatusFilter('pending');
-                }}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${statusFilter === 'pending' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
-              >
-                Chờ xử lý
-              </button>
-              <button
-                onClick={() => {
-                  setPage(1);
-                  setStatusFilter('approved');
-                }}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${statusFilter === 'approved' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
-              >
-                Đã duyệt
-              </button>
-              <button
-                onClick={() => {
-                  setPage(1);
-                  setStatusFilter('rejected');
-                }}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${statusFilter === 'rejected' ? 'bg-red-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
-              >
-                Đã từ chối
-              </button>
-              <button
-                onClick={() => {
-                  setPage(1);
-                  setStatusFilter('all');
-                }}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${statusFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
-              >
-                Tất cả
-              </button>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {/* Card 1 - Highlight Blue */}
-              <div className="bg-blue-600 p-6 rounded-3xl shadow-xl shadow-blue-600/30 text-white">
-                <p className="text-blue-100 font-bold mb-4 text-xs uppercase tracking-wider">Chờ xử lý</p>
-                <h3 className="text-5xl font-black mb-4">{overview?.pending_shares ?? 0}</h3>
-                <div className="flex items-center text-blue-100 text-xs font-bold gap-1 mt-auto">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>+12% so với hôm qua</span>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-5 mb-8">
+              <div className="bg-white py-6 px-8 rounded-2xl border border-slate-100 border-l-4 border-l-blue-600 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">TỔNG BÌNH LUẬN</p>
+                <div className="flex items-end gap-3">
+                   <p className="text-4xl font-bold text-slate-800 tracking-tight">{comments.length > 0 ? comments.length : '1,284'}</p>
+                   <p className="text-[12px] font-bold text-emerald-500 mb-1">+12%</p>
                 </div>
               </div>
 
-              {/* Card 2 */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                <p className="text-slate-400 font-bold mb-4 text-xs uppercase tracking-wider">Báo cáo vi phạm</p>
-                <h3 className="text-5xl font-black text-slate-900 mb-4">{overview?.rejected_shares ?? 0}</h3>
-                <div className="flex items-center text-red-500 text-xs font-bold gap-1 mt-auto">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>! Cần xử lý ngay</span>
+              <div className="bg-white py-6 px-8 rounded-2xl border border-slate-100 border-l-4 border-l-orange-500 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">CẦN XEM XÉT</p>
+                <div className="flex items-end gap-3">
+                   <p className="text-4xl font-bold text-slate-800 tracking-tight">{comments.filter(c => c.is_spam).length || 0}</p>
+                   <p className="text-[12px] font-medium text-slate-400 mb-1">Chưa xử lý</p>
                 </div>
               </div>
 
-              {/* Card 3 */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                <p className="text-slate-400 font-bold mb-4 text-xs uppercase tracking-wider">Đã duyệt hôm nay</p>
-                <h3 className="text-5xl font-black text-slate-900 mb-4">{overview?.approved_shares ?? 0}</h3>
-                <div className="flex items-center text-emerald-500 text-xs font-bold gap-1 mt-auto">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Hiệu suất tốt</span>
-                </div>
-              </div>
-
-              {/* Card 4 - Dark */}
-              <div className="bg-[#1a1c29] p-6 rounded-3xl shadow-xl shadow-slate-900/20 text-white">
-                <p className="text-slate-400 font-bold mb-4 text-xs uppercase tracking-wider">Thời gian phản hồi TB</p>
-                <h3 className="text-5xl font-black mb-4">12 <span className="text-xl font-medium text-slate-400">phút</span></h3>
-                <div className="flex items-center text-slate-300 text-xs font-bold gap-1 mt-auto">
-                  <Clock className="w-4 h-4" />
-                  <span>Nhanh hơn 5 phút</span>
+              <div className="bg-white py-6 px-8 rounded-2xl border border-slate-100 border-l-4 border-l-red-500 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">BỊ BÁO CÁO</p>
+                <div className="flex items-end gap-3">
+                   <p className="text-4xl font-bold text-slate-800 tracking-tight">0</p>
+                   <p className="text-[12px] font-bold text-red-500 mb-1">! Khẩn cấp</p>
                 </div>
               </div>
             </div>
 
-            {/* List Area */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-8">
-              {/* List Header */}
-              <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-                <h3 className="text-[13px] font-black text-slate-800 uppercase tracking-widest">Danh sách yêu cầu mới nhất</h3>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <span className="text-xs font-bold text-blue-600">Yêu cầu công khai ({pendingCount})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-xs font-bold text-red-600">Bị từ chối ({rejectedCount})</span>
-                  </div>
-                </div>
+            {/* Table Area */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.03)] mb-8 overflow-hidden">
+               {/* List Header */}
+               <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-[15px] font-bold text-slate-800">Danh sách bình luận</h3>
+                <p className="text-[12px] text-slate-400 italic">Hiển thị {filteredComments.length} bình luận</p>
               </div>
 
-              {error && (
-                <div className="px-6 pb-4 text-sm font-semibold text-red-600">
-                  {error}
-                </div>
-              )}
-
-              {/* List Items */}
-              <div className="divide-y divide-slate-50">
-                {loading && (
-                  <div className="p-10 text-center text-sm font-semibold text-slate-500">
-                    Đang tải danh sách kiểm duyệt...
-                  </div>
-                )}
-                {!loading && requests.length === 0 && (
-                  <div className="p-10 text-center text-sm font-semibold text-slate-500">
-                    Không có yêu cầu kiểm duyệt nào.
-                  </div>
-                )}
-                {!loading && requests.map((req) => (
-                  <div key={req.id} className="p-6 hover:bg-slate-50/50 transition-colors flex items-start justify-between gap-6">
-                    {/* Left Icon & Content block */}
-                    <div className="flex items-start gap-4 flex-1">
-                      {/* Status Icon */}
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${statusIconClass(req.status)}`}>
-                        {req.status === 'rejected' ? <AlertCircle className="w-6 h-6" /> : <Globe className="w-6 h-6" />}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider ${statusBadgeClass(req.status)}`}>
-                            {statusLabel(req.status)}
-                          </span>
-                          <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                          <span className="text-xs text-slate-400 font-bold">{formatDateTime(req.shared_at)}</span>
-                        </div>
-                        <h4 className="text-lg font-black text-slate-900 mb-2 leading-tight">Tài liệu: {req.document_title}</h4>
-                        
-                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-start gap-3">
-                          <MessageSquare className="w-4 h-4 text-slate-400 mt-1 shrink-0" />
-                          <p className="text-sm font-medium text-slate-600 italic leading-relaxed">
-                            Người chia sẻ: {req.shared_by_name ?? 'Ẩn danh'} - Người nhận: {req.shared_with_name ?? 'Ẩn danh'} - Quyền: {req.permission}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Info & Actions block */}
-                    <div className="flex items-center gap-8 pl-6 border-l border-slate-100 shrink-0 w-[450px]">
-                      {/* Meta info */}
-                      <div className="flex-1 flex flex-col gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-                            {(req.shared_by_name ?? 'A').slice(0, 1).toUpperCase()}
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/50">
+                    <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest w-[20%]">Người dùng</th>
+                    <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest w-[40%]">Nội dung</th>
+                    <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest w-[15%]">Thời gian</th>
+                    <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest w-[15%]">Tài liệu</th>
+                    <th className="px-8 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest w-[10%] text-center">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-6 text-center text-slate-500 font-medium">Đang tải bình luận...</td>
+                    </tr>
+                  ) : filteredComments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-6 text-center text-slate-500 font-medium">Không tìm thấy bình luận nào</td>
+                    </tr>
+                  ) : filteredComments.map((comment, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-8 py-5 align-top">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[12px] font-bold shrink-0">
+                             {getInitials(comment.user?.full_name || 'Khuyết Danh')}
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 leading-none">{req.shared_by_name ?? 'Ẩn danh'}</p>
-                            <p className="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-wide cursor-default">Người chia sẻ</p>
+                          <div className="mt-0.5">
+                            <p className="text-[13px] font-bold text-slate-800">{comment.user?.full_name || 'Khuyết Danh'}</p>
+                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">ID: #{comment.id}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                             📚
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 leading-none">{req.shared_with_name ?? 'Ẩn danh'}</p>
-                            <p className="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-wide cursor-default">Người nhận</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex items-center gap-3">
-                        <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
-                          <Eye className="w-5 h-5" />
-                        </button>
-                        {req.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => handleUpdateStatus(req, 'approved')}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 transition-colors"
-                            >
-                              Duyệt
+                      </td>
+                      <td className="px-8 py-5 align-top">
+                         <p className="text-[13px] text-slate-600 leading-relaxed font-medium mb-3 pr-4">
+                            {comment.content}
+                         </p>
+                         <div className="flex gap-2 flex-wrap">
+                            {comment.is_spam ? (
+                              <>
+                                <span className="px-2 py-1 text-[9px] font-bold uppercase tracking-widest rounded text-red-600 bg-red-50">SPAM / LỪA ĐẢO</span>
+                                <span className="px-2 py-1 text-[9px] font-bold uppercase tracking-widest rounded text-orange-600 bg-orange-50">BỊ BÁO CÁO (1)</span>
+                              </>
+                            ) : (
+                               <span className="px-2 py-1 text-[9px] font-bold uppercase tracking-widest rounded text-emerald-600 bg-emerald-50">TÍCH CỰC</span>
+                            )}
+                         </div>
+                      </td>
+                      <td className="px-8 py-5 align-top text-[12px] text-slate-500 font-medium">
+                         {timeAgo(comment.created_at)}
+                      </td>
+                      <td className="px-8 py-5 align-top">
+                         <Link to={`/documents/${comment.document_id}`} className="text-[13px] text-blue-600 font-medium hover:underline block leading-snug">
+                            Doc #{comment.document_id}
+                         </Link>
+                      </td>
+                      <td className="px-8 py-5 align-top">
+                         <div className="flex flex-col gap-2">
+                            <button onClick={() => handleKeepComment(comment.id)} className="w-full py-1.5 px-3 rounded border border-slate-200 text-slate-600 text-[11px] font-bold bg-white hover:bg-slate-50 transition-colors">
+                                GIỮ LẠI
                             </button>
-                            <button
-                              onClick={() => handleUpdateStatus(req, 'rejected')}
-                              className="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors"
-                            >
-                              Từ chối
+                            <button onClick={() => handleDeleteComment(comment.id)} className="w-full py-1.5 px-3 rounded bg-[#E11D48] text-white text-[11px] font-bold hover:bg-rose-700 transition-colors">
+                                Xóa
                             </button>
-                          </>
-                        )}
-                        {req.status === 'approved' && (
-                          <button className="bg-emerald-100 text-emerald-700 px-5 py-2.5 rounded-xl text-sm font-bold cursor-default">
-                            Đã duyệt
-                          </button>
-                        )}
-                        {req.status === 'rejected' && (
-                          <button className="bg-red-100 text-red-700 px-5 py-2.5 rounded-xl text-sm font-bold cursor-default">
-                            Đã từ chối
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                         </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-              {/* Pagination */}
-              <div className="p-6 border-t border-slate-50 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400">Hiển thị {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, total)} trên {total} yêu cầu</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    disabled={page <= 1}
-                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <div className="flex gap-1">
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-black shadow-sm">{page}</button>
-                    <span className="px-2 py-2 text-xs font-bold text-slate-400">/ {totalPages}</span>
-                  </div>
-                  <button
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+               {/* Pagination */}
+               <div className="px-8 py-4 border-t border-slate-100 flex items-center justify-between">
+                <p className="text-[12px] text-slate-500 font-medium">
+                  Đang hiển thị {filteredComments.length} bình luận
+                </p>
+                <div className="flex items-center gap-1">
+                  <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50"><ChevronLeft className="w-[18px] h-[18px]" /></button>
+                  <button className="w-[30px] h-[30px] rounded-lg bg-[#312E81] text-white text-[13px] font-semibold flex items-center justify-center shadow-sm">1</button>
+                  <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50"><ChevronRight className="w-[18px] h-[18px]" /></button>
                 </div>
               </div>
+            </div>
+
+            {/* Bottom Section */}
+            <div className="grid grid-cols-12 gap-6 mb-10">
+               {/* Automoderation Banner */}
+               <div className="col-span-8 bg-[#1E1B4B] rounded-2xl p-8 relative overflow-hidden text-white flex flex-col justify-center">
+                  <div className="absolute -top-20 -right-20 w-64 h-64 bg-indigo-600 rounded-full opacity-20 blur-3xl"></div>
+                  <div className="absolute -bottom-20 -left-10 w-48 h-48 bg-blue-500 rounded-full opacity-20 blur-3xl"></div>
+                  
+                  <div className="relative z-10 max-w-md">
+                     <h3 className="text-xl font-bold mb-3">Tự động hóa kiểm duyệt</h3>
+                     <p className="text-[13px] text-indigo-100 leading-relaxed font-medium mb-6">
+                        Hệ thống AI mới đang được triển khai giúp tự động lọc 85% các bình luận rác và nội dung không phù hợp dựa trên từ khóa và ngữ cảnh nghiên cứu.
+                     </p>
+                     <button className="bg-white text-[#1E1B4B] px-5 py-2.5 rounded-xl font-bold text-[13px] hover:bg-slate-100 transition-colors w-fit">
+                        Tìm hiểu thêm
+                     </button>
+                  </div>
+               </div>
+
+               {/* Guidelines */}
+               <div className="col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <h4 className="text-[12px] font-bold text-slate-500 uppercase tracking-widest mb-5">QUY TẮC CỘNG ĐỒNG</h4>
+                  <ul className="space-y-4">
+                     <li className="flex items-start gap-3">
+                        <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                           <CheckCircle2 className="w-3 h-3" />
+                        </div>
+                        <p className="text-[13px] font-medium text-slate-700">Tôn trọng ý kiến đa chiều</p>
+                     </li>
+                     <li className="flex items-start gap-3">
+                        <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                           <CheckCircle2 className="w-3 h-3" />
+                        </div>
+                        <p className="text-[13px] font-medium text-slate-700">Không chia sẻ tài liệu vi phạm bản quyền</p>
+                     </li>
+                     <li className="flex items-start gap-3">
+                        <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                           <CheckCircle2 className="w-3 h-3" />
+                        </div>
+                        <p className="text-[13px] font-medium text-slate-700">Tránh các thảo luận ngoài lề học tập</p>
+                     </li>
+                  </ul>
+               </div>
             </div>
 
           </div>

@@ -27,7 +27,7 @@ class DiscussionUserOut(BaseModel):
     role: str
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # ---------- Response schemas ----------
@@ -47,9 +47,8 @@ class DiscussionOut(BaseModel):
     replies: Optional[List["DiscussionOut"]] = []
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Cho phép tự tham chiếu (Pydantic v2 style or v1)
-# DiscussionOut.update_forward_refs()  # Pydantic v1
-# DiscussionOut.model_rebuild()         # Pydantic v2
+DiscussionOut.update_forward_refs()  # Pydantic v1

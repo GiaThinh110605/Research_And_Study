@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { testService, TestResultOut, ITestQuestion } from '../services/test';
-import { mockTestResult } from '../mock_data/test_result';
 
 const TestResultPage: React.FC = () => {
    const { id } = useParams<{ id: string }>();
@@ -49,8 +48,8 @@ const TestResultPage: React.FC = () => {
             }
             setResult(data);
          } catch (error) {
-            console.error("Lỗi khi tải kết quả. Mô phỏng dữ liệu.", error);
-            setResult(mockTestResult);
+            console.error("Lỗi khi tải kết quả", error);
+            setResult(null);
          } finally {
             setLoading(false);
          }
@@ -69,7 +68,7 @@ const TestResultPage: React.FC = () => {
    const formatTime = (seconds: number) => {
       const mins = Math.floor(seconds / 60);
       const secs = seconds % 60;
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
    };
 
    const correctCount = result.test_questions?.reduce((acc, q) => {
@@ -77,7 +76,10 @@ const TestResultPage: React.FC = () => {
       return acc + (userAns !== undefined && userAns === q.answer ? 1 : 0);
    }, 0) || 0;
    const totalQuestions = result.test_questions?.length || 0;
-   const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+   const score10 = totalQuestions > 0 ? (correctCount / totalQuestions) * 10 : 0;
+   const wrongCount = totalQuestions - correctCount;
+
+   const avgTimePerQuestion = totalQuestions > 0 ? ((result.time_taken_seconds || 0) / totalQuestions).toFixed(1) : 0;
 
    const filteredQuestions = result.test_questions?.filter((_q, idx) => {
       const isCorrect = result.answers[result.test_questions?.[idx]?.id || ''] === result.test_questions?.[idx]?.answer;
@@ -85,225 +87,274 @@ const TestResultPage: React.FC = () => {
    }) || [];
 
    return (
-      <div className="min-h-screen bg-[#F8FAFF] font-sans pb-20">
+      <div className="min-h-screen bg-white font-sans pb-20">
+         <main className="max-w-6xl mx-auto px-8 pt-6">
+            
+            {/* Header Area */}
+            <div className="mb-6">
+               <Link to="/test-list" className="inline-flex items-center text-[#3B66F5] font-medium text-sm hover:underline mb-2">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                  Quay lại danh sách
+               </Link>
+               <h1 className="text-3xl font-bold text-gray-900 mb-1">Kết Quả Bài Kiểm Tra</h1>
+               <p className="text-sm text-gray-500">Phân tích chi tiết kết quả học tập của bạn.</p>
+            </div>
 
-
-         <main className="max-w-6xl mx-auto px-8 pt-10">
-            <div className="grid grid-cols-3 gap-8">
-               {/* Left Hero Card */}
-               <div className="col-span-2 bg-white rounded-[32px] p-10 shadow-sm border border-gray-50 relative overflow-hidden flex items-center justify-between">
-                  <div className="flex-1 pr-10">
-                     <div className="bg-emerald-50 text-emerald-500 text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider inline-block mb-6">
-                        HOÀN THÀNH
-                     </div>
-                     <h2 className="text-4xl font-black text-gray-900 mb-4 tracking-tight">Chúc mừng, {result.full_name?.split(' ')[0]}!</h2>
-                     <p className="text-gray-500 font-medium mb-10 leading-relaxed text-lg">
-                        Bạn đã hoàn thành bài kiểm tra <span className="text-[#3B66F5] font-bold">{result.test_title}</span> một cách xuất sắc.
-                     </p>
-                     <div className="flex gap-4">
-                        <button
-                           onClick={() => navigate(`/take-test/${result.test_id}`)}
-                           className="bg-[#3B66F5] text-white font-bold px-8 py-4 rounded-2xl hover:bg-[#2A52D5] transition-all flex items-center gap-2"
-                        >
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                           Làm lại
-                        </button>
-                        <button
-                           onClick={() => navigate('/dashboard')}
-                           className="bg-gray-50 text-gray-700 font-bold px-8 py-4 rounded-2xl hover:bg-gray-100 transition-all flex items-center gap-2"
-                        >
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                           Về trang chủ
-                        </button>
-                     </div>
+            {/* Top Cards Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+               
+               {/* Final Score Card */}
+               <div className="col-span-1 bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6 flex flex-col items-center justify-center relative overflow-hidden">
+                  <div className="absolute top-4 left-4 text-xs font-bold text-gray-400 uppercase tracking-wider">ĐIỂM SỐ CUỐI CÙNG</div>
+                  <div className="absolute top-4 right-4 text-blue-100">
+                     <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                   </div>
-
-                  <div className="bg-[#3B66F5] w-48 h-[240px] rounded-3xl flex flex-col items-center justify-center text-white relative shadow-xl shadow-blue-100">
-                     <div className="relative w-32 h-32 flex items-center justify-center">
-                        <svg className="w-full h-full -rotate-90">
-                           <circle cx="64" cy="64" r="58" stroke="rgba(255,255,255,0.2)" strokeWidth="12" fill="transparent" />
-                           <circle cx="64" cy="64" r="58" stroke="white" strokeWidth="12" fill="transparent" strokeDasharray={364} strokeDashoffset={364 - (364 * accuracy / 100)} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                           <span className="text-3xl font-black">{(accuracy / 10).toFixed(1)}</span>
-                           <span className="text-[10px] font-bold opacity-60">HỆ 10</span>
-                        </div>
-                     </div>
-                     <div className="mt-4 text-center">
-                        <div className="text-sm font-bold">Tỉ lệ đúng {accuracy}%</div>
-                     </div>
+                  
+                  <div className="mt-6 relative w-32 h-32 flex flex-col items-center justify-center">
+                     <svg className="absolute inset-0 w-full h-full -rotate-90">
+                        <circle cx="64" cy="64" r="56" stroke="#EEF2FF" strokeWidth="8" fill="transparent" />
+                        <circle cx="64" cy="64" r="56" stroke="#3B66F5" strokeWidth="8" fill="transparent" strokeDasharray={351.8} strokeDashoffset={351.8 - (351.8 * score10 / 10)} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+                     </svg>
+                     <span className="text-4xl font-bold text-gray-900 z-10">{score10.toFixed(1)}</span>
+                  </div>
+                  
+                  <div className="mt-4 text-center">
+                     <div className="text-lg font-bold text-[#3B66F5] mb-1">Tuyệt vời!</div>
+                     <p className="text-xs text-gray-500 max-w-[200px]">Bạn đã hoàn thành tốt hơn 85% học viên khác.</p>
                   </div>
                </div>
 
-               {/* Top Stats Cards */}
-               <div className="flex flex-col gap-8">
-                  <div className="bg-white rounded-[28px] p-8 shadow-sm border border-gray-50 flex-1 relative overflow-hidden">
-                     <div className="bg-blue-50 w-12 h-12 rounded-xl flex items-center justify-center text-[#3B66F5] mb-4">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+               {/* Right 4 Stats Cards */}
+               <div className="col-span-2 grid grid-cols-2 gap-4">
+                  {/* Correct Answers */}
+                  <div className="bg-white rounded-2xl border-t-4 border-t-emerald-500 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-5 relative flex flex-col justify-between">
+                     <div className="absolute top-4 right-4 bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Đúng</div>
+                     <div>
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-2">
+                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                        <div className="text-2xl font-bold text-gray-900">{correctCount.toString().padStart(2, '0')}/{totalQuestions}</div>
                      </div>
-                     <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">THỜI GIAN LÀM</div>
-                     <div className="text-3xl font-black text-gray-900">{formatTime(result.time_taken_seconds || 0)}</div>
-                     <p className="text-[11px] text-gray-400 font-medium mt-3 leading-relaxed">
-                        Nhanh hơn 75% so với mức trung bình của sinh viên khác.
-                     </p>
+                     <div className="text-xs text-gray-500 mt-1">Câu trả lời chính xác</div>
                   </div>
 
-                  <div className="bg-white rounded-[28px] p-8 shadow-sm border border-gray-50 flex-1">
-                     <div className="flex justify-between items-start mb-4">
-                        <div className="flex gap-1.5">
-                           <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                           <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                           <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  {/* Wrong Answers */}
+                  <div className="bg-white rounded-2xl border-t-4 border-t-red-500 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-5 relative flex flex-col justify-between">
+                     <div className="absolute top-4 right-4 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Sai</div>
+                     <div>
+                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-2">
+                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                         </div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">CHI TIẾT</span>
+                        <div className="text-2xl font-bold text-gray-900">{wrongCount.toString().padStart(2, '0')}/{totalQuestions}</div>
                      </div>
-                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                           <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">CÂU ĐÚNG</div>
-                           <div className="text-xl font-black text-gray-900">{correctCount}/{totalQuestions}</div>
+                     <div className="text-xs text-gray-500 mt-1">Câu trả lời chưa đúng</div>
+                  </div>
+
+                  {/* Time Taken */}
+                  <div className="bg-white rounded-2xl border-t-4 border-t-blue-400 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-5 relative flex flex-col justify-between">
+                     <div className="absolute top-4 right-4 bg-blue-50 text-blue-500 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Thời gian</div>
+                     <div>
+                        <div className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center mb-2">
+                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
-                        <div className="text-right">
-                           <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">THỨ HẠNG</div>
-                           <div className="text-xl font-black text-gray-900">#{result.rank}</div>
-                        </div>
+                        <div className="text-2xl font-bold text-gray-900">{formatTime(result.time_taken_seconds || 0)}</div>
                      </div>
+                     <div className="text-xs text-gray-500 mt-1">Thời gian làm bài</div>
+                  </div>
+
+                  {/* Speed */}
+                  <div className="bg-white rounded-2xl border-t-4 border-t-indigo-400 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-5 relative flex flex-col justify-between">
+                     <div className="absolute top-4 right-4 bg-indigo-50 text-indigo-500 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Tốc độ</div>
+                     <div>
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center mb-2">
+                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        </div>
+                        <div className="text-2xl font-bold text-gray-900">{avgTimePerQuestion}s</div>
+                     </div>
+                     <div className="text-xs text-gray-500 mt-1">Trung bình mỗi câu</div>
                   </div>
                </div>
             </div>
 
-            {/* Answer Review */}
-            <div className="mt-16">
-               <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-2xl font-black text-gray-900 tracking-tight">Xem lại đáp án</h3>
-                  <div className="bg-white rounded-xl p-1 shadow-sm border border-gray-100 flex gap-1">
-                     <button
-                        onClick={() => setFilter('all')}
-                        className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${filter === 'all' ? 'bg-[#3B66F5] text-white' : 'text-gray-400 hover:text-gray-600'}`}
-                     >
-                        Tất cả
-                     </button>
-                     <button
-                        onClick={() => setFilter('wrong')}
-                        className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${filter === 'wrong' ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-gray-600'}`}
-                     >
-                        Câu sai
-                     </button>
-                  </div>
+            {/* Details Section */}
+            <div className="mb-6 flex justify-between items-end">
+               <h3 className="text-xl font-bold text-gray-900">Chi Tiết Câu Hỏi</h3>
+               <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button 
+                     onClick={() => setFilter('all')}
+                     className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${filter === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                     Tất cả
+                  </button>
+                  <button 
+                     onClick={() => setFilter('wrong')}
+                     className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${filter === 'wrong' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                     Chỉ xem câu sai
+                  </button>
                </div>
+            </div>
 
-               <div className="flex flex-col gap-8">
-                  {filteredQuestions.map((question: ITestQuestion, idx: number) => {
-                     const userAns = result.answers[question.id.toString()];
-                     const correctAns = question.answer;
-                     const isCorrect = userAns === correctAns;
+            <div className="flex flex-col gap-6 mb-10">
+               {filteredQuestions.map((question: ITestQuestion, idx: number) => {
+                  const userAns = result.answers[question.id.toString()];
+                  const correctAns = question.answer;
+                  const isCorrect = userAns === correctAns;
 
-                     return (
-                        <div key={question.id} className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-50">
-                           <div className="flex justify-between items-center mb-6">
-                              <div className="bg-blue-50 text-[#3B66F5] text-[10px] font-black px-4 py-1.5 rounded-lg uppercase tracking-wider">
-                                 CÂU HỎI {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
-                              </div>
-                              <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isCorrect ? 'text-emerald-500' : 'text-red-500'}`}>
-                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isCorrect ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50'}`}>
-                                    {isCorrect ? <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg> : <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>}
-                                 </div>
-                                 {isCorrect ? 'ĐÚNG' : 'SAI'}
-                              </div>
+                  return (
+                     <div key={question.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex gap-4">
+                        {/* Number Indicator */}
+                        <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${isCorrect ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                           {(idx + 1).toString().padStart(2, '0')}
+                        </div>
+
+                        <div className="flex-1">
+                           {/* Status Label */}
+                           <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-2 ${isCorrect ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {isCorrect ? (
+                                 <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                              ) : (
+                                 <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                              )}
+                              {isCorrect ? 'CHÍNH XÁC' : 'CHƯA ĐÚNG'}
                            </div>
 
-                           <div className="text-xl font-bold text-gray-800 leading-relaxed mb-8">
+                           <div className="text-lg font-bold text-gray-900 mb-4 leading-snug">
                               {question.text}
                            </div>
 
-                           <div className="grid gap-4 mb-8">
+                           <div className="grid grid-cols-2 gap-3 mb-4">
                               {question.options.map((option, optIdx) => {
                                  const isUserSelection = userAns === optIdx;
                                  const isCorrectOption = correctAns === optIdx;
-                                 const label = String.fromCharCode(65 + optIdx);
+                                 const label = `${String.fromCharCode(65 + optIdx)}.`;
 
-                                 let borderClass = "border-gray-50";
-                                 let bgClass = "bg-white";
-                                 let textClass = "text-gray-500";
-                                 let circleBorder = "border-gray-300";
+                                 let containerClass = "border-gray-100 bg-gray-50/50 text-gray-600";
+                                 let textClass = "";
 
                                  if (isCorrectOption) {
-                                    borderClass = "border-emerald-500";
-                                    bgClass = "bg-emerald-50/30";
-                                    textClass = "text-emerald-700 font-bold";
-                                    circleBorder = "border-emerald-500";
+                                    containerClass = "border-emerald-500 bg-emerald-50 text-emerald-800";
+                                    textClass = "font-bold";
                                  } else if (isUserSelection && !isCorrect) {
-                                    borderClass = "border-red-500";
-                                    bgClass = "bg-red-50/30";
-                                    textClass = "text-red-700 font-bold";
-                                    circleBorder = "border-red-500";
+                                    containerClass = "border-red-400 bg-red-50 text-red-800";
+                                    textClass = "font-bold";
                                  }
 
                                  return (
-                                    <div key={optIdx} className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${borderClass} ${bgClass} relative`}>
-                                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${circleBorder}`}>
-                                          {label}
+                                    <div key={optIdx} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${containerClass}`}>
+                                       <div className="flex items-start gap-2">
+                                          <span className={`font-semibold shrink-0 ${textClass}`}>{label}</span>
+                                          <span className={`text-sm ${textClass}`}>{option}</span>
                                        </div>
-                                       <span className={`text-base font-medium ${textClass}`}>{option}</span>
+                                       
                                        {isCorrectOption && (
-                                          <div className="absolute right-6 text-emerald-500">
-                                             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                          </div>
+                                          <svg className="w-5 h-5 shrink-0 text-emerald-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                                        )}
                                        {isUserSelection && !isCorrect && (
-                                          <div className="absolute right-6 text-red-500">
-                                             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                          </div>
+                                          <svg className="w-5 h-5 shrink-0 text-red-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                        )}
                                     </div>
                                  );
                               })}
                            </div>
 
-                           <div className="bg-blue-50/50 rounded-2xl p-6 border-l-4 border-[#3B66F5]">
-                              <div className="flex items-center gap-2 text-[#3B66F5] text-[10px] font-black uppercase tracking-widest mb-3">
-                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                 GIẢI THÍCH
+                           {/* Explanations */}
+                           {isCorrect ? (
+                              <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
+                                 <div className="flex items-center gap-1.5 text-[#3B66F5] text-[10px] font-bold uppercase tracking-wider mb-2">
+                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                    GIẢI THÍCH CHI TIẾT
+                                 </div>
+                                 <p className="text-gray-600 text-sm italic">
+                                    {question.explanation || "Giải thích chi tiết chưa được cập nhật cho câu hỏi này."}
+                                 </p>
                               </div>
-                              <p className="text-gray-600 text-sm italic font-medium leading-relaxed">
-                                 {question.explanation || "Chưa có lời giải thích chi tiết cho câu hỏi này. Tuy nhiên, bạn có thể tham khảo kiến thức trong Chương 3 để hiểu rõ hơn."}
-                              </p>
-                           </div>
+                           ) : (
+                              <div className="bg-orange-50/50 rounded-xl p-4 border border-orange-100">
+                                 <div className="flex flex-col gap-4">
+                                    <div>
+                                       <div className="flex items-center gap-1.5 text-red-600 text-[10px] font-bold uppercase tracking-wider mb-1">
+                                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                          TẠI SAO SAI?
+                                       </div>
+                                       <p className="text-gray-600 text-sm italic">Bạn đã chọn sai. Xem lại kiến thức về phần này để hiểu rõ hơn.</p>
+                                    </div>
+                                    <div>
+                                       <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold uppercase tracking-wider mb-1">
+                                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                          KIẾN THỨC ĐÚNG
+                                       </div>
+                                       <p className="text-gray-600 text-sm italic">{question.explanation || "Giải thích chi tiết chưa được cập nhật cho câu hỏi này."}</p>
+                                    </div>
+                                 </div>
+                              </div>
+                           )}
+
                         </div>
-                     );
-                  })}
-               </div>
+                     </div>
+                  );
+               })}
             </div>
 
-            {/* Improved Recommendations */}
-            <div className="mt-20">
-               <h3 className="text-xl font-bold text-gray-900 mb-8 tracking-tight">Đề xuất cải thiện</h3>
-               <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-white p-6 rounded-3xl border border-gray-100 flex items-center gap-6 cursor-pointer hover:shadow-lg hover:shadow-blue-100 transition-all border-b-4 border-b-blue-500">
-                     <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-[#3B66F5]">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                     </div>
-                     <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 mb-1">Ôn tập về {result.test_title?.split('-')[0] || 'Kiến thức cốt lõi'}</h4>
-                        <p className="text-xs text-gray-400 font-medium">Bài học chi tiết về các khái niệm cơ bản</p>
-                     </div>
-                     <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                  </div>
-
-                  <div className="bg-white p-6 rounded-3xl border border-gray-100 flex items-center gap-6 cursor-pointer hover:shadow-lg hover:shadow-orange-100 transition-all border-b-4 border-b-orange-500">
-                     <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                     </div>
-                     <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 mb-1">Video: Giải thích Big O dễ hiểu</h4>
-                        <p className="text-xs text-gray-400 font-medium">Video giải thích thuật toán trực quan</p>
-                     </div>
-                     <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            {/* Recommendations */}
+            <div className="bg-[#F4F7FF] rounded-2xl p-6 mb-6 flex flex-col md:flex-row gap-6 items-start border border-[#E5EDFF]">
+               <div className="w-12 h-12 rounded-xl bg-[#5E6AD2] text-white flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+               </div>
+               <div className="flex-1">
+                  <h4 className="text-base font-bold text-gray-900 mb-2">Đề xuất học tập</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                     Dựa trên kết quả, bạn đang gặp khó khăn ở các khái niệm về <strong className="text-gray-900">Học máy không giám sát</strong>. 
+                     Chúng tôi khuyên bạn nên xem lại chương 4 trong tài liệu "Nguyên lý Machine Learning" để cải thiện điểm số.
+                  </p>
+                  <div className="flex gap-3">
+                     <button className="bg-[#3B66F5] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors">
+                        Xem tài liệu liên quan
+                     </button>
+                     <button className="bg-white text-[#3B66F5] border border-[#3B66F5] px-5 py-2 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors">
+                        Lưu vào ghi chú
+                     </button>
                   </div>
                </div>
             </div>
+
+            {/* Bottom 3 Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+               <div className="bg-white border border-gray-100 rounded-xl p-4 flex items-center gap-4 shadow-sm">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
+                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                  </div>
+                  <div>
+                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">CẢI THIỆN</div>
+                     <div className="font-bold text-gray-900">+12% so với kỳ trước</div>
+                  </div>
+               </div>
+               
+               <div className="bg-white border border-gray-100 rounded-xl p-4 flex items-center gap-4 shadow-sm">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
+                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">LẦN THI THỨ</div>
+                     <div className="font-bold text-gray-900">Lần 03</div>
+                  </div>
+               </div>
+
+               <div className="bg-white border border-gray-100 rounded-xl p-4 flex items-center gap-4 shadow-sm">
+                  <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                  </div>
+                  <div>
+                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">THỨ HẠNG</div>
+                     <div className="font-bold text-gray-900">Top 10 Lớp</div>
+                  </div>
+               </div>
+            </div>
+
          </main>
       </div>
    );
 };
 
 export default TestResultPage;
+

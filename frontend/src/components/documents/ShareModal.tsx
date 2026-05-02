@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DocumentItem, ShareItem } from '../../services/documents';
 import api from '../../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface UserSearchResult {
   id: number;
@@ -98,19 +97,13 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <div
         onClick={onClose}
-        className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
       />
       
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden"
+      <div
+        className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden transition-all transform"
       >
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
@@ -154,33 +147,28 @@ const ShareModal: React.FC<ShareModalProps> = ({
             </div>
 
             {/* Search Results Dropdown */}
-            <AnimatePresence>
-              {searchQuery.length >= 2 && !selectedUser && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute z-20 w-[calc(100%-48px)] mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl max-h-48 overflow-y-auto"
-                >
-                  {isSearching ? (
-                    <div className="p-4 text-center text-slate-500 text-sm italic tracking-wide">Đang tìm kiếm...</div>
-                  ) : searchResults.length > 0 ? (
-                    searchResults.map(user => (
-                      <button
-                        key={user.id}
-                        onClick={() => { setSelectedUser(user); setSearchQuery(''); }}
-                        className="w-full p-3 hover:bg-slate-700 text-left border-b border-slate-700/50 last:border-0 transition-colors"
-                      >
-                        <div className="font-bold text-white text-sm">{user.full_name}</div>
-                        <div className="text-xs text-slate-400">@{user.username} • {user.email}</div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-slate-500 text-sm">Không tìm thấy kết quả</div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {searchQuery.length >= 2 && !selectedUser && (
+              <div
+                className="absolute z-20 w-[calc(100%-48px)] mt-1 bg-slate-800 border border-slate-700 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-fade-in"
+              >
+                {isSearching ? (
+                  <div className="p-4 text-center text-slate-500 text-sm italic tracking-wide">Đang tìm kiếm...</div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map(user => (
+                    <button
+                      key={user.id}
+                      onClick={() => { setSelectedUser(user); setSearchQuery(''); }}
+                      className="w-full p-3 hover:bg-slate-700 text-left border-b border-slate-700/50 last:border-0 transition-colors"
+                    >
+                      <div className="font-bold text-white text-sm">{user.full_name}</div>
+                      <div className="text-xs text-slate-400">@{user.username} • {user.email}</div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-slate-500 text-sm">Không tìm thấy kết quả</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Message Section */}
@@ -239,7 +227,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
             {isLoading ? 'Đang gửi...' : selectedUser ? 'Chia sẻ với ' + selectedUser.full_name : 'Tạo link chia sẻ'}
           </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

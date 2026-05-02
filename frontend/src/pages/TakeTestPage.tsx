@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { testService, TestOut, ITestQuestion } from '../services/test';
-import { mockTestDetail } from '../mock_data/test_detail';
 
 const TakeTestPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,9 +24,8 @@ const TakeTestPage: React.FC = () => {
         setTest(data);
         setTimeLeft((data.duration_minutes || 60) * 60);
       } catch (error) {
-        console.error("Lỗi hoặc không có bài. Sử dụng dữ liệu mẫu.", error);
-        setTest(mockTestDetail);
-        setTimeLeft((mockTestDetail.duration_minutes || 60) * 60);
+        console.error("Lỗi khi tải đề thi", error);
+        setTest(null);
       } finally {
         setLoading(false);
       }

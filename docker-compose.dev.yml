@@ -4,13 +4,13 @@ services:
     environment:
       POSTGRES_DB: ai_research_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: 123456789
     ports:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -20,7 +20,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/ai_research_db
+      DATABASE_URL: postgresql://postgres:123456789@postgres:5432/ai_research_db
     depends_on:
       postgres:
         condition: service_healthy

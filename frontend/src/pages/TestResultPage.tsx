@@ -1,6 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  TrendingUp, 
+  Award, 
+  ChevronLeft,
+  Calculator,
+  Plus,
+  Minus,
+  Save,
+  RotateCcw,
+  Zap
+} from 'lucide-react';
 import { testService, TestResultOut, ITestQuestion } from '../services/test';
+import { gradeService, GradeOut } from '../services/grade';
 
 const TestResultPage: React.FC = () => {
    const { id } = useParams<{ id: string }>();
@@ -8,59 +23,114 @@ const TestResultPage: React.FC = () => {
    const location = useLocation();
    const [result, setResult] = useState<TestResultOut | null>(null);
    const [loading, setLoading] = useState(true);
-   const [filter, setFilter] = useState<'all' | 'wrong'>('all');
+   const [filter, setFilter] = useState<'all' | 'correct' | 'wrong'>('all');
+   
+   // GPA Calculator States
+   const [grades, setGrades] = useState<any[]>([]);
+   const [syncing, setSyncing] = useState(false);
 
    useEffect(() => {
-      // Check if we have data passed in via location.state (immediate feedback)
-      if (location.state && location.state.questions && location.state.answers) {
-         const { questions, answers, timeTaken, testTitle, test_id } = location.state;
-         
-         // Calculate score based on state
-         const correctCount = questions.reduce((acc: number, q: ITestQuestion) => {
-            const userAns = answers[q.id.toString()];
-            return acc + (userAns !== undefined && userAns === q.answer ? 1 : 0);
-         }, 0);
-         const score = (correctCount / (questions.length || 1)) * 10;
-
-         setResult({
-            id: id ? parseInt(id) : 999,
-            test_id: test_id || 999,
-            user_id: 1, // Placeholder user_id
-            test_title: testTitle || "Bài kiểm tra mới",
-            full_name: "Nguyễn", // Fallback name
-            score: score,
-            time_taken_seconds: timeTaken || 0,
-            rank: 1,
-            test_questions: questions,
-            answers: answers,
-            completed_at: new Date().toISOString()
-         });
-         setLoading(false);
-         return;
-      }
-
-      const fetchResult = async () => {
-         if (!id) return;
+      const fetchData = async () => {
+         setLoading(true);
          try {
-            const data = await testService.getResultDetail(parseInt(id));
-            if (!data || !data.test_questions) {
-               throw new Error("No data or questions");
+            let resData: TestResultOut | null = null;
+            
+            // 1. Try to get result from location state (immediate feedback)
+            if (location.state && location.state.questions && location.state.answers) {
+               const { questions, answers, timeTaken, testTitle, test_id } = location.state;
+               const correctCount = questions.reduce((acc: number, q: any) => {
+                  const userAns = answers[q.id.toString()];
+                  return acc + (userAns !== undefined && userAns === q.answer ? 1 : 0);
+               }, 0);
+               const score = (correctCount / (questions.length || 1)) * 10;
+
+               resData = {
+                  id: id ? parseInt(id) : 999,
+                  test_id: test_id || 999,
+                  user_id: 1,
+                  test_title: testTitle || "Bài kiểm tra mới",
+                  full_name: "Sinh viên",
+                  score: score,
+                  time_taken_seconds: timeTaken || 0,
+                  rank: 1,
+                  test_questions: questions,
+                  answers: answers,
+                  completed_at: new Date().toISOString()
+               };
+            } else if (id) {
+               // 2. Otherwise fetch from API
+               resData = await testService.getResultDetail(parseInt(id));
             }
-            setResult(data);
+
+            setResult(resData);
+
+            // 3. Fetch GPA data
+            const gradesData = await gradeService.getGrades();
+            if (gradesData.length > 0) {
+               setGrades(gradesData.map(g => ({ ...g, isEditing: false })));
+            } else {
+               // Initial mock data if empty
+               setGrades([
+                  { id: 1, subject_name: 'Môn 1 (3TC)', score: 8.5, credits: 3 },
+                  { id: 2, subject_name: 'Môn 2 (4TC)', score: 9.0, credits: 4 },
+                  { id: 3, subject_name: 'Môn 3 (2TC)', score: 0, credits: 2, isNew: true }
+               ]);
+            }
          } catch (error) {
-            console.error("Lỗi khi tải kết quả", error);
-            setResult(null);
+            console.error("Lỗi khi tải dữ liệu", error);
          } finally {
             setLoading(false);
          }
       };
-      fetchResult();
-   }, [id, navigate]);
+      fetchData();
+   }, [id, location.state]);
+
+   const handleSyncGrades = async () => {
+      setSyncing(true);
+      try {
+         const synced = await gradeService.syncGrades();
+         setGrades(synced.map(g => ({ ...g, isEditing: false })));
+         alert("Đã đồng bộ điểm số từ các bài kiểm tra!");
+      } catch (error) {
+         console.error("Lỗi đồng bộ", error);
+         alert("Không thể đồng bộ ngay bây giờ.");
+      } finally {
+         setSyncing(false);
+      }
+   };
+
+   const updateGradeScore = (id: number, delta: number) => {
+      setGrades(prev => prev.map(g => {
+         if (g.id === id) {
+            const newScore = Math.max(0, Math.min(10, (g.score || 0) + delta));
+            return { ...g, score: parseFloat(newScore.toFixed(1)) };
+         }
+         return g;
+      }));
+   };
+
+   // Calculations
+   const { currentGpa, projectedGpa, totalCredits } = useMemo(() => {
+      const filtered = grades.filter(g => (g.score || 0) > 0);
+      const totalScore = filtered.reduce((acc, g) => acc + (g.score * g.credits), 0);
+      const totalC = filtered.reduce((acc, g) => acc + g.credits, 0);
+      
+      const current = totalC > 0 ? (totalScore / totalC) : 0;
+      
+      // For projected, assume some logic or just use current as base
+      const gpa4 = (current / 10) * 4;
+      
+      return {
+         currentGpa: parseFloat(gpa4.toFixed(2)),
+         projectedGpa: parseFloat((gpa4 + 0.07).toFixed(2)),
+         totalCredits: totalC
+      };
+   }, [grades]);
 
    if (loading || !result) {
       return (
          <div className="min-h-screen bg-white flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3B66F5]"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
          </div>
       );
    }
@@ -71,287 +141,242 @@ const TestResultPage: React.FC = () => {
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
    };
 
+   const totalQuestions = result.test_questions?.length || 0;
    const correctCount = result.test_questions?.reduce((acc, q) => {
       const userAns = result.answers[q.id.toString()];
       return acc + (userAns !== undefined && userAns === q.answer ? 1 : 0);
    }, 0) || 0;
-   const totalQuestions = result.test_questions?.length || 0;
-   const score10 = totalQuestions > 0 ? (correctCount / totalQuestions) * 10 : 0;
-   const wrongCount = totalQuestions - correctCount;
+   const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
-   const avgTimePerQuestion = totalQuestions > 0 ? ((result.time_taken_seconds || 0) / totalQuestions).toFixed(1) : 0;
-
-   const filteredQuestions = result.test_questions?.filter((_q, idx) => {
-      const isCorrect = result.answers[result.test_questions?.[idx]?.id || ''] === result.test_questions?.[idx]?.answer;
-      return filter === 'all' || !isCorrect;
+   const filteredQuestions = result.test_questions?.filter((q) => {
+      const isCorrect = result.answers[q.id.toString()] === q.answer;
+      if (filter === 'correct') return isCorrect;
+      if (filter === 'wrong') return !isCorrect;
+      return true;
    }) || [];
 
    return (
-      <div className="min-h-screen bg-white font-sans pb-20">
-         <main className="max-w-6xl mx-auto px-8 pt-6">
-            
-            {/* Header Area */}
-            <div className="mb-6">
-               <Link to="/test-list" className="inline-flex items-center text-[#3B66F5] font-medium text-sm hover:underline mb-2">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                  Quay lại danh sách
+      <div className="min-h-screen bg-[#F0F7FF]/50 p-6 font-sans">
+         {/* Top Header */}
+         <div className="max-w-7xl mx-auto mb-8 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+               <Link to="/test-list" className="p-3 bg-white rounded-2xl shadow-sm text-slate-400 hover:text-blue-600 transition-all border border-white hover:border-blue-100">
+                  <ChevronLeft size={24} />
                </Link>
-               <h1 className="text-3xl font-bold text-gray-900 mb-1">Kết Quả Bài Kiểm Tra</h1>
-               <p className="text-sm text-gray-500">Phân tích chi tiết kết quả học tập của bạn.</p>
+               <div>
+                  <h1 className="text-3xl font-black text-slate-900 tracking-tight">Kết quả & Phân tích Học thuật</h1>
+                  <p className="text-[11px] font-black text-blue-500 uppercase tracking-widest">STUDENT - UC14 + UC15 - TEST RESULT PAGE & GPA CALCULATOR PAGE</p>
+               </div>
             </div>
+            <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-white">
+               <span className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-wider">Đạt yêu cầu - Giỏi</span>
+            </div>
+         </div>
 
-            {/* Top Cards Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+         <div className="max-w-7xl mx-auto grid grid-cols-12 gap-8">
+            {/* Left: Results Analysis */}
+            <div className="col-span-12 lg:col-span-8 space-y-8">
                
-               {/* Final Score Card */}
-               <div className="col-span-1 bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6 flex flex-col items-center justify-center relative overflow-hidden">
-                  <div className="absolute top-4 left-4 text-xs font-bold text-gray-400 uppercase tracking-wider">ĐIỂM SỐ CUỐI CÙNG</div>
-                  <div className="absolute top-4 right-4 text-blue-100">
-                     <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                  </div>
-                  
-                  <div className="mt-6 relative w-32 h-32 flex flex-col items-center justify-center">
-                     <svg className="absolute inset-0 w-full h-full -rotate-90">
-                        <circle cx="64" cy="64" r="56" stroke="#EEF2FF" strokeWidth="8" fill="transparent" />
-                        <circle cx="64" cy="64" r="56" stroke="#3B66F5" strokeWidth="8" fill="transparent" strokeDasharray={351.8} strokeDashoffset={351.8 - (351.8 * score10 / 10)} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+               {/* Summary Card */}
+               <div className="bg-white rounded-[48px] p-10 shadow-xl shadow-blue-100/40 border border-white flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
+                  {/* Circular Chart */}
+                  <div className="relative w-56 h-56 shrink-0 flex items-center justify-center">
+                     <svg className="w-full h-full -rotate-90">
+                        <circle cx="112" cy="112" r="100" stroke="#F1F5F9" strokeWidth="16" fill="transparent" />
+                        <circle 
+                           cx="112" cy="112" r="100" stroke="#3B66F5" strokeWidth="16" fill="transparent" 
+                           strokeDasharray={628.3} strokeDashoffset={628.3 - (628.3 * accuracy / 100)} 
+                           strokeLinecap="round" className="transition-all duration-1000 ease-out"
+                           style={{ filter: 'drop-shadow(0 0 8px rgba(59, 102, 245, 0.4))' }}
+                        />
                      </svg>
-                     <span className="text-4xl font-bold text-gray-900 z-10">{score10.toFixed(1)}</span>
+                     <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-6xl font-black text-slate-900 tracking-tighter">{accuracy}%</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">HOÀN THÀNH</span>
+                     </div>
                   </div>
-                  
-                  <div className="mt-4 text-center">
-                     <div className="text-lg font-bold text-[#3B66F5] mb-1">Tuyệt vời!</div>
-                     <p className="text-xs text-gray-500 max-w-[200px]">Bạn đã hoàn thành tốt hơn 85% học viên khác.</p>
+
+                  <div className="flex-1 space-y-6">
+                     <div className="space-y-2">
+                        <h2 className="text-3xl font-black text-slate-900 leading-tight">
+                           {result.test_title}
+                        </h2>
+                        <p className="text-slate-500 font-medium leading-relaxed">
+                           Bạn đã vượt qua {correctCount}/{totalQuestions} câu hỏi một cách xuất sắc. Hiệu suất của bạn cao hơn 92% sinh viên cùng khóa.
+                        </p>
+                     </div>
+
+                     <div className="grid grid-cols-3 gap-6 pt-4 border-t border-slate-50">
+                        <div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Thời gian</p>
+                           <p className="text-xl font-black text-slate-800">{formatTime(result.time_taken_seconds || 0)}</p>
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Độ chính xác</p>
+                           <p className="text-xl font-black text-slate-800">{accuracy}%</p>
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Thứ hạng</p>
+                           <p className="text-xl font-black text-blue-600">{result.rank}/{result.total_participants || 145}</p>
+                        </div>
+                     </div>
                   </div>
                </div>
 
-               {/* Right 4 Stats Cards */}
-               <div className="col-span-2 grid grid-cols-2 gap-4">
-                  {/* Correct Answers */}
-                  <div className="bg-white rounded-2xl border-t-4 border-t-emerald-500 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-5 relative flex flex-col justify-between">
-                     <div className="absolute top-4 right-4 bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Đúng</div>
-                     <div>
-                        <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-2">
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900">{correctCount.toString().padStart(2, '0')}/{totalQuestions}</div>
+               {/* Questions Detail */}
+               <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">Chi tiết câu hỏi</h3>
+                     <div className="flex p-1 bg-white rounded-xl shadow-sm border border-white">
+                        {['all', 'correct', 'wrong'].map((f) => (
+                           <button
+                              key={f}
+                              onClick={() => setFilter(f as any)}
+                              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                                 filter === f ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'text-slate-400 hover:text-slate-600'
+                              }`}
+                           >
+                              {f === 'all' ? 'Tất cả' : f === 'correct' ? `Đúng (${correctCount})` : `Sai (${totalQuestions - correctCount})`}
+                           </button>
+                        ))}
                      </div>
-                     <div className="text-xs text-gray-500 mt-1">Câu trả lời chính xác</div>
                   </div>
 
-                  {/* Wrong Answers */}
-                  <div className="bg-white rounded-2xl border-t-4 border-t-red-500 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-5 relative flex flex-col justify-between">
-                     <div className="absolute top-4 right-4 bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Sai</div>
-                     <div>
-                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-2">
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900">{wrongCount.toString().padStart(2, '0')}/{totalQuestions}</div>
-                     </div>
-                     <div className="text-xs text-gray-500 mt-1">Câu trả lời chưa đúng</div>
-                  </div>
+                  <div className="space-y-4">
+                     {filteredQuestions.map((q, idx) => {
+                        const userAns = result.answers[q.id.toString()];
+                        const isCorrect = userAns === q.answer;
+                        const label = (i: number) => String.fromCharCode(65 + i);
 
-                  {/* Time Taken */}
-                  <div className="bg-white rounded-2xl border-t-4 border-t-blue-400 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-5 relative flex flex-col justify-between">
-                     <div className="absolute top-4 right-4 bg-blue-50 text-blue-500 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Thời gian</div>
-                     <div>
-                        <div className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center mb-2">
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900">{formatTime(result.time_taken_seconds || 0)}</div>
-                     </div>
-                     <div className="text-xs text-gray-500 mt-1">Thời gian làm bài</div>
-                  </div>
-
-                  {/* Speed */}
-                  <div className="bg-white rounded-2xl border-t-4 border-t-indigo-400 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-5 relative flex flex-col justify-between">
-                     <div className="absolute top-4 right-4 bg-indigo-50 text-indigo-500 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Tốc độ</div>
-                     <div>
-                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center mb-2">
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900">{avgTimePerQuestion}s</div>
-                     </div>
-                     <div className="text-xs text-gray-500 mt-1">Trung bình mỗi câu</div>
-                  </div>
-               </div>
-            </div>
-
-            {/* Details Section */}
-            <div className="mb-6 flex justify-between items-end">
-               <h3 className="text-xl font-bold text-gray-900">Chi Tiết Câu Hỏi</h3>
-               <div className="flex bg-gray-100 rounded-lg p-1">
-                  <button 
-                     onClick={() => setFilter('all')}
-                     className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${filter === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                  >
-                     Tất cả
-                  </button>
-                  <button 
-                     onClick={() => setFilter('wrong')}
-                     className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${filter === 'wrong' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                  >
-                     Chỉ xem câu sai
-                  </button>
-               </div>
-            </div>
-
-            <div className="flex flex-col gap-6 mb-10">
-               {filteredQuestions.map((question: ITestQuestion, idx: number) => {
-                  const userAns = result.answers[question.id.toString()];
-                  const correctAns = question.answer;
-                  const isCorrect = userAns === correctAns;
-
-                  return (
-                     <div key={question.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex gap-4">
-                        {/* Number Indicator */}
-                        <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${isCorrect ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                           {(idx + 1).toString().padStart(2, '0')}
-                        </div>
-
-                        <div className="flex-1">
-                           {/* Status Label */}
-                           <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-2 ${isCorrect ? 'text-emerald-500' : 'text-red-500'}`}>
-                              {isCorrect ? (
-                                 <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                              ) : (
-                                 <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                              )}
-                              {isCorrect ? 'CHÍNH XÁC' : 'CHƯA ĐÚNG'}
-                           </div>
-
-                           <div className="text-lg font-bold text-gray-900 mb-4 leading-snug">
-                              {question.text}
-                           </div>
-
-                           <div className="grid grid-cols-2 gap-3 mb-4">
-                              {question.options.map((option, optIdx) => {
-                                 const isUserSelection = userAns === optIdx;
-                                 const isCorrectOption = correctAns === optIdx;
-                                 const label = `${String.fromCharCode(65 + optIdx)}.`;
-
-                                 let containerClass = "border-gray-100 bg-gray-50/50 text-gray-600";
-                                 let textClass = "";
-
-                                 if (isCorrectOption) {
-                                    containerClass = "border-emerald-500 bg-emerald-50 text-emerald-800";
-                                    textClass = "font-bold";
-                                 } else if (isUserSelection && !isCorrect) {
-                                    containerClass = "border-red-400 bg-red-50 text-red-800";
-                                    textClass = "font-bold";
-                                 }
-
-                                 return (
-                                    <div key={optIdx} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${containerClass}`}>
-                                       <div className="flex items-start gap-2">
-                                          <span className={`font-semibold shrink-0 ${textClass}`}>{label}</span>
-                                          <span className={`text-sm ${textClass}`}>{option}</span>
-                                       </div>
-                                       
-                                       {isCorrectOption && (
-                                          <svg className="w-5 h-5 shrink-0 text-emerald-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                       )}
-                                       {isUserSelection && !isCorrect && (
-                                          <svg className="w-5 h-5 shrink-0 text-red-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                       )}
-                                    </div>
-                                 );
-                              })}
-                           </div>
-
-                           {/* Explanations */}
-                           {isCorrect ? (
-                              <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
-                                 <div className="flex items-center gap-1.5 text-[#3B66F5] text-[10px] font-bold uppercase tracking-wider mb-2">
-                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                    GIẢI THÍCH CHI TIẾT
+                        return (
+                           <div key={q.id} className={`bg-white rounded-3xl p-8 border transition-all ${isCorrect ? 'border-white' : 'border-red-100 shadow-lg shadow-red-50'}`}>
+                              <div className="flex gap-6">
+                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isCorrect ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
+                                    {isCorrect ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
                                  </div>
-                                 <p className="text-gray-600 text-sm italic">
-                                    {question.explanation || "Giải thích chi tiết chưa được cập nhật cho câu hỏi này."}
-                                 </p>
-                              </div>
-                           ) : (
-                              <div className="bg-orange-50/50 rounded-xl p-4 border border-orange-100">
-                                 <div className="flex flex-col gap-4">
-                                    <div>
-                                       <div className="flex items-center gap-1.5 text-red-600 text-[10px] font-bold uppercase tracking-wider mb-1">
-                                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                          TẠI SAO SAI?
+                                 <div className="flex-1 space-y-4">
+                                    <div className="flex justify-between items-start">
+                                       <div>
+                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">CÂU HỎI {idx + 1}</p>
+                                          <h4 className="text-lg font-bold text-slate-800 leading-snug">{q.text}</h4>
                                        </div>
-                                       <p className="text-gray-600 text-sm italic">Bạn đã chọn sai. Xem lại kiến thức về phần này để hiểu rõ hơn.</p>
+                                       <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">ĐỘ KHÓ: CAO</span>
                                     </div>
-                                    <div>
-                                       <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-bold uppercase tracking-wider mb-1">
-                                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                                          KIẾN THỨC ĐÚNG
-                                       </div>
-                                       <p className="text-gray-600 text-sm italic">{question.explanation || "Giải thích chi tiết chưa được cập nhật cho câu hỏi này."}</p>
+
+                                    <div className="flex flex-wrap gap-2">
+                                       <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-100">
+                                          Bạn chọn: {label(userAns)} ({q.options[userAns]})
+                                       </span>
+                                       {!isCorrect && (
+                                          <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-emerald-100">
+                                             Đáp án đúng: {label(q.answer || 0)} ({q.options[q.answer || 0]})
+                                          </span>
+                                       )}
                                     </div>
                                  </div>
                               </div>
-                           )}
+                           </div>
+                        );
+                     })}
+                  </div>
+               </div>
+            </div>
 
+            {/* Right Sidebar: GPA Calculator */}
+            <div className="col-span-12 lg:col-span-4 space-y-8">
+               <div className="bg-white rounded-[48px] p-8 shadow-xl shadow-blue-100/40 border border-white space-y-10">
+                  <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+                        <Calculator size={24} />
+                     </div>
+                     <h2 className="text-2xl font-black text-slate-900 tracking-tight">GPA Calculator</h2>
+                  </div>
+
+                  {/* GPA Display */}
+                  <div className="bg-blue-50/50 rounded-[32px] p-8 text-center relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 w-20 h-20 bg-blue-100/50 rounded-full -mr-10 -mt-10 blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 relative z-10">GPA HIỆN TẠI</p>
+                     <p className="text-6xl font-black text-slate-900 relative z-10">{currentGpa}</p>
+                  </div>
+
+                  {/* Subject List */}
+                  <div className="space-y-4">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">DỰ PHÓNG ĐIỂM HỌC KỲ MỚI</p>
+                     {grades.map((grade) => (
+                        <div key={grade.id} className="group p-4 bg-slate-50/50 rounded-3xl border border-slate-100 hover:bg-white hover:border-blue-100 transition-all flex items-center justify-between">
+                           <div className="space-y-1 max-w-[150px]">
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                 {grade.subject_name.split('(')[0]}
+                              </p>
+                              <p className="text-sm font-black text-slate-700 truncate">{grade.score || 'Nhập điểm'}</p>
+                           </div>
+                           <div className="flex items-center gap-3">
+                              <div className="flex flex-col gap-1">
+                                 <button onClick={() => updateGradeScore(grade.id, 0.5)} className="p-1 hover:bg-blue-50 text-slate-300 hover:text-blue-500 rounded-md transition-all">
+                                    <Plus size={14} />
+                                 </button>
+                                 <button onClick={() => updateGradeScore(grade.id, -0.5)} className="p-1 hover:bg-blue-50 text-slate-300 hover:text-blue-500 rounded-md transition-all">
+                                    <Minus size={14} />
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+
+                  {/* Summary */}
+                  <div className="pt-6 border-t border-slate-50 space-y-6">
+                     <div className="flex justify-between items-end">
+                        <div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">DỰ KIẾN GPA TỔNG</p>
+                           <p className="text-5xl font-black text-slate-900 tracking-tighter">{projectedGpa}</p>
+                        </div>
+                        <div className="text-right text-emerald-500 flex flex-col items-end">
+                           <div className="flex items-center gap-1 font-black text-sm">
+                              <TrendingUp size={14} />
+                              +0.07
+                           </div>
+                           <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Sắp đạt loại Xuất sắc</p>
                         </div>
                      </div>
-                  );
-               })}
-            </div>
 
-            {/* Recommendations */}
-            <div className="bg-[#F4F7FF] rounded-2xl p-6 mb-6 flex flex-col md:flex-row gap-6 items-start border border-[#E5EDFF]">
-               <div className="w-12 h-12 rounded-xl bg-[#5E6AD2] text-white flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-               </div>
-               <div className="flex-1">
-                  <h4 className="text-base font-bold text-gray-900 mb-2">Đề xuất học tập</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                     Dựa trên kết quả, bạn đang gặp khó khăn ở các khái niệm về <strong className="text-gray-900">Học máy không giám sát</strong>. 
-                     Chúng tôi khuyên bạn nên xem lại chương 4 trong tài liệu "Nguyên lý Machine Learning" để cải thiện điểm số.
-                  </p>
-                  <div className="flex gap-3">
-                     <button className="bg-[#3B66F5] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors">
-                        Xem tài liệu liên quan
-                     </button>
-                     <button className="bg-white text-[#3B66F5] border border-[#3B66F5] px-5 py-2 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors">
-                        Lưu vào ghi chú
-                     </button>
-                  </div>
-               </div>
-            </div>
-
-            {/* Bottom 3 Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               <div className="bg-white border border-gray-100 rounded-xl p-4 flex items-center gap-4 shadow-sm">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
-                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                  </div>
-                  <div>
-                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">CẢI THIỆN</div>
-                     <div className="font-bold text-gray-900">+12% so với kỳ trước</div>
-                  </div>
-               </div>
-               
-               <div className="bg-white border border-gray-100 rounded-xl p-4 flex items-center gap-4 shadow-sm">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
-                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  </div>
-                  <div>
-                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">LẦN THI THỨ</div>
-                     <div className="font-bold text-gray-900">Lần 03</div>
+                     <div className="space-y-3">
+                        <button 
+                           onClick={handleSyncGrades}
+                           disabled={syncing}
+                           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-[24px] shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                        >
+                           <RotateCcw size={18} className={syncing ? 'animate-spin' : ''} />
+                           Lưu cấu hình dự kiến
+                        </button>
+                        <button className="w-full bg-slate-900 hover:bg-black text-white font-black py-5 rounded-[24px] shadow-lg shadow-slate-100 transition-all active:scale-95 flex items-center justify-center gap-3 group">
+                           <Save size={18} />
+                           Xuất báo cáo PDF
+                        </button>
+                     </div>
                   </div>
                </div>
 
-               <div className="bg-white border border-gray-100 rounded-xl p-4 flex items-center gap-4 shadow-sm">
-                  <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
-                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-                  </div>
-                  <div>
-                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">THỨ HẠNG</div>
-                     <div className="font-bold text-gray-900">Top 10 Lớp</div>
+               {/* Goal Card */}
+               <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[48px] p-8 text-white relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:scale-150 transition-transform duration-1000" />
+                  <div className="relative z-10 space-y-6">
+                     <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                        <Zap size={24} className="text-amber-400" />
+                     </div>
+                     <div>
+                        <h4 className="text-xl font-black tracking-tight leading-tight mb-2">Mục tiêu của bạn:</h4>
+                        <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                           Đạt top 5% toàn viện trong học kỳ này.
+                        </p>
+                     </div>
+                     <div className="px-4 py-2 bg-white/10 rounded-xl border border-white/10 w-fit text-xs font-black tracking-widest uppercase">
+                        SAFE - WORK
+                     </div>
                   </div>
                </div>
             </div>
-
-         </main>
+         </div>
       </div>
    );
 };

@@ -14,7 +14,8 @@ import {
   Search,
   Upload,
   Menu,
-  X
+  X,
+  GraduationCap
 } from 'lucide-react';
 
 const DashboardLayout: React.FC = () => {
@@ -68,11 +69,11 @@ const DashboardLayout: React.FC = () => {
         <div className="p-8 mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-              <BookOpen className="text-white" size={24} />
+              <GraduationCap className="text-white" size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-black text-indigo-900 tracking-tight">Nghiên cứu</h1>
-              <p className="text-[10px] font-bold text-indigo-400 tracking-widest uppercase">Học tập thông minh</p>
+              <h1 className="text-xl font-black text-blue-600 tracking-tight">Nghiên cứu</h1>
+              <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Học tập thông minh</p>
             </div>
           </div>
         </div>
@@ -130,7 +131,7 @@ const DashboardLayout: React.FC = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
               <input
                 type="text"
-                placeholder="Tìm kiếm tài liệu, bài giảng..."
+                placeholder="Tìm kiếm học phần, flashcard..."
                 className="w-full h-12 bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

@@ -28,8 +28,9 @@ import TakeTestPage from './pages/TakeTestPage';
 import TestResultPage from './pages/TestResultPage';
 import ProfilePage from './pages/ProfilePage';
 import GPAPage from './pages/GPAPage';
-import FlashcardListPage from './pages/FlashcardListPage';
+import FlashcardDashboardPage from './pages/FlashcardDashboardPage';
 import FlashcardCreatePage from './pages/FlashcardCreatePage';
+import FlashcardEditPage from './pages/FlashcardEditPage';
 import FlashcardStudyPage from './pages/FlashcardStudyPage';
 
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -53,8 +54,9 @@ function App() {
           <Route path="/test-list" element={<TestListPage />} />
           <Route path="/take-test/:id" element={<TakeTestPage />} />
           <Route path="/test-result/:id" element={<TestResultPage />} />
-          <Route path="/flashcard" element={<FlashcardListPage />} />
+          <Route path="/flashcard" element={<FlashcardDashboardPage />} />
           <Route path="/flashcard/create" element={<FlashcardCreatePage />} />
+          <Route path="/flashcard/edit/:setId" element={<FlashcardEditPage />} />
           <Route path="/flashcard/study/:setId" element={<FlashcardStudyPage />} />
           <Route path="/gpa" element={<GPAPage />} />
           <Route path="/profile" element={<ProfilePage />} />

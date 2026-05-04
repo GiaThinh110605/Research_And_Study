@@ -152,6 +152,8 @@ const DocumentDetailPage: React.FC = () => {
       document_id: parsedId,
       front: "Độ phức tạp thời gian (Time Complexity) của thuật toán Quick Sort trong trường hợp trung bình là gì?",
       back: "O(n log n). Quick Sort sử dụng chiến thuật chia để trị, phân chia mảng dựa trên phần tử chốt (pivot).",
+      status: "new",
+      mastery_level: 0,
       created_at: new Date().toISOString()
     },
     {
@@ -160,6 +162,8 @@ const DocumentDetailPage: React.FC = () => {
       document_id: parsedId,
       front: "Nguyên lý ACID trong hệ quản trị cơ sở dữ liệu (DBMS) là gì?",
       back: "Atomicity (Nguyên tử), Consistency (Nhất quán), Isolation (Cô lập), Durability (Bền vững).",
+      status: "new",
+      mastery_level: 0,
       created_at: new Date().toISOString()
     },
     {
@@ -168,6 +172,8 @@ const DocumentDetailPage: React.FC = () => {
       document_id: parsedId,
       front: "Sự khác biệt giữa REST và GraphQL là gì?",
       back: "REST dựa trên tài nguyên với các endpoint cố định. GraphQL cho phép client yêu cầu chính xác dữ liệu họ cần thông qua một endpoint duy nhất.",
+      status: "new",
+      mastery_level: 0,
       created_at: new Date().toISOString()
     }
   ];

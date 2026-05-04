@@ -21,6 +21,7 @@ interface FlashcardDraft {
 
 const FlashcardCreatePage: React.FC = () => {
   const navigate = useNavigate();
+  
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [subject, setSubject] = useState('');
@@ -190,14 +191,6 @@ const FlashcardCreatePage: React.FC = () => {
                   />
                 </div>
 
-                <div className="border-2 border-dashed border-[#E0E5F2] rounded-2xl p-8 text-center group hover:border-blue-400 transition-all cursor-pointer bg-[#F4F7FE]/50">
-                   <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-4 text-[#A3AED0] group-hover:text-blue-500 transition-colors">
-                      <ImageIcon className="w-6 h-6" />
-                   </div>
-                   <p className="text-xs font-bold text-[#A3AED0]">Tải ảnh lên hoặc kéo thả vào đây</p>
-                   <p className="text-[10px] text-gray-300 mt-1 uppercase font-black">Hỗ trợ JPG, PNG (Tối đa 5MB)</p>
-                </div>
-
                 <button 
                   onClick={handleAddCard}
                   className="w-full py-4 bg-[#1B2559] text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-[#111c44] transition-all"
@@ -211,48 +204,33 @@ const FlashcardCreatePage: React.FC = () => {
 
           {/* Right Column - Drafts List */}
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-[#1B2559]">Danh sách thẻ đã tạo ({drafts.length})</h2>
-              <button className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#A3AED0] hover:text-blue-500 transition-all">
-                <Edit3 className="w-4 h-4" />
-              </button>
-            </div>
-
+            <h2 className="text-xl font-black text-[#1B2559]">Danh sách thẻ đã tạo ({drafts.length})</h2>
             <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
               {drafts.length === 0 ? (
                 <div className="bg-white rounded-[32px] p-20 text-center border-2 border-dashed border-[#E0E5F2]">
                    <Brain className="w-12 h-12 text-[#E0E5F2] mx-auto mb-4" />
                    <p className="text-gray-400 font-bold">Chưa có thẻ nào được thêm.</p>
-                   <p className="text-[10px] text-gray-300 uppercase font-black mt-2">Kéo thẻ để sắp xếp lại thứ tự</p>
                 </div>
               ) : (
                 drafts.map((card, idx) => (
                   <div key={idx} className="bg-white rounded-3xl p-5 shadow-sm flex gap-4 items-start group">
-                    <div className="w-20 h-20 bg-[#F4F7FE] rounded-2xl flex-shrink-0 flex items-center justify-center text-[#A3AED0]">
+                    <div className="w-16 h-16 bg-[#F4F7FE] rounded-2xl flex-shrink-0 flex items-center justify-center text-[#A3AED0]">
                       <FileText className="w-8 h-8" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-black text-[#1B2559] truncate">{card.front}</h3>
                       <p className="text-xs text-[#A3AED0] font-medium mt-1 line-clamp-2">{card.back}</p>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <button 
-                        onClick={() => removeDraft(idx)}
-                        className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => removeDraft(idx)}
+                      className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))
               )}
             </div>
-
-            {drafts.length > 0 && (
-              <div className="bg-[#E9EDF7] rounded-3xl p-8 border-2 border-dashed border-[#B0BBDA] text-center">
-                <p className="text-sm font-bold text-[#707EAE]">Kéo thẻ để sắp xếp lại thứ tự</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

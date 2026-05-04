@@ -18,6 +18,9 @@ from app.schemas.flashcard import (
     FlashcardSetUpdate,
     FlashcardBulkCreate
 )
+from app.schemas.ai import FlashcardGenerateRequest
+from app.core.gemini import generate_flashcards_from_text
+from app.core.file_utils import extract_text_from_file
 
 router = APIRouter()
 
@@ -64,6 +67,28 @@ def get_flashcard_set(
     ).first()
     if not flashcard_set:
         raise HTTPException(status_code=404, detail="Flashcard set not found")
+    return flashcard_set
+
+@router.put("/sets/{set_id}", response_model=FlashcardSet)
+def update_flashcard_set(
+    set_id: int,
+    payload: FlashcardSetUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    flashcard_set = db.query(FlashcardSetModel).filter(
+        FlashcardSetModel.id == set_id, 
+        FlashcardSetModel.owner_id == current_user.id
+    ).first()
+    if not flashcard_set:
+        raise HTTPException(status_code=404, detail="Flashcard set not found")
+    
+    update_data = payload.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(flashcard_set, key, value)
+    
+    db.commit()
+    db.refresh(flashcard_set)
     return flashcard_set
 
 @router.delete("/sets/{set_id}")
@@ -135,6 +160,8 @@ def create_flashcard(
         set_id=payload.set_id,
         front=payload.front,
         back=payload.back,
+        status="new",
+        mastery_level=0
     )
     db.add(flashcard)
     db.commit()
@@ -154,12 +181,17 @@ def bulk_create_flashcards(
     if not flashcard_set:
         raise HTTPException(status_code=404, detail="Flashcard set not found")
 
+    if payload.clear_existing:
+        db.query(FlashcardModel).filter(FlashcardModel.set_id == payload.set_id).delete()
+
     new_flashcards = []
     for item in payload.flashcards:
         flashcard = FlashcardModel(
             set_id=payload.set_id,
             front=item.front,
             back=item.back,
+            status="new",
+            mastery_level=0
         )
         db.add(flashcard)
         new_flashcards.append(flashcard)
@@ -172,12 +204,30 @@ def bulk_create_flashcards(
 @router.post("/generate")
 def generate_flashcards(
     document_id: int,
+    payload: FlashcardGenerateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    # Placeholder for Gemini AI integration
-    # For now, return an empty list or a message
-    return {"message": "AI Generation is currently disabled. Please use manual creation.", "data": []}
+    # Temporarily disabled as per user request
+    return {"message": "AI Generation is temporarily disabled. Please use manual creation.", "data": []}
+    
+    # document = db.query(Document).filter(Document.id == document_id).first()
+    # if not document:
+    #     raise HTTPException(status_code=404, detail="Document not found")
+    # 
+    # # Check access
+    # if document.uploader_id != current_user.id and not document.is_public:
+    #     raise HTTPException(status_code=403, detail="Access denied")
+    #
+    # text = extract_text_from_file(document.file_path)
+    # if not text:
+    #     if document.summary:
+    #         text = document.summary.content
+    #     else:
+    #         raise HTTPException(status_code=400, detail="Could not extract text from document and no summary available.")
+    #
+    # flashcards_data = generate_flashcards_from_text(text, count=payload.count)
+    # return {"message": "Flashcards generated successfully", "data": flashcards_data}
 
 @router.put("/{flashcard_id}", response_model=Flashcard)
 def update_flashcard(
@@ -198,7 +248,10 @@ def update_flashcard(
     if not flashcard_set:
         raise HTTPException(status_code=404, detail="Flashcard not found")
 
-    update_data = payload.model_dump(exclude_unset=True)
+    update_data = payload.dict(exclude_unset=True)
+    if "status" in update_data or "mastery_level" in update_data:
+        flashcard.last_reviewed = datetime.now()
+        
     for key, value in update_data.items():
         setattr(flashcard, key, value)
 
@@ -227,3 +280,26 @@ def delete_flashcard(
     db.delete(flashcard)
     db.commit()
     return {"message": "Flashcard deleted successfully"}
+
+@router.post("/sets/{set_id}/reset")
+def reset_flashcard_set_progress(
+    set_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    # Check ownership
+    flashcard_set = db.query(FlashcardSetModel).filter(
+        FlashcardSetModel.id == set_id, 
+        FlashcardSetModel.owner_id == current_user.id
+    ).first()
+    if not flashcard_set:
+        raise HTTPException(status_code=404, detail="Flashcard set not found")
+    
+    # Reset all flashcards in this set
+    db.query(FlashcardModel).filter(FlashcardModel.set_id == set_id).update({
+        "mastery_level": 0,
+        "status": "new",
+        "last_reviewed": None
+    })
+    db.commit()
+    return {"message": "Progress reset successfully"}

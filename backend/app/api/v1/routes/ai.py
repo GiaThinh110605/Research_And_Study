@@ -86,22 +86,25 @@ def generate_flashcards(
     db: Session = Depends(get_db),
     current_user: Any = Depends(get_current_user)
 ) -> Any:
-    document = db.query(Document).filter(Document.id == document_id).first()
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-
-    # Mock AI generation of flashcards
-    num_cards = payload.count or 5
-    flashcards_data = []
-    for i in range(num_cards):
-        flashcard_data = {
-            "front": f"Câu hỏi {i+1} về {document.title}?",
-            "back": f"Đáp án {i+1} chi tiết cho câu hỏi này.",
-            "difficulty": "medium"
-        }
-        flashcards_data.append(flashcard_data)
+    # Temporarily disabled as per user request
+    return {"message": "AI Generation is temporarily disabled.", "flashcards": []}
     
-    return {
-        "message": f"Generated {num_cards} flashcards for document '{document.title}'",
-        "flashcards": flashcards_data
-    }
+    # document = db.query(Document).filter(Document.id == document_id).first()
+    # if not document:
+    #     raise HTTPException(status_code=404, detail="Document not found")
+    # 
+    # # Mock AI generation of flashcards
+    # num_cards = payload.count or 5
+    # flashcards_data = []
+    # for i in range(num_cards):
+    #     flashcard_data = {
+    #         "front": f"Câu hỏi {i+1} về {document.title}?",
+    #         "back": f"Đáp án {i+1} chi tiết cho câu hỏi này.",
+    #         "difficulty": "medium"
+    #     }
+    #     flashcards_data.append(flashcard_data)
+    # 
+    # return {
+    #     "message": f"Generated {num_cards} flashcards for document '{document.title}'",
+    #     "flashcards": flashcards_data
+    # }

@@ -41,3 +41,7 @@ class Token(BaseModel):
 
 class TokenPayload(BaseModel):
     sub: Optional[str] = None
+
+class SocialLogin(BaseModel):
+    token: str
+    client_id: Optional[str] = None

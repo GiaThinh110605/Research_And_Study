@@ -21,6 +21,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             r"^/openapi.json",
             r"^/api/v1/auth/login",
             r"^/api/v1/auth/register",
+            r"^/api/v1/auth/google",
+            r"^/api/v1/auth/facebook",
             r"^/uploads/.*",
         ]
         

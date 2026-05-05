@@ -14,6 +14,9 @@ class Document(Base):
     file_size = Column(Integer, nullable=True)
     file_type = Column(String(20), nullable=False)
     status = Column(String(20), default="active")  # active, archived
+    ingestion_status = Column(String(20), default="ready")  # ready, processing
+    auto_summary = Column(Boolean, default=True)
+    auto_quiz = Column(Boolean, default=True)
     is_public = Column(Boolean, default=True)
     uploader_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

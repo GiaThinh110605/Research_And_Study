@@ -3,14 +3,15 @@ from pathlib import Path
 from typing import Any, List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, aliased
 
 from app.api.v1.deps import get_current_active_admin, get_current_user, get_current_user_optional
 from app.core.config import settings
-from app.models.base import get_db
+from app.core.file_utils import extract_text_from_file
+from app.models.base import SessionLocal, get_db
 from app.models.document import Document
 from app.models.document_share import DocumentShare
 from app.models.discussion import Discussion
@@ -27,6 +28,8 @@ from app.schemas.document import (
     AdminShareModerationItem,
     AdminShareModerationListResponse,
     AdminShareModerationUpdate,
+    DocumentIngestionOptionsUpdate,
+    DocumentIngestionStatus,
     DocumentListResponse,
     DocumentOut,
     DocumentShareCreate,
@@ -48,6 +51,152 @@ ALLOWED_FILE_TYPES = {
 }
 
 
+_STOPWORDS = {
+    "a", "an", "the", "and", "or", "but", "if", "then", "else", "when", "while", "for",
+    "to", "of", "in", "on", "at", "by", "from", "with", "without", "as", "is", "are",
+    "was", "were", "be", "been", "being", "this", "that", "these", "those", "it", "its",
+    "into", "about", "over", "under", "between", "among", "than", "so", "such", "not",
+}
+
+
+def _chunk_text(text: str, max_chars: int = 1200, overlap: int = 120) -> List[str]:
+    if not text:
+        return []
+
+    normalized = " ".join(text.split())
+    chunks: List[str] = []
+    start = 0
+    length = len(normalized)
+    while start < length:
+        end = min(start + max_chars, length)
+        chunk = normalized[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        start = end - overlap
+        if start < 0:
+            start = 0
+        if start >= length:
+            break
+    return chunks
+
+
+def _extract_keywords(text: str, limit: int = 8) -> List[str]:
+    if not text:
+        return []
+
+    tokens = [
+        "".join(ch for ch in token if ch.isalnum()).lower()
+        for token in text.split()
+    ]
+    filtered = [token for token in tokens if token and token not in _STOPWORDS and len(token) > 3]
+    counts: dict[str, int] = {}
+    for token in filtered:
+        counts[token] = counts.get(token, 0) + 1
+
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    return [token for token, _ in ranked[:limit]]
+
+
+def _build_summary(text: str, keywords: List[str]) -> str:
+    if not text:
+        return "No content could be extracted from the document."
+
+    sentences = [s.strip() for s in text.replace("\n", " ").split(".") if s.strip()]
+    lead = ". ".join(sentences[:4])
+    if lead and not lead.endswith("."):
+        lead += "."
+
+    keyword_line = ""
+    if keywords:
+        keyword_line = "\n\nKey concepts: " + ", ".join(keywords) + "."
+
+    return f"Summary (auto-generated):\n\n{lead}{keyword_line}"
+
+
+def _build_quiz(title: str, keywords: List[str]) -> List[dict[str, Any]]:
+    questions: List[dict[str, Any]] = []
+    if not keywords:
+        keywords = ["concept", "definition", "application"]
+
+    for idx, keyword in enumerate(keywords[:3], start=1):
+        options = [
+            f"Core idea about {keyword}",
+            f"Unrelated term to {keyword}",
+            f"Example of {keyword}",
+            f"Common misconception of {keyword}",
+        ]
+        questions.append(
+            {
+                "id": idx,
+                "text": f"What best describes the role of '{keyword}' in {title}?",
+                "options": options,
+                "answer": 0,
+            }
+        )
+
+    return questions
+
+
+def _process_document_ingestion(document_id: int, uploader_id: int) -> None:
+    db = SessionLocal()
+    try:
+        document = db.query(Document).filter(Document.id == document_id).first()
+        if not document:
+            return
+
+        if not document.auto_summary and not document.auto_quiz:
+            document.ingestion_status = "ready"
+            db.commit()
+            return
+
+        document.ingestion_status = "processing"
+        db.commit()
+
+        text = extract_text_from_file(document.file_path)
+        if not text:
+            document.ingestion_status = "ready"
+            db.commit()
+            return
+
+        chunks = _chunk_text(text)
+        sample_text = " ".join(chunks[:3])
+        keywords = _extract_keywords(sample_text)
+        if document.auto_summary:
+            summary_content = _build_summary(text, keywords)
+            existing_summary = db.query(Summary).filter(Summary.document_id == document_id).first()
+            if existing_summary:
+                existing_summary.content = summary_content
+            else:
+                db.add(
+                    Summary(
+                        document_id=document_id,
+                        content=summary_content,
+                        generated_by="ai",
+                    )
+                )
+
+        if document.auto_quiz:
+            existing_test = db.query(Test).filter(Test.document_id == document_id).first()
+            if not existing_test:
+                db.add(
+                    Test(
+                        title=f"Quiz: {document.title}",
+                        subject=document.subject or "General",
+                        creator_id=uploader_id,
+                        document_id=document_id,
+                        duration_minutes=15,
+                        questions=_build_quiz(document.title, keywords),
+                    )
+                )
+
+        document.ingestion_status = "ready"
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+
+
 def _to_document_out(document: Document) -> DocumentOut:
     return DocumentOut(
         id=document.id,
@@ -59,6 +208,9 @@ def _to_document_out(document: Document) -> DocumentOut:
         file_type=document.file_type,
         uploader_id=document.uploader_id,
         uploader_name=document.uploader.full_name if document.uploader else None,
+        auto_summary=bool(document.auto_summary),
+        auto_quiz=bool(document.auto_quiz),
+        ingestion_status=document.ingestion_status,
         created_at=document.created_at,
         updated_at=document.updated_at,
     )
@@ -555,7 +707,10 @@ async def upload_document(
     description: Optional[str] = Form(None),
     subject: Optional[str] = Form(None),
     is_public: bool = Form(True),
+    auto_summary: bool = Form(True),
+    auto_quiz: bool = Form(True),
     file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -585,13 +740,81 @@ async def upload_document(
         subject=subject,
         is_public=is_public,
         file_path=f"/uploads/{saved_name}",
+        file_size=len(file_bytes),
         file_type=extension.replace(".", "").upper(),
         uploader_id=current_user.id,
+        auto_summary=auto_summary,
+        auto_quiz=auto_quiz,
+        ingestion_status="processing" if auto_summary or auto_quiz else "ready",
     )
 
     db.add(document)
     db.commit()
     db.refresh(document)
+
+    if background_tasks is not None and (auto_summary or auto_quiz):
+        background_tasks.add_task(_process_document_ingestion, document.id, current_user.id)
+
+    return _to_document_out(document)
+
+
+@router.get("/{document_id}/ingestion-status", response_model=DocumentIngestionStatus)
+def get_document_ingestion_status(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+) -> Any:
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if not _can_access_document(db, document, current_user):
+        raise HTTPException(status_code=403, detail="You do not have permission to view this document")
+
+    summary_ready = db.query(Summary).filter(Summary.document_id == document_id).first() is not None
+    quiz_ready = db.query(Test).filter(Test.document_id == document_id).first() is not None
+
+    return {
+        "status": document.ingestion_status or "ready",
+        "summary_ready": summary_ready,
+        "quiz_ready": quiz_ready,
+    }
+
+
+@router.patch("/{document_id}/ingestion-options", response_model=DocumentOut)
+def update_document_ingestion_options(
+    document_id: int,
+    payload: DocumentIngestionOptionsUpdate,
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if not _can_edit_document(db, document, current_user):
+        raise HTTPException(status_code=403, detail="You do not have permission to update this document")
+
+    update_data = payload.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(document, key, value)
+
+    summary_ready = db.query(Summary).filter(Summary.document_id == document_id).first() is not None
+    quiz_ready = db.query(Test).filter(Test.document_id == document_id).first() is not None
+    needs_summary = document.auto_summary and not summary_ready
+    needs_quiz = document.auto_quiz and not quiz_ready
+
+    if needs_summary or needs_quiz:
+        document.ingestion_status = "processing"
+        db.commit()
+        db.refresh(document)
+        if background_tasks is not None:
+            background_tasks.add_task(_process_document_ingestion, document.id, document.uploader_id)
+    else:
+        document.ingestion_status = "ready"
+        db.commit()
+        db.refresh(document)
 
     return _to_document_out(document)
 

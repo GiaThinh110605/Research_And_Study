@@ -25,6 +25,8 @@ const DocumentsUploadPage: React.FC = () => {
   const [subject, setSubject] = useState(subjectOptions[0]);
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+  const [autoSummary, setAutoSummary] = useState(true);
+  const [autoQuiz, setAutoQuiz] = useState(true);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -129,6 +131,8 @@ const DocumentsUploadPage: React.FC = () => {
         description: description.trim(),
         subject,
         is_public: isPublic,
+        auto_summary: autoSummary,
+        auto_quiz: autoQuiz,
         file,
       });
 
@@ -234,6 +238,31 @@ const DocumentsUploadPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Tùy chọn AI sau upload</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={autoSummary}
+                      onChange={(event) => setAutoSummary(event.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-[#3B66F5] focus:ring-[#3B66F5]/20"
+                    />
+                    Tự động tóm tắt
+                  </label>
+                  <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={autoQuiz}
+                      onChange={(event) => setAutoQuiz(event.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-[#3B66F5] focus:ring-[#3B66F5]/20"
+                    />
+                    Tự động tạo quiz
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">Hệ thống sẽ xử lý ở nền sau khi upload thành công.</p>
               </div>
 
               <div>

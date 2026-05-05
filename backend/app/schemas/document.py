@@ -24,6 +24,9 @@ class DocumentOut(DocumentBase):
     file_type: str
     uploader_id: int
     uploader_name: Optional[str] = None
+    auto_summary: bool = True
+    auto_quiz: bool = True
+    ingestion_status: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -101,6 +104,17 @@ class AdminDocumentListResponse(BaseModel):
 
 class AdminDocumentVisibilityUpdate(BaseModel):
     is_public: bool
+
+
+class DocumentIngestionOptionsUpdate(BaseModel):
+    auto_summary: Optional[bool] = None
+    auto_quiz: Optional[bool] = None
+
+
+class DocumentIngestionStatus(BaseModel):
+    status: Literal["processing", "ready"]
+    summary_ready: bool
+    quiz_ready: bool
 
 
 class AdminShareModerationItem(BaseModel):

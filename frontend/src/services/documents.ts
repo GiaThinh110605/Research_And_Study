@@ -6,6 +6,9 @@ export interface DocumentItem {
   description?: string | null;
   subject?: string | null;
   is_public: boolean;
+  auto_summary?: boolean | null;
+  auto_quiz?: boolean | null;
+  ingestion_status?: 'processing' | 'ready' | null;
   file_url: string;
   file_type: string;
   uploader_id: number;
@@ -36,6 +39,14 @@ export interface UploadDocumentPayload {
   subject?: string;
   is_public: boolean;
   file: File;
+  auto_summary?: boolean;
+  auto_quiz?: boolean;
+}
+
+export interface DocumentIngestionStatus {
+  status: 'processing' | 'ready';
+  summary_ready: boolean;
+  quiz_ready: boolean;
 }
 
 export interface UpdateDocumentPayload {
@@ -43,6 +54,11 @@ export interface UpdateDocumentPayload {
   description?: string;
   subject?: string;
   is_public?: boolean;
+}
+
+export interface UpdateIngestionOptionsPayload {
+  auto_summary?: boolean;
+  auto_quiz?: boolean;
 }
 
 export interface SharePayload {
@@ -72,12 +88,19 @@ export const documentService = {
     return response.data;
   },
 
+  async getIngestionStatus(documentId: number): Promise<DocumentIngestionStatus> {
+    const response = await api.get(`/api/v1/documents/${documentId}/ingestion-status`);
+    return response.data;
+  },
+
   async upload(payload: UploadDocumentPayload): Promise<DocumentItem> {
     const formData = new FormData();
     formData.append('title', payload.title);
     if (payload.description) formData.append('description', payload.description);
     if (payload.subject) formData.append('subject', payload.subject);
     formData.append('is_public', String(payload.is_public));
+    formData.append('auto_summary', String(payload.auto_summary ?? true));
+    formData.append('auto_quiz', String(payload.auto_quiz ?? true));
     formData.append('file', payload.file);
 
     const response = await api.post('/api/v1/documents', formData, {
@@ -95,6 +118,11 @@ export const documentService = {
 
   async update(documentId: number, payload: UpdateDocumentPayload): Promise<DocumentItem> {
     const response = await api.put(`/api/v1/documents/${documentId}`, payload);
+    return response.data;
+  },
+
+  async updateIngestionOptions(documentId: number, payload: UpdateIngestionOptionsPayload): Promise<DocumentItem> {
+    const response = await api.patch(`/api/v1/documents/${documentId}/ingestion-options`, payload);
     return response.data;
   },
 

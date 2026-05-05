@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import ShareModal from '../components/documents/ShareModal';
 import { authService } from '../services/auth';
-import { documentService, DocumentItem, ShareItem } from '../services/documents';
+import { documentService, DocumentIngestionStatus, DocumentItem, ShareItem } from '../services/documents';
 import { Flashcard as FlashcardItem } from '../services/flashcards';
 import api from '../services/api';
 import { aiService } from '../services/ai';
@@ -108,6 +108,12 @@ const DocumentDetailPage: React.FC = () => {
 
   const [aiResult, setAiResult] = useState('Chọn một công cụ AI để tạo kết quả học tập nhanh.');
   const [discussionInput, setDiscussionInput] = useState(''); // Used in right sidebar AI
+  const [ingestionStatus, setIngestionStatus] = useState<DocumentIngestionStatus | null>(null);
+  const [ingestionLoading, setIngestionLoading] = useState(false);
+  const [autoSummaryOption, setAutoSummaryOption] = useState(true);
+  const [autoQuizOption, setAutoQuizOption] = useState(true);
+  const [ingestionOptionError, setIngestionOptionError] = useState('');
+  const [ingestionOptionSaving, setIngestionOptionSaving] = useState(false);
 
   // States for discussions (Thảo luận)
   const [discussions, setDiscussions] = useState<DiscussionItem[]>([]);
@@ -219,6 +225,8 @@ const DocumentDetailPage: React.FC = () => {
         setEditSubject(detail.subject || '');
         setEditDescription(detail.description || '');
         setEditIsPublic(detail.is_public);
+        setAutoSummaryOption(Boolean(detail.auto_summary ?? true));
+        setAutoQuizOption(Boolean(detail.auto_quiz ?? true));
       } catch (err: any) {
         setError(err.response?.data?.detail || 'Không thể tải chi tiết tài liệu.');
         setDocument(null);
@@ -230,6 +238,72 @@ const DocumentDetailPage: React.FC = () => {
     bootstrap();
     loadDocument();
   }, [parsedId]);
+
+  useEffect(() => {
+    if (!parsedId) return;
+
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const fetchStatus = async () => {
+      setIngestionLoading(true);
+      try {
+        const status = await documentService.getIngestionStatus(parsedId);
+        setIngestionStatus(status);
+        if (status.status === 'processing' && !timer) {
+          timer = setInterval(fetchStatus, 4000);
+        }
+        if (status.status === 'ready' && timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      } catch {
+        setIngestionStatus(null);
+      } finally {
+        setIngestionLoading(false);
+      }
+    };
+
+    fetchStatus();
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [parsedId]);
+
+  const refreshIngestionStatus = async () => {
+    if (!parsedId) return;
+    try {
+      const status = await documentService.getIngestionStatus(parsedId);
+      setIngestionStatus(status);
+    } catch {
+      setIngestionStatus(null);
+    }
+  };
+
+  const handleUpdateIngestionOption = async (payload: { auto_summary?: boolean; auto_quiz?: boolean }) => {
+    if (!document) return;
+    const previousSummary = autoSummaryOption;
+    const previousQuiz = autoQuizOption;
+
+    if (payload.auto_summary !== undefined) setAutoSummaryOption(payload.auto_summary);
+    if (payload.auto_quiz !== undefined) setAutoQuizOption(payload.auto_quiz);
+
+    setIngestionOptionSaving(true);
+    setIngestionOptionError('');
+    try {
+      const updated = await documentService.updateIngestionOptions(document.id, payload);
+      setDocument(updated);
+      setAutoSummaryOption(Boolean(updated.auto_summary ?? true));
+      setAutoQuizOption(Boolean(updated.auto_quiz ?? true));
+      await refreshIngestionStatus();
+    } catch (err: any) {
+      setAutoSummaryOption(previousSummary);
+      setAutoQuizOption(previousQuiz);
+      setIngestionOptionError(err.response?.data?.detail || 'Không thể cập nhật tùy chọn AI.');
+    } finally {
+      setIngestionOptionSaving(false);
+    }
+  };
 
   const fetchDiscussions = async (docId: number) => {
     setDiscLoading(true);
@@ -548,6 +622,64 @@ const DocumentDetailPage: React.FC = () => {
                {/* Summary View */}
                {activeTab === 'info' && (
                   <>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-slate-800">Trạng thái xử lý tài liệu</h4>
+                      <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${ingestionStatus?.status === 'processing' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                        {ingestionStatus?.status === 'processing' ? 'ĐANG XỬ LÝ' : 'SẴN SÀNG'}
+                      </span>
+                    </div>
+                    <div className="mt-4 space-y-2 text-xs font-semibold text-slate-600">
+                      <div className="flex items-center justify-between">
+                        <span>Tóm tắt AI</span>
+                        <span className={ingestionStatus?.summary_ready ? 'text-emerald-600' : 'text-slate-400'}>
+                          {ingestionStatus?.summary_ready ? 'Đã sẵn sàng' : 'Đang chờ'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Quiz tự động</span>
+                        <span className={ingestionStatus?.quiz_ready ? 'text-emerald-600' : 'text-slate-400'}>
+                          {ingestionStatus?.quiz_ready ? 'Đã sẵn sàng' : 'Đang chờ'}
+                        </span>
+                      </div>
+                      {ingestionLoading && (
+                        <div className="mt-3 text-[11px] text-slate-400">Đang cập nhật trạng thái...</div>
+                      )}
+                    </div>
+                    {isOwner && (
+                      <div className="mt-5 border-t border-slate-100 pt-4">
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Tùy chọn AI sau upload</p>
+                        <div className="mt-3 grid grid-cols-1 gap-3 text-xs font-semibold text-slate-600">
+                          <label className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2">
+                            <span>Tự động tóm tắt</span>
+                            <input
+                              type="checkbox"
+                              checked={autoSummaryOption}
+                              onChange={(event) => handleUpdateIngestionOption({ auto_summary: event.target.checked })}
+                              disabled={ingestionOptionSaving}
+                              className="h-4 w-4 rounded border-slate-300 text-[#3B66F5] focus:ring-[#3B66F5]/20"
+                            />
+                          </label>
+                          <label className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2">
+                            <span>Tự động tạo quiz</span>
+                            <input
+                              type="checkbox"
+                              checked={autoQuizOption}
+                              onChange={(event) => handleUpdateIngestionOption({ auto_quiz: event.target.checked })}
+                              disabled={ingestionOptionSaving}
+                              className="h-4 w-4 rounded border-slate-300 text-[#3B66F5] focus:ring-[#3B66F5]/20"
+                            />
+                          </label>
+                        </div>
+                        {ingestionOptionSaving && (
+                          <div className="mt-2 text-[11px] text-slate-400">Đang lưu tùy chọn...</div>
+                        )}
+                        {ingestionOptionError && (
+                          <div className="mt-2 text-[11px] text-red-500">{ingestionOptionError}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                      <div className="bg-[#F8FAFF] rounded-2xl p-6 border border-blue-50">
                         <div className="flex justify-between items-center mb-5">
                            <h4 className="text-sm font-bold text-gray-800">AI Tóm tắt nội dung</h4>

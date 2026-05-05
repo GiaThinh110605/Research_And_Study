@@ -480,7 +480,7 @@ const DocumentDetailPage: React.FC = () => {
         {/* Top Header */}
         <div className="h-[72px] bg-white border-b border-gray-100 px-8 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 text-sm text-gray-500 font-bold">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg>
             Tài liệu
             <span className="text-gray-300">›</span>
             <span className="text-gray-900">{document.title}</span>
@@ -502,248 +502,248 @@ const DocumentDetailPage: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           {/* Left: Document Viewer */}
           <div className="flex-1 h-full overflow-y-auto p-8 bg-[#F8FAFF]">
-             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 h-full overflow-hidden">
-                {document.file_type.toUpperCase() === 'PDF' ? (
-                  <iframe title="PDF Viewer" src={fileUrl} className="w-full h-full" />
-                ) : (
-                  <div className="h-full flex items-center justify-center text-center p-8">
-                    <div>
-                      <p className="text-lg font-bold text-slate-700">Tài liệu không phải PDF</p>
-                      <p className="mt-2 text-sm text-slate-500">Hệ thống vẫn hỗ trợ tải về và đọc bằng ứng dụng tương ứng.</p>
-                      <a href={fileUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-xl bg-[#3B66F5] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-600 transition-colors">Tải tài liệu gốc</a>
-                    </div>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 h-full overflow-hidden">
+              {document.file_type.toUpperCase() === 'PDF' ? (
+                <iframe title="PDF Viewer" src={fileUrl} className="w-full h-full" />
+              ) : (
+                <div className="h-full flex items-center justify-center text-center p-8">
+                  <div>
+                    <p className="text-lg font-bold text-slate-700">Tài liệu không phải PDF</p>
+                    <p className="mt-2 text-sm text-slate-500">Hệ thống vẫn hỗ trợ tải về và đọc bằng ứng dụng tương ứng.</p>
+                    <a href={fileUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-xl bg-[#3B66F5] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-600 transition-colors">Tải tài liệu gốc</a>
                   </div>
-                )}
-             </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: Sidebar */}
           <div className="w-[400px] bg-white h-full overflow-hidden border-l border-gray-100 flex flex-col shrink-0">
             {/* Tabs */}
             <div className="flex items-center justify-between px-6 pt-5 border-b border-gray-100">
-               <button 
-                  onClick={() => setActiveTab('info')} 
-                  className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'info' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-               >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-                  Tóm tắt
-               </button>
-               <button 
-                  onClick={() => setActiveTab('flashcards')} 
-                  className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'flashcards' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-               >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                  Sơ đồ
-               </button>
-               <button 
-                  onClick={() => setActiveTab('discussion')} 
-                  className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'discussion' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-               >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                  Thảo luận
-               </button>
+              <button
+                onClick={() => setActiveTab('info')}
+                className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'info' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                Tóm tắt
+              </button>
+              <button
+                onClick={() => setActiveTab('flashcards')}
+                className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'flashcards' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                Sơ đồ
+              </button>
+              <button
+                onClick={() => setActiveTab('discussion')}
+                className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'discussion' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                Thảo luận
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
-               {/* Summary View */}
-               {activeTab === 'info' && (
-                  <>
-                     <div className="bg-[#F8FAFF] rounded-2xl p-6 border border-blue-50">
-                        <div className="flex justify-between items-center mb-5">
-                           <h4 className="text-sm font-bold text-gray-800">AI Tóm tắt nội dung</h4>
-                           <span className="bg-[#5E6AD2] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Premium</span>
-                        </div>
-                        <ul className="space-y-4 text-[13px] text-gray-600 font-medium leading-relaxed">
-                           <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Định nghĩa đạo hàm riêng theo từng biến số khi các biến còn lại được giữ nguyên.</li>
-                           <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Quy tắc tính đạo hàm tương tự hàm một biến nhưng cần chú ý biến hằng.</li>
-                           <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Công thức vi phân toàn phần và ứng dụng trong tính gần đúng.</li>
-                        </ul>
-                     </div>
+              {/* Summary View */}
+              {activeTab === 'info' && (
+                <>
+                  <div className="bg-[#F8FAFF] rounded-2xl p-6 border border-blue-50">
+                    <div className="flex justify-between items-center mb-5">
+                      <h4 className="text-sm font-bold text-gray-800">AI Tóm tắt nội dung</h4>
+                      <span className="bg-[#5E6AD2] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Premium</span>
+                    </div>
+                    <ul className="space-y-4 text-[13px] text-gray-600 font-medium leading-relaxed">
+                      <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Định nghĩa đạo hàm riêng theo từng biến số khi các biến còn lại được giữ nguyên.</li>
+                      <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Quy tắc tính đạo hàm tương tự hàm một biến nhưng cần chú ý biến hằng.</li>
+                      <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Công thức vi phân toàn phần và ứng dụng trong tính gần đúng.</li>
+                    </ul>
+                  </div>
 
-                     <div>
-                        <h4 className="text-sm font-bold text-gray-800 mb-4">Khái niệm trọng tâm</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-[#3B66F5] transition-colors cursor-pointer group">
-                              <p className="text-[10px] font-black text-[#3B66F5] uppercase tracking-wider mb-1.5 group-hover:text-[#2A52D5]">Cơ bản</p>
-                              <p className="font-bold text-gray-900 text-[13px]">Biến hằng</p>
-                           </div>
-                           <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-orange-500 transition-colors cursor-pointer group">
-                              <p className="text-[10px] font-black text-orange-500 uppercase tracking-wider mb-1.5 group-hover:text-orange-600">Nâng cao</p>
-                              <p className="font-bold text-gray-900 text-[13px]">Vi phân TP</p>
-                           </div>
-                           <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-emerald-500 transition-colors cursor-pointer group">
-                              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider mb-1.5 group-hover:text-emerald-600">Ứng dụng</p>
-                              <p className="font-bold text-gray-900 text-[13px]">Cực trị</p>
-                           </div>
-                           <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-purple-500 transition-colors cursor-pointer group">
-                              <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1.5 group-hover:text-purple-600">Đồ thị</p>
-                              <p className="font-bold text-gray-900 text-[13px]">Mặt cong</p>
-                           </div>
-                        </div>
-                     </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-800 mb-4">Khái niệm trọng tâm</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-[#3B66F5] transition-colors cursor-pointer group">
+                        <p className="text-[10px] font-black text-[#3B66F5] uppercase tracking-wider mb-1.5 group-hover:text-[#2A52D5]">Cơ bản</p>
+                        <p className="font-bold text-gray-900 text-[13px]">Biến hằng</p>
+                      </div>
+                      <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-orange-500 transition-colors cursor-pointer group">
+                        <p className="text-[10px] font-black text-orange-500 uppercase tracking-wider mb-1.5 group-hover:text-orange-600">Nâng cao</p>
+                        <p className="font-bold text-gray-900 text-[13px]">Vi phân TP</p>
+                      </div>
+                      <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-emerald-500 transition-colors cursor-pointer group">
+                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider mb-1.5 group-hover:text-emerald-600">Ứng dụng</p>
+                        <p className="font-bold text-gray-900 text-[13px]">Cực trị</p>
+                      </div>
+                      <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-purple-500 transition-colors cursor-pointer group">
+                        <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1.5 group-hover:text-purple-600">Đồ thị</p>
+                        <p className="font-bold text-gray-900 text-[13px]">Mặt cong</p>
+                      </div>
+                    </div>
+                  </div>
 
-                     <div className="flex-1 flex flex-col min-h-[160px]">
-                        <h4 className="text-sm font-bold text-gray-800 mb-3">Ghi chú của bạn</h4>
-                        <div className="flex-1 border border-gray-200 rounded-2xl bg-gray-50/50 p-4 flex flex-col focus-within:border-[#3B66F5] focus-within:bg-white transition-all shadow-sm">
-                           <textarea 
-                              placeholder="Viết ghi chú nhanh về trang này..."
-                              className="w-full flex-1 bg-transparent resize-none outline-none text-[13px] text-gray-700 placeholder:text-gray-400 font-medium"
-                           />
-                           <button className="self-end text-[#3B66F5] text-sm font-bold hover:text-blue-700">Lưu</button>
-                        </div>
-                     </div>
-                  </>
-               )}
+                  <div className="flex-1 flex flex-col min-h-[160px]">
+                    <h4 className="text-sm font-bold text-gray-800 mb-3">Ghi chú của bạn</h4>
+                    <div className="flex-1 border border-gray-200 rounded-2xl bg-gray-50/50 p-4 flex flex-col focus-within:border-[#3B66F5] focus-within:bg-white transition-all shadow-sm">
+                      <textarea
+                        placeholder="Viết ghi chú nhanh về trang này..."
+                        className="w-full flex-1 bg-transparent resize-none outline-none text-[13px] text-gray-700 placeholder:text-gray-400 font-medium"
+                      />
+                      <button className="self-end text-[#3B66F5] text-sm font-bold hover:text-blue-700">Lưu</button>
+                    </div>
+                  </div>
+                </>
+              )}
 
-               {/* Discussion View */}
-               {activeTab === 'discussion' && (
-                  <div className="flex flex-col h-full bg-white relative">
-                     {!(document.is_public || isOwner || true) ? (
-                        <div className="flex-1 flex items-center justify-center">
-                           <p className="text-sm text-slate-500">Bạn không có quyền tham gia thảo luận.</p>
-                        </div>
-                     ) : (
-                        <>
-                           {/* List */}
-                           <div className="flex-1 overflow-y-auto p-4 space-y-5 min-h-[300px]">
-                              {discLoading ? (
-                                 <div className="flex justify-center items-center h-full">
-                                    <div className="w-6 h-6 border-2 border-[#3B66F5] border-t-transparent rounded-full animate-spin"></div>
-                                 </div>
-                              ) : discussions.length === 0 ? (
-                                 <div className="flex flex-col items-center justify-center h-full text-center opacity-70">
-                                    <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                    <p className="text-sm text-slate-500 font-medium">Chưa có bình luận nào.<br/>Hãy bắt đầu thảo luận!</p>
-                                 </div>
-                              ) : (
-                                 discussions.map(disc => (
-                                    <div key={disc.id} className="flex gap-3 group animate-fade-in">
-                                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
-                                          {disc.user ? getInitials(disc.user.full_name) : 'A'}
-                                       </div>
-                                       <div className="flex-1">
-                                          <div className="bg-[#F8FAFF] rounded-2xl rounded-tl-sm px-4 py-2.5 inline-block w-full">
-                                             <div className="flex justify-between items-baseline mb-1">
-                                                <span className="font-bold text-[13px] text-slate-800">{disc.user?.full_name || 'Ẩn danh'}</span>
-                                             </div>
-                                             <p className="text-[13px] text-slate-700 leading-relaxed">{disc.content}</p>
-                                          </div>
-                                          
-                                          {/* Actions */}
-                                          <div className="flex items-center gap-4 mt-1.5 ml-2 text-[11px] font-bold text-slate-500 relative">
-                                             <span className="font-normal opacity-70">{timeAgo(disc.created_at)}</span>
-                                             
-                                             <div className="relative group/reaction">
-                                                <button onClick={() => handleReaction(disc.id, '👍')} className={`hover:text-[#3B66F5] transition-colors py-1 ${reactions[disc.id] ? 'text-[#3B66F5]' : ''}`}>
-                                                   {reactions[disc.id] ? `${reactions[disc.id]} Thích` : 'Thích'}
-                                                </button>
-                                                {/* Facebook style reactions */}
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-1 hidden group-hover/reaction:block z-10">
-                                                   <div className="flex bg-white shadow-[0_5px_15px_rgba(0,0,0,0.15)] rounded-full px-2 py-1 gap-1 border border-slate-100 animate-slide-up">
-                                                      <button onClick={() => handleReaction(disc.id, '👍')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">👍</button>
-                                                      <button onClick={() => handleReaction(disc.id, '❤️')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">❤️</button>
-                                                      <button onClick={() => handleReaction(disc.id, '😂')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😂</button>
-                                                      <button onClick={() => handleReaction(disc.id, '😮')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😮</button>
-                                                      <button onClick={() => handleReaction(disc.id, '😢')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😢</button>
-                                                   </div>
-                                                </div>
-                                             </div>
-
-                                             <button onClick={() => setReplyingTo(replyingTo === disc.id ? null : disc.id)} className="hover:text-[#3B66F5] transition-colors">Phản hồi</button>
-                                          </div>
-
-                                          {/* Replies */}
-                                          {disc.replies && disc.replies.length > 0 && (
-                                             <div className="mt-3 space-y-3">
-                                                {disc.replies.map(reply => (
-                                                   <div key={reply.id} className="flex gap-2.5">
-                                                      <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[10px] shrink-0">
-                                                         {reply.user ? getInitials(reply.user.full_name) : 'A'}
-                                                      </div>
-                                                      <div className="flex-1">
-                                                         <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-3 py-2 inline-block">
-                                                            <span className="font-bold text-xs text-slate-800 mr-2">{reply.user?.full_name || 'Ẩn danh'}</span>
-                                                            <span className="text-[13px] text-slate-700">{reply.content}</span>
-                                                         </div>
-                                                         <div className="flex items-center gap-3 mt-1 ml-2 text-[10px] font-bold text-slate-500">
-                                                            <span className="font-normal opacity-70">{timeAgo(reply.created_at)}</span>
-                                                            <button className="hover:text-[#3B66F5]">Thích</button>
-                                                         </div>
-                                                      </div>
-                                                   </div>
-                                                ))}
-                                             </div>
-                                          )}
-
-                                          {/* Reply Input */}
-                                          {replyingTo === disc.id && (
-                                             <div className="mt-3 flex gap-2">
-                                                <input
-                                                   autoFocus
-                                                   placeholder="Viết phản hồi..."
-                                                   className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-[13px] outline-none focus:border-[#3B66F5] focus:bg-white transition-all"
-                                                   value={replyContent}
-                                                   onChange={(e) => setReplyContent(e.target.value)}
-                                                   onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(disc.id)}
-                                                />
-                                                <button
-                                                   onClick={() => handleReplySubmit(disc.id)}
-                                                   disabled={!replyContent.trim()}
-                                                   className="bg-[#3B66F5] text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 transition-colors"
-                                                >
-                                                   <svg className="w-4 h-4 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-                                                </button>
-                                             </div>
-                                          )}
-                                       </div>
-                                    </div>
-                                 ))
-                              )}
-                           </div>
-
-                           {/* Main Input */}
-                           <div className="p-4 border-t border-slate-100 bg-white shrink-0">
-                              <div className="flex items-center gap-2 relative">
-                                 <input 
-                                    type="text" 
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(false)}
-                                    placeholder="Thêm bình luận..." 
-                                    className="w-full bg-[#F4F7FE] rounded-full border border-transparent px-4 py-3 pr-12 text-[13px] font-medium outline-none focus:border-[#3B66F5] focus:bg-white transition-all placeholder:text-slate-400"
-                                 />
-                                 <button 
-                                    onClick={() => handleCommentSubmit(false)}
-                                    disabled={!newComment.trim()}
-                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-[#3B66F5] text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:bg-slate-300"
-                                 >
-                                    <svg className="w-4 h-4 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-                                 </button>
+              {/* Discussion View */}
+              {activeTab === 'discussion' && (
+                <div className="flex flex-col h-full bg-white relative">
+                  {!(document.is_public || isOwner || true) ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-sm text-slate-500">Bạn không có quyền tham gia thảo luận.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* List */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-5 min-h-[300px]">
+                        {discLoading ? (
+                          <div className="flex justify-center items-center h-full">
+                            <div className="w-6 h-6 border-2 border-[#3B66F5] border-t-transparent rounded-full animate-spin"></div>
+                          </div>
+                        ) : discussions.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center h-full text-center opacity-70">
+                            <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                            <p className="text-sm text-slate-500 font-medium">Chưa có bình luận nào.<br />Hãy bắt đầu thảo luận!</p>
+                          </div>
+                        ) : (
+                          discussions.map(disc => (
+                            <div key={disc.id} className="flex gap-3 group animate-fade-in">
+                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
+                                {disc.user ? getInitials(disc.user.full_name) : 'A'}
                               </div>
-                           </div>
-                        </>
-                     )}
-                  </div>
-               )}
+                              <div className="flex-1">
+                                <div className="bg-[#F8FAFF] rounded-2xl rounded-tl-sm px-4 py-2.5 inline-block w-full">
+                                  <div className="flex justify-between items-baseline mb-1">
+                                    <span className="font-bold text-[13px] text-slate-800">{disc.user?.full_name || 'Ẩn danh'}</span>
+                                  </div>
+                                  <p className="text-[13px] text-slate-700 leading-relaxed">{disc.content}</p>
+                                </div>
 
-               {/* Flashcards View */}
-               {activeTab === 'flashcards' && (
-                  <div className="flex flex-col h-full">
-                     <div className="text-center text-gray-500 text-sm mt-10">
-                        Tính năng Sơ đồ / Flashcards đang được phát triển...
-                     </div>
+                                {/* Actions */}
+                                <div className="flex items-center gap-4 mt-1.5 ml-2 text-[11px] font-bold text-slate-500 relative">
+                                  <span className="font-normal opacity-70">{timeAgo(disc.created_at)}</span>
+
+                                  <div className="relative group/reaction">
+                                    <button onClick={() => handleReaction(disc.id, '👍')} className={`hover:text-[#3B66F5] transition-colors py-1 ${reactions[disc.id] ? 'text-[#3B66F5]' : ''}`}>
+                                      {reactions[disc.id] ? `${reactions[disc.id]} Thích` : 'Thích'}
+                                    </button>
+                                    {/* Facebook style reactions */}
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-1 hidden group-hover/reaction:block z-10">
+                                      <div className="flex bg-white shadow-[0_5px_15px_rgba(0,0,0,0.15)] rounded-full px-2 py-1 gap-1 border border-slate-100 animate-slide-up">
+                                        <button onClick={() => handleReaction(disc.id, '👍')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">👍</button>
+                                        <button onClick={() => handleReaction(disc.id, '❤️')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">❤️</button>
+                                        <button onClick={() => handleReaction(disc.id, '😂')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😂</button>
+                                        <button onClick={() => handleReaction(disc.id, '😮')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😮</button>
+                                        <button onClick={() => handleReaction(disc.id, '😢')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😢</button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <button onClick={() => setReplyingTo(replyingTo === disc.id ? null : disc.id)} className="hover:text-[#3B66F5] transition-colors">Phản hồi</button>
+                                </div>
+
+                                {/* Replies */}
+                                {disc.replies && disc.replies.length > 0 && (
+                                  <div className="mt-3 space-y-3">
+                                    {disc.replies.map(reply => (
+                                      <div key={reply.id} className="flex gap-2.5">
+                                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[10px] shrink-0">
+                                          {reply.user ? getInitials(reply.user.full_name) : 'A'}
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-3 py-2 inline-block">
+                                            <span className="font-bold text-xs text-slate-800 mr-2">{reply.user?.full_name || 'Ẩn danh'}</span>
+                                            <span className="text-[13px] text-slate-700">{reply.content}</span>
+                                          </div>
+                                          <div className="flex items-center gap-3 mt-1 ml-2 text-[10px] font-bold text-slate-500">
+                                            <span className="font-normal opacity-70">{timeAgo(reply.created_at)}</span>
+                                            <button className="hover:text-[#3B66F5]">Thích</button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Reply Input */}
+                                {replyingTo === disc.id && (
+                                  <div className="mt-3 flex gap-2">
+                                    <input
+                                      autoFocus
+                                      placeholder="Viết phản hồi..."
+                                      className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-[13px] outline-none focus:border-[#3B66F5] focus:bg-white transition-all"
+                                      value={replyContent}
+                                      onChange={(e) => setReplyContent(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(disc.id)}
+                                    />
+                                    <button
+                                      onClick={() => handleReplySubmit(disc.id)}
+                                      disabled={!replyContent.trim()}
+                                      className="bg-[#3B66F5] text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                                    >
+                                      <svg className="w-4 h-4 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Main Input */}
+                      <div className="p-4 border-t border-slate-100 bg-white shrink-0">
+                        <div className="flex items-center gap-2 relative">
+                          <input
+                            type="text"
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(false)}
+                            placeholder="Thêm bình luận..."
+                            className="w-full bg-[#F4F7FE] rounded-full border border-transparent px-4 py-3 pr-12 text-[13px] font-medium outline-none focus:border-[#3B66F5] focus:bg-white transition-all placeholder:text-slate-400"
+                          />
+                          <button
+                            onClick={() => handleCommentSubmit(false)}
+                            disabled={!newComment.trim()}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-[#3B66F5] text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:bg-slate-300"
+                          >
+                            <svg className="w-4 h-4 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Flashcards View */}
+              {activeTab === 'flashcards' && (
+                <div className="flex flex-col h-full">
+                  <div className="text-center text-gray-500 text-sm mt-10">
+                    Tính năng Sơ đồ / Flashcards đang được phát triển...
                   </div>
-               )}
+                </div>
+              )}
             </div>
 
             {/* Bottom action */}
             {activeTab === 'info' && (
-               <div className="p-6 border-t border-gray-100 bg-white">
-                  <button className="w-full flex items-center justify-center gap-2 border-2 border-gray-100 rounded-2xl py-3.5 text-sm font-bold text-[#3B66F5] hover:border-[#3B66F5] hover:bg-blue-50/50 transition-colors">
-                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-                     Tạo Flashcard từ nội dung này
-                  </button>
-               </div>
+              <div className="p-6 border-t border-gray-100 bg-white">
+                <button className="w-full flex items-center justify-center gap-2 border-2 border-gray-100 rounded-2xl py-3.5 text-sm font-bold text-[#3B66F5] hover:border-[#3B66F5] hover:bg-blue-50/50 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                  Tạo Flashcard từ nội dung này
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -753,7 +753,7 @@ const DocumentDetailPage: React.FC = () => {
         isOpen={isShareOpen}
         document={document}
         onClose={() => setIsShareOpen(false)}
-        onShareSuccess={() => {}}
+        onShareSuccess={() => { }}
       />
     </div>
   );

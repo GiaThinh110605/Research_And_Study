@@ -30,6 +30,10 @@
 
 ## Start all services (Database, Backend, Frontend)
 ```bash
+- If you are the first time to visit
+cd backend 
+python create_tables.py
+- run docker compose 
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 

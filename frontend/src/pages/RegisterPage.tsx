@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
 import { LogIn, UserPlus, GraduationCap, User } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +16,51 @@ const RegisterPage: React.FC = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleGoogleSuccess = async (tokenResponse: any) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      await authService.loginGoogle(tokenResponse.access_token);
+      const user = await authService.getCurrentUser();
+      const role = user.role?.toLowerCase();
+      if (role === 'student') navigate('/dashboard');
+      else if (role === 'lecturer') navigate('/lecturer-dashboard');
+      else if (role === 'admin') navigate('/admin');
+      else navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Đăng ký Google thất bại');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => setError('Đăng ký Google thất bại'),
+  });
+
+  const handleFacebookResponse = async (response: any) => {
+    if (response.accessToken) {
+      setIsLoading(true);
+      setError('');
+      try {
+        await authService.loginFacebook(response.accessToken);
+        const user = await authService.getCurrentUser();
+        const role = user.role?.toLowerCase();
+        if (role === 'student') navigate('/dashboard');
+        else if (role === 'lecturer') navigate('/lecturer-dashboard');
+        else if (role === 'admin') navigate('/admin');
+        else navigate('/');
+      } catch (err: any) {
+        setError(err.response?.data?.detail || 'Đăng ký Facebook thất bại');
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (response.status !== 'unknown') {
+      setError('Đăng ký Facebook thất bại');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,7 +275,39 @@ const RegisterPage: React.FC = () => {
                 {isLoading ? 'Đang xử lý...' : 'Đăng ký'}
               </button>
 
-              <div className="pt-6 border-t border-slate-100 text-center">
+              <div className="relative flex items-center justify-center my-6">
+                <div className="absolute inset-x-0 h-px bg-slate-200"></div>
+                <span className="relative px-4 text-xs font-bold tracking-widest text-slate-400 uppercase bg-white">Hoặc</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => loginWithGoogle()}
+                  className="flex items-center justify-center gap-2 px-4 py-3 font-semibold transition-colors bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50"
+                >
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+                  Google
+                </button>
+                <FacebookLogin
+                  appId={process.env.REACT_APP_FACEBOOK_APP_ID || "123456789"}
+                  fields="name,email,picture"
+                  scope="public_profile,email"
+                  callback={handleFacebookResponse}
+                  render={(renderProps: any) => (
+                    <button
+                      type="button"
+                      onClick={renderProps.onClick}
+                      className="flex items-center justify-center gap-2 px-4 py-3 font-semibold transition-colors bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50"
+                    >
+                      <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" className="w-5 h-5" />
+                      Facebook
+                    </button>
+                  )}
+                />
+              </div>
+
+              <div className="pt-6 border-t border-slate-100 text-center mt-6">
                 <span className="text-sm font-medium text-slate-500">
                   Đã có tài khoản?{' '}
                   <Link to="/login" className="font-bold text-[#4F46E5] hover:underline">Đăng nhập</Link>

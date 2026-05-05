@@ -8,14 +8,14 @@ import {
   DocumentItem,
   DocumentQueryParams,
 } from '../services/documents';
-import { 
-  Search, 
-  Filter, 
-  Grid, 
-  List, 
-  Plus, 
-  Library, 
-  TrendingUp, 
+import {
+  Search,
+  Filter,
+  Grid,
+  List,
+  Plus,
+  Library,
+  TrendingUp,
   Star,
   ChevronLeft,
   ChevronRight,
@@ -34,7 +34,7 @@ const DocumentsPage: React.FC = () => {
   const qParam = queryParams.get('q') || '';
 
   const [searchQuery, setSearchQuery] = useState(qParam);
-  
+
   useEffect(() => {
     setSearchQuery(qParam);
     setCurrentPage(1);
@@ -158,21 +158,21 @@ const DocumentsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="pb-20 space-y-8">
       {/* Header Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="md:col-span-2 relative overflow-hidden bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[32px] p-10 text-white shadow-xl shadow-indigo-200/50">
           <div className="relative z-10 max-w-lg space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-black tracking-widest uppercase">
+            <div className="inline-flex items-center gap-2 px-3 py-1 text-xs font-black tracking-widest uppercase rounded-full bg-white/20 backdrop-blur-md">
               <Library size={14} />
               Thư viện tài liệu
             </div>
-            <h1 className="text-4xl font-black tracking-tight leading-tight">Khám phá kho tàng kiến thức cộng đồng</h1>
-            <p className="text-indigo-100 font-medium leading-relaxed">
+            <h1 className="text-4xl font-black leading-tight tracking-tight">Khám phá kho tàng kiến thức cộng đồng</h1>
+            <p className="font-medium leading-relaxed text-indigo-100">
               Hơn {total.toLocaleString()} tài liệu chất lượng cao được đóng góp và chia sẻ bởi các sinh viên xuất sắc nhất.
             </p>
             <div className="flex gap-4 pt-2">
-              <button onClick={openUpload} className="bg-white text-indigo-600 px-6 py-3 rounded-2xl font-black text-sm hover:bg-indigo-50 transition-all flex items-center gap-2 shadow-lg shadow-black/10 active:scale-95">
+              <button onClick={openUpload} className="flex items-center gap-2 px-6 py-3 text-sm font-black text-indigo-600 transition-all bg-white shadow-lg rounded-2xl hover:bg-indigo-50 shadow-black/10 active:scale-95">
                 <Plus size={18} />
                 Đóng góp tài liệu
               </button>
@@ -184,24 +184,24 @@ const DocumentsPage: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm shadow-slate-200/50 group hover:border-emerald-100 transition-all cursor-default">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="flex items-center justify-center w-12 h-12 transition-transform bg-emerald-50 rounded-2xl group-hover:scale-110">
                 <TrendingUp className="text-emerald-600" size={24} />
               </div>
               <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Xu hướng</span>
             </div>
-            <p className="text-slate-500 text-sm font-bold">Môn học phổ biến nhất</p>
-            <p className="text-2xl font-black text-slate-900 mt-1 line-clamp-1">{subjectOptions[1] || 'CNTT & Lập trình'}</p>
+            <p className="text-sm font-bold text-slate-500">Môn học phổ biến nhất</p>
+            <p className="mt-1 text-2xl font-black text-slate-900 line-clamp-1">{subjectOptions[1] || 'CNTT & Lập trình'}</p>
           </div>
 
           <div className="bg-slate-900 p-8 rounded-[32px] shadow-xl shadow-slate-200/50 group cursor-default">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="flex items-center justify-center w-12 h-12 transition-transform bg-white/10 rounded-2xl group-hover:scale-110">
                 <Star className="text-amber-400" size={24} />
               </div>
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Yêu thích</span>
             </div>
-            <p className="text-slate-400 text-sm font-bold">Lượt tải tài liệu tuần này</p>
-            <p className="text-3xl font-black text-white mt-1">{(total * 1.5).toFixed(0)}</p>
+            <p className="text-sm font-bold text-slate-400">Lượt tải tài liệu tuần này</p>
+            <p className="mt-1 text-3xl font-black text-white">{(total * 1.5).toFixed(0)}</p>
           </div>
         </div>
       </div>
@@ -209,25 +209,25 @@ const DocumentsPage: React.FC = () => {
       {/* Main Content Area */}
       <div className="bg-white rounded-[40px] p-8 shadow-sm shadow-slate-200/50 border border-slate-100 space-y-8">
         {/* Filters & Search */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
-              <button 
+              <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 <Grid size={20} />
               </button>
-              <button 
+              <button
                 onClick={() => setViewMode('list')}
                 className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 <List size={20} />
               </button>
             </div>
-            
-            <div className="h-10 w-px bg-slate-100 mx-2" />
-            
+
+            <div className="w-px h-10 mx-2 bg-slate-100" />
+
             <div className="flex items-center gap-3">
               <div className="relative group">
                 <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -263,7 +263,7 @@ const DocumentsPage: React.FC = () => {
 
           <div className="flex items-center gap-4">
             <p className="text-sm font-bold text-slate-400">
-              Hiển thị <span className="text-slate-900 font-black">{visibleStart}-{visibleEnd}</span> trên <span className="text-slate-900 font-black">{total}</span>
+              Hiển thị <span className="font-black text-slate-900">{visibleStart}-{visibleEnd}</span> trên <span className="font-black text-slate-900">{total}</span>
             </p>
           </div>
         </div>
@@ -277,11 +277,10 @@ const DocumentsPage: React.FC = () => {
                 setSubjectFilter(subject);
                 setCurrentPage(1);
               }}
-              className={`px-6 py-3 rounded-2xl text-xs font-black transition-all active:scale-95 ${
-                subjectFilter === subject
+              className={`px-6 py-3 rounded-2xl text-xs font-black transition-all active:scale-95 ${subjectFilter === subject
                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
                   : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100 hover:border-slate-200'
-              }`}
+                }`}
             >
               {subject}
             </button>
@@ -290,14 +289,14 @@ const DocumentsPage: React.FC = () => {
 
         {/* Documents Grid/List */}
         {error && (
-          <div className="bg-rose-50 border border-rose-100 text-rose-600 p-6 rounded-3xl text-sm font-bold flex items-center gap-3">
-            <div className="w-8 h-8 bg-rose-100 rounded-xl flex items-center justify-center shrink-0">!</div>
+          <div className="flex items-center gap-3 p-6 text-sm font-bold border bg-rose-50 border-rose-100 text-rose-600 rounded-3xl">
+            <div className="flex items-center justify-center w-8 h-8 bg-rose-100 rounded-xl shrink-0">!</div>
             {error}
           </div>
         )}
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, index) => (
               <div key={index} className="h-80 animate-pulse rounded-[32px] bg-slate-50 border border-slate-100" />
             ))}
@@ -317,20 +316,20 @@ const DocumentsPage: React.FC = () => {
           </div>
         ) : (
           <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-slate-50 rounded-[40px] border border-dashed border-slate-200">
-            <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm">
+            <div className="flex items-center justify-center w-20 h-20 bg-white shadow-sm rounded-3xl">
               <FileText className="text-slate-300" size={40} />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-slate-800 tracking-tight">Không có tài liệu nào</h3>
-              <p className="text-slate-500 font-medium">Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+              <h3 className="text-xl font-black tracking-tight text-slate-800">Không có tài liệu nào</h3>
+              <p className="font-medium text-slate-500">Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
             </div>
-            <button 
+            <button
               onClick={() => {
                 setSearchQuery('');
                 setSubjectFilter('Tất cả tài liệu');
                 setFileTypeFilter('all');
               }}
-              className="text-indigo-600 font-black text-sm hover:underline"
+              className="text-sm font-black text-indigo-600 hover:underline"
             >
               Xóa tất cả bộ lọc
             </button>
@@ -343,7 +342,7 @@ const DocumentsPage: React.FC = () => {
             <button
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="p-3 rounded-2xl border border-slate-100 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-3 transition-all bg-white border rounded-2xl border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronLeft size={20} />
             </button>
@@ -353,11 +352,10 @@ const DocumentsPage: React.FC = () => {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`w-11 h-11 rounded-2xl text-sm font-black transition-all ${
-                    currentPage === page
+                  className={`w-11 h-11 rounded-2xl text-sm font-black transition-all ${currentPage === page
                       ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
                       : 'bg-white border border-slate-100 text-slate-500 hover:border-indigo-100 hover:text-indigo-600'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
@@ -367,7 +365,7 @@ const DocumentsPage: React.FC = () => {
             <button
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
-              className="p-3 rounded-2xl border border-slate-100 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-3 transition-all bg-white border rounded-2xl border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronRight size={20} />
             </button>
@@ -380,7 +378,7 @@ const DocumentsPage: React.FC = () => {
         isOpen={isShareOpen}
         document={selectedDocument}
         onClose={() => setIsShareOpen(false)}
-        onShareSuccess={() => {}}
+        onShareSuccess={() => { }}
       />
     </div>
   );

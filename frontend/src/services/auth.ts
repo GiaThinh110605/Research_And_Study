@@ -27,6 +27,22 @@ export const authService = {
     localStorage.removeItem('token');
   },
 
+  async loginGoogle(token: string) {
+    const response = await api.post('/api/v1/auth/google', { token });
+    if (response.data.access_token) {
+      localStorage.setItem('token', response.data.access_token);
+    }
+    return response.data;
+  },
+
+  async loginFacebook(token: string) {
+    const response = await api.post('/api/v1/auth/facebook', { token });
+    if (response.data.access_token) {
+      localStorage.setItem('token', response.data.access_token);
+    }
+    return response.data;
+  },
+
   async getCurrentUser() {
     const response = await api.get('/api/v1/users/me');
     return response.data;

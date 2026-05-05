@@ -16,7 +16,7 @@ from app.core.security import get_password_hash, create_access_token
 from main import app
 from app.models import Base
 from app.models.base import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 
 # Removed global engine
 
@@ -56,7 +56,7 @@ def create_user(db_session, email: str, password: str = "password123") -> User:
         full_name="Test User",
         email=email,
         password_hash=get_password_hash(password),
-        role="student",
+        role=UserRole.STUDENT,
     )
     db_session.add(user)
     db_session.commit()
@@ -130,7 +130,7 @@ def test_protected_route_succeeds_with_valid_token(client: TestClient, db_sessio
 def test_admin_only_route_fails_for_student(client: TestClient, db_session):
     """Admin-only route should return 403 for student users, even if token is valid."""
     user = create_user(db_session, "student@example.com")
-    user.role = "student"
+    user.role = UserRole.STUDENT
     db_session.add(user)
     db_session.commit()
     

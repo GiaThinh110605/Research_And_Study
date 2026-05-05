@@ -5,12 +5,17 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 export interface Flashcard {
   id: number;
   set_id: number;
-  document_id?: number; // Optional for compatibility with older code
+  document_id?: number;
   front: string;
   back: string;
+  status: string;
+  mastery_level: number;
+  last_reviewed?: string;
   created_at: string;
   updated_at?: string;
 }
+
+export type FlashcardItem = Flashcard;
 
 export interface FlashcardSet {
   id: number;
@@ -38,8 +43,6 @@ export interface FlashcardCreate {
   back: string;
 }
 
-export type FlashcardItem = Flashcard;
-
 export const flashcardService = {
   // Sets
   listSets: async (documentId?: number) => {
@@ -63,6 +66,14 @@ export const flashcardService = {
   createSet: async (data: FlashcardSetCreate) => {
     const token = localStorage.getItem('token');
     const res = await axios.post<FlashcardSet>(`${API_URL}/api/v1/flashcards/sets/`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  },
+
+  updateSet: async (setId: number, data: Partial<FlashcardSetCreate>) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.put<FlashcardSet>(`${API_URL}/api/v1/flashcards/sets/${setId}`, data, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return res.data;
@@ -93,11 +104,12 @@ export const flashcardService = {
     return res.data;
   },
 
-  bulkCreate: async (setId: number, flashcards: { front: string; back: string }[]) => {
+  bulkCreate: async (setId: number, flashcards: { front: string; back: string }[], clearExisting: boolean = false) => {
     const token = localStorage.getItem('token');
     const res = await axios.post<Flashcard[]>(`${API_URL}/api/v1/flashcards/bulk`, {
       set_id: setId,
-      flashcards
+      flashcards,
+      clear_existing: clearExisting
     }, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -119,8 +131,29 @@ export const flashcardService = {
     });
   },
 
+  generateFlashcards: async (documentId: number, count: number = 5) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.post<{message: string, data: {front: string, back: string}[]}>(
+      `${API_URL}/api/v1/flashcards/generate`, 
+      { count },
+      { 
+        params: { document_id: documentId },
+        headers: { Authorization: `Bearer ${token}` } 
+      }
+    );
+    return res.data;
+  },
+
   // Aliases for backward compatibility
   list: async (params: any = {}) => flashcardService.listFlashcards(params),
   create: async (data: any) => flashcardService.createFlashcard(data),
-  remove: async (id: number) => flashcardService.deleteFlashcard(id)
+  remove: async (id: number) => flashcardService.deleteFlashcard(id),
+  
+  resetSetProgress: async (setId: number) => {
+    const token = localStorage.getItem('token');
+    const res = await axios.post(`${API_URL}/api/v1/flashcards/sets/${setId}/reset`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  }
 };

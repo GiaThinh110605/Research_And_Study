@@ -33,7 +33,7 @@ const RegisterPage: React.FC = () => {
         full_name: fullName,
         username: username,
         email: email,
-        role: role,
+        role: role.toUpperCase(),
         password: password,
       });
       navigate('/login');

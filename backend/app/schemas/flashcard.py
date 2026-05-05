@@ -12,10 +12,16 @@ class FlashcardCreate(FlashcardBase):
 class FlashcardUpdate(BaseModel):
     front: Optional[str] = None
     back: Optional[str] = None
+    status: Optional[str] = None
+    mastery_level: Optional[int] = None
+    last_reviewed: Optional[datetime] = None
 
 class Flashcard(FlashcardBase):
     id: int
     set_id: int
+    status: str
+    mastery_level: int
+    last_reviewed: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -50,3 +56,4 @@ class FlashcardSet(FlashcardSetBase):
 class FlashcardBulkCreate(BaseModel):
     set_id: int
     flashcards: List[FlashcardBase]
+    clear_existing: Optional[bool] = False

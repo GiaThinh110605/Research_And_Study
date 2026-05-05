@@ -29,6 +29,14 @@ class Flashcard(Base):
     set_id = Column(Integer, ForeignKey("flashcard_sets.id"), nullable=False)
     front = Column(Text, nullable=False)
     back = Column(Text, nullable=False)
+    
+    # Progress tracking
+    # status can be: 'new', 'learning', 'reviewing', 'mastered'
+    status = Column(String(50), default="new")
+    # mastery_level: 0 to 5 (0: don't know, 5: mastered)
+    mastery_level = Column(Integer, default=0)
+    last_reviewed = Column(DateTime(timezone=True), nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

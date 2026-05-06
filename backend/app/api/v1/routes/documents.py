@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, aliased
@@ -12,6 +12,8 @@ from app.api.v1.deps import get_current_active_admin, get_current_user, get_curr
 from app.core.config import settings
 from app.models.base import get_db
 from app.models.document import Document
+from app.models.document_ingestion import DocumentIngestion
+from app.models.document_concept import DocumentConcept
 from app.models.document_share import DocumentShare
 from app.models.discussion import Discussion
 from app.models.flashcard import Flashcard, FlashcardSet
@@ -29,10 +31,12 @@ from app.schemas.document import (
     AdminShareModerationUpdate,
     DocumentListResponse,
     DocumentOut,
+    DocumentIngestionOut,
     DocumentShareCreate,
     DocumentShareOut,
     DocumentUpdate,
 )
+from app.core.ingestion import process_document_ingestion
 
 router = APIRouter()
 
@@ -556,6 +560,7 @@ async def upload_document(
     subject: Optional[str] = Form(None),
     is_public: bool = Form(True),
     file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -586,6 +591,7 @@ async def upload_document(
         is_public=is_public,
         file_path=f"/uploads/{saved_name}",
         file_type=extension.replace(".", "").upper(),
+        file_size=len(file_bytes),
         uploader_id=current_user.id,
     )
 
@@ -593,7 +599,145 @@ async def upload_document(
     db.commit()
     db.refresh(document)
 
+    ingestion = db.query(DocumentIngestion).filter(DocumentIngestion.document_id == document.id).first()
+    if not ingestion:
+        ingestion = DocumentIngestion(
+            document_id=document.id,
+            status="queued",
+            progress=0.0,
+            last_event="document_uploaded",
+        )
+        db.add(ingestion)
+        db.commit()
+
+    if background_tasks is not None:
+        background_tasks.add_task(process_document_ingestion, document.id)
+
     return _to_document_out(document)
+
+
+@router.get("/{document_id}/ingestion", response_model=DocumentIngestionOut)
+def get_document_ingestion(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if not _can_access_document(db, document, current_user):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    ingestion = db.query(DocumentIngestion).filter(DocumentIngestion.document_id == document_id).first()
+    concepts = (
+        db.query(DocumentConcept)
+        .filter(DocumentConcept.document_id == document_id)
+        .order_by(DocumentConcept.score.desc())
+        .all()
+    )
+    concept_payload = [
+        {
+            "id": concept.id,
+            "label": concept.label,
+            "category": concept.category,
+            "score": float(concept.score or 0.0),
+        }
+        for concept in concepts
+    ]
+
+    summary_content = None
+    if document.summary and ingestion and ingestion.status == "completed":
+        summary_content = document.summary.content
+    elif document.summary and ingestion is None:
+        summary_content = document.summary.content
+    quiz_questions_count = 0
+    if ingestion and ingestion.quiz_test_id:
+        quiz = db.query(Test).filter(Test.id == ingestion.quiz_test_id).first()
+        quiz_questions_count = len(quiz.questions) if quiz and quiz.questions else 0
+
+    if not ingestion:
+        return {
+            "document_id": document_id,
+            "status": "queued",
+            "progress": 0.0,
+            "last_event": "document_uploaded",
+            "error_message": None,
+            "chunks_count": 0,
+            "concepts_count": 0,
+            "summary_content": summary_content,
+            "quiz_test_id": None,
+            "quiz_questions_count": quiz_questions_count,
+            "started_at": None,
+            "completed_at": None,
+            "concepts": concept_payload,
+        }
+
+    return {
+        "document_id": ingestion.document_id,
+        "status": ingestion.status,
+        "progress": float(ingestion.progress or 0.0),
+        "last_event": ingestion.last_event,
+        "error_message": ingestion.error_message,
+        "chunks_count": ingestion.chunks_count or 0,
+        "concepts_count": ingestion.concepts_count or 0,
+        "summary_content": summary_content,
+        "quiz_test_id": ingestion.quiz_test_id,
+        "quiz_questions_count": quiz_questions_count,
+        "started_at": ingestion.started_at,
+        "completed_at": ingestion.completed_at,
+        "concepts": concept_payload,
+    }
+
+
+@router.post("/{document_id}/ingestion/retry", response_model=DocumentIngestionOut)
+def retry_document_ingestion(
+    document_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if not _can_edit_document(db, document, current_user):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    ingestion = db.query(DocumentIngestion).filter(DocumentIngestion.document_id == document_id).first()
+    if not ingestion:
+        ingestion = DocumentIngestion(document_id=document_id)
+        db.add(ingestion)
+
+    ingestion.status = "queued"
+    ingestion.progress = 0.0
+    ingestion.last_event = "reingest_requested"
+    ingestion.error_message = None
+    ingestion.chunks_count = 0
+    ingestion.concepts_count = 0
+    ingestion.quiz_test_id = None
+    ingestion.summary_id = None
+    ingestion.started_at = None
+    ingestion.completed_at = None
+    db.commit()
+
+    background_tasks.add_task(process_document_ingestion, document.id)
+
+    return {
+        "document_id": ingestion.document_id,
+        "status": ingestion.status,
+        "progress": float(ingestion.progress or 0.0),
+        "last_event": ingestion.last_event,
+        "error_message": ingestion.error_message,
+        "chunks_count": ingestion.chunks_count or 0,
+        "concepts_count": ingestion.concepts_count or 0,
+        "summary_content": None,
+        "quiz_test_id": ingestion.quiz_test_id,
+        "quiz_questions_count": 0,
+        "started_at": ingestion.started_at,
+        "completed_at": ingestion.completed_at,
+        "concepts": [],
+    }
 
 
 @router.put("/{document_id}", response_model=DocumentOut)

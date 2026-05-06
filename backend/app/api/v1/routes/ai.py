@@ -9,6 +9,8 @@ from app.models.summary import Summary
 from app.models.mindmap import Mindmap
 from app.models.flashcard import Flashcard
 from app.schemas.ai import AIRequest, SummaryOut, MindmapOut, FlashcardGenerateRequest
+from app.core.file_utils import extract_text_from_file
+from app.core.ingestion import generate_summary
 
 router = APIRouter()
 
@@ -22,8 +24,8 @@ def generate_summary(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Mock AI generation
-    summary_content = f"Tóm tắt cho tài liệu '{document.title}':\n\nĐây là một tài liệu quan trọng về {document.subject or 'chủ đề này'}. Nội dung tập trung vào các khái niệm cốt lõi và cung cấp cái nhìn chi tiết về các vấn đề liên quan. AI đã phân tích và thấy rằng các điểm chính bao gồm: 1. Khái niệm cơ bản, 2. Phương pháp thực hiện, 3. Kết luận và định hướng tương lai."
+    raw_text = extract_text_from_file(document.file_path) or document.description or ""
+    summary_content = generate_summary(raw_text)
     
     existing_summary = db.query(Summary).filter(Summary.document_id == document_id).first()
     if existing_summary:

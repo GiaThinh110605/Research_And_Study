@@ -1,6 +1,10 @@
 from .base import Base, get_db, engine, SessionLocal
 from .user import User, UserRole
 from .document import Document
+from .document_ingestion import DocumentIngestion
+from .document_chunk import DocumentChunk
+from .document_chunk_embedding import DocumentChunkEmbedding
+from .document_concept import DocumentConcept
 from .document_share import DocumentShare
 from .summary import Summary
 from .mindmap import Mindmap
@@ -18,6 +22,10 @@ __all__ = [
     "User",
     "UserRole",
     "Document",
+    "DocumentIngestion",
+    "DocumentChunk",
+    "DocumentChunkEmbedding",
+    "DocumentConcept",
     "DocumentShare",
     "Summary",
     "Mindmap",

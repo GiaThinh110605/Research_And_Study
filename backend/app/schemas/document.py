@@ -31,6 +31,35 @@ class DocumentOut(DocumentBase):
         from_attributes = True
 
 
+class DocumentConceptOut(BaseModel):
+    id: int
+    label: str
+    category: str
+    score: float
+
+    class Config:
+        from_attributes = True
+
+
+class DocumentIngestionOut(BaseModel):
+    document_id: int
+    status: str
+    progress: float
+    last_event: Optional[str] = None
+    error_message: Optional[str] = None
+    chunks_count: int
+    concepts_count: int
+    summary_content: Optional[str] = None
+    quiz_test_id: Optional[int] = None
+    quiz_questions_count: int = 0
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    concepts: List[DocumentConceptOut] = []
+
+    class Config:
+        from_attributes = True
+
+
 class DocumentListResponse(BaseModel):
     items: List[DocumentOut]
     total: int

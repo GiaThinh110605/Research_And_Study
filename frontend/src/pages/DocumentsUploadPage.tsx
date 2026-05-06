@@ -17,6 +17,25 @@ const subjectOptions = [
   'Triết học',
 ];
 
+const pipelineSteps = [
+  { id: 'upload', label: 'Tiếp nhận' },
+  { id: 'chunk', label: 'Chunking' },
+  { id: 'concept', label: 'Khái niệm' },
+  { id: 'summary', label: 'Tóm tắt' },
+  { id: 'quiz', label: 'Quiz' },
+];
+
+const getFileBadge = (fileName?: string) => {
+  if (!fileName) return { label: 'FILE', color: 'bg-slate-200 text-slate-600' };
+  const extension = fileName.split('.').pop()?.toLowerCase() || '';
+  if (extension === 'pdf') return { label: 'PDF', color: 'bg-red-100 text-red-600' };
+  if (extension === 'doc' || extension === 'docx') return { label: 'DOC', color: 'bg-blue-100 text-blue-700' };
+  if (extension === 'ppt' || extension === 'pptx') return { label: 'PPT', color: 'bg-orange-100 text-orange-700' };
+  if (extension === 'xls' || extension === 'xlsx') return { label: 'XLS', color: 'bg-emerald-100 text-emerald-700' };
+  if (extension === 'txt') return { label: 'TXT', color: 'bg-slate-200 text-slate-700' };
+  return { label: extension.toUpperCase() || 'FILE', color: 'bg-slate-200 text-slate-600' };
+};
+
 const DocumentsUploadPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -28,8 +47,10 @@ const DocumentsUploadPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [redirectCountdown, setRedirectCountdown] = useState(0);
   const [uploadedThisMonth, setUploadedThisMonth] = useState(0);
 
   useEffect(() => {
@@ -64,6 +85,8 @@ const DocumentsUploadPage: React.FC = () => {
     if (!file) return 'Kéo và thả tệp vào đây';
     return `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
   }, [file]);
+
+  const fileBadge = useMemo(() => getFileBadge(file?.name), [file]);
 
   const handleLogout = () => {
     authService.logout();
@@ -120,29 +143,55 @@ const DocumentsUploadPage: React.FC = () => {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
     setUploadError('');
     setSuccessMessage('');
 
     try {
-      const created = await documentService.upload({
-        title: title.trim(),
-        description: description.trim(),
-        subject,
-        is_public: isPublic,
-        file,
-      });
+      const created = await documentService.upload(
+        {
+          title: title.trim(),
+          description: description.trim(),
+          subject,
+          is_public: isPublic,
+          file,
+        },
+        (percent) => setUploadProgress(percent),
+      );
 
-      setSuccessMessage('Tải tài liệu thành công. Hệ thống đang chuyển tới trang chi tiết.');
-      navigate(`/tai-lieu/${created.id}`);
+      setUploadProgress(100);
+      setSuccessMessage('Tải tài liệu thành công! Đang chuyển tới trang chi tiết...');
+      setRedirectCountdown(3);
+      const countdownInterval = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            navigate(`/tai-lieu/${created.id}`);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (err: any) {
-      setUploadError(err.response?.data?.detail || 'Tải tài liệu thất bại. Vui lòng thử lại.');
+      setUploadProgress(0);
+      const detail = err.response?.data?.detail;
+      if (err.message?.includes('Network Error')) {
+        setUploadError('Mất kết nối mạng. Vui lòng kiểm tra và thử lại.');
+      } else if (err.response?.status === 413) {
+        setUploadError('Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn 10MB.');
+      } else {
+        setUploadError(detail || 'Tải tài liệu thất bại. Vui lòng thử lại.');
+      }
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="p-6 md:p-8">
+    <div
+      className="p-6 md:p-8"
+      style={{ backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(207, 233, 255, 0.55), transparent 35%), radial-gradient(circle at 90% 10%, rgba(255, 228, 205, 0.5), transparent 40%)' }}
+    >
       <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div className="xl:col-span-8 space-y-5">
           <div>
@@ -171,7 +220,18 @@ const DocumentsUploadPage: React.FC = () => {
               }`}
             >
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-700">
-                ☁
+                {file ? (
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L18.5 9H14z" />
+                  </svg>
+                ) : (
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.8-1.2A4 4 0 1 1 17 18H7z" />
+                  </svg>
+                )}
+              </div>
+              <div className={`mx-auto mb-3 inline-flex items-center rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wider ${fileBadge.color}`}>
+                {fileBadge.label}
               </div>
               <p className="text-lg font-bold text-slate-800">{selectedFileDisplay}</p>
               <p className="mt-1 text-sm text-slate-500">Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT (Tối đa {maxUploadMb}MB)</p>
@@ -187,6 +247,24 @@ const DocumentsUploadPage: React.FC = () => {
             </div>
 
             <div className="mt-5 space-y-4">
+              {(isUploading || uploadProgress > 0) && (
+                <div className={`rounded-xl border px-4 py-3 transition-all duration-300 ${uploadProgress >= 100 ? 'border-emerald-200 bg-emerald-50' : 'border-blue-100 bg-blue-50'}`}>
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className={uploadProgress >= 100 ? 'text-emerald-700' : 'text-blue-700'}>
+                      {uploadProgress >= 100 ? '✓ Tải lên hoàn tất' : `Đang tải lên... ${uploadProgress}%`}
+                    </span>
+                    <span className={uploadProgress >= 100 ? 'text-emerald-600' : 'text-blue-600'}>
+                      {uploadProgress >= 100 ? 'AI Pipeline đang khởi chạy' : 'AI Pipeline đang chuẩn bị'}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2.5 rounded-full bg-blue-100 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ease-out ${uploadProgress >= 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Tiêu đề tài liệu</label>
                 <input
@@ -248,8 +326,18 @@ const DocumentsUploadPage: React.FC = () => {
               </div>
             </div>
 
-            {uploadError && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{uploadError}</div>}
-            {successMessage && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{successMessage}</div>}
+            {uploadError && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 flex items-start gap-2.5">
+                <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span className="text-sm text-red-700">{uploadError}</span>
+              </div>
+            )}
+            {successMessage && (
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2.5">
+                <svg className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span className="text-sm text-emerald-700">{successMessage}{redirectCountdown > 0 && ` (${redirectCountdown}s)`}</span>
+              </div>
+            )}
 
             <div className="mt-5 flex items-center justify-end gap-3">
               <Link to="/tai-lieu" className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-100">Hủy bỏ</Link>
@@ -272,6 +360,33 @@ const DocumentsUploadPage: React.FC = () => {
               <li>• Không chứa nội dung vi phạm pháp luật hoặc thuần phong mỹ tục.</li>
               <li>• Khuyến khích tài liệu có chất lượng hình ảnh và nội dung tốt.</li>
             </ul>
+          </div>
+
+          <div className="rounded-2xl border border-slate-100 bg-white p-5">
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">AI Study Loop</h3>
+            <p className="mt-3 text-sm text-slate-500">Tài liệu được đưa vào pipeline học tập tự động ngay sau khi tải lên.</p>
+            <div className="mt-4 grid gap-3">
+              {pipelineSteps.map((step, index) => {
+                const stepActive = isUploading || uploadProgress > 0;
+                const stepDone = uploadProgress >= 100 && index === 0;
+                return (
+                  <div key={step.id} className="flex items-center gap-3">
+                    <div className={`h-7 w-7 rounded-full border text-[11px] font-black flex items-center justify-center transition-all duration-300 ${stepDone ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : stepActive ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                      {stepDone ? '✓' : index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-[13px] font-semibold transition-colors duration-300 ${stepDone ? 'text-emerald-700' : 'text-slate-700'}`}>{step.label}</p>
+                      <div className="mt-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ease-out ${stepDone ? 'bg-emerald-500' : stepActive && index === 0 ? 'bg-blue-500' : 'bg-slate-200'}`}
+                          style={{ width: stepDone ? '100%' : stepActive && index === 0 ? `${uploadProgress}%` : '20%' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-100 bg-white p-5">

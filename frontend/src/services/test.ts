@@ -41,9 +41,17 @@ export interface TestStats {
   progress_percent: number;
 }
 
+export interface TestQueryParams {
+  subject?: string;
+  document_id?: number;
+  creator_id?: number;
+  skip?: number;
+  limit?: number;
+}
+
 export const testService = {
-  getTests: async (): Promise<TestOut[]> => {
-    const response = await api.get(`/api/v1/tests/`);
+  getTests: async (params?: TestQueryParams): Promise<TestOut[]> => {
+    const response = await api.get(`/api/v1/tests/`, { params });
     return response.data;
   },
   getTest: async (id: number): Promise<TestOut> => {

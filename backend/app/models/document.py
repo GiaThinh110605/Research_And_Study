@@ -27,3 +27,6 @@ class Document(Base):
     mindmap = relationship("Mindmap", back_populates="document", uselist=False)
     flashcard_sets = relationship("FlashcardSet", back_populates="document")
     tests = relationship("Test", back_populates="document")
+    ingestion = relationship("DocumentIngestion", back_populates="document", uselist=False, cascade="all, delete-orphan")
+    chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
+    concepts = relationship("DocumentConcept", back_populates="document", cascade="all, delete-orphan")

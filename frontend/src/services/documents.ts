@@ -61,6 +61,29 @@ export interface ShareItem {
   shared_at: string;
 }
 
+export interface DocumentConceptItem {
+  id: number;
+  label: string;
+  category: string;
+  score: number;
+}
+
+export interface DocumentIngestionStatus {
+  document_id: number;
+  status: string;
+  progress: number;
+  last_event?: string | null;
+  error_message?: string | null;
+  chunks_count: number;
+  concepts_count: number;
+  summary_content?: string | null;
+  quiz_test_id?: number | null;
+  quiz_questions_count: number;
+  started_at?: string | null;
+  completed_at?: string | null;
+  concepts: DocumentConceptItem[];
+}
+
 export const documentService = {
   async list(params: DocumentQueryParams): Promise<DocumentListResponse> {
     const response = await api.get('/api/v1/documents', { params });
@@ -72,7 +95,20 @@ export const documentService = {
     return response.data;
   },
 
-  async upload(payload: UploadDocumentPayload): Promise<DocumentItem> {
+  async getIngestion(documentId: number): Promise<DocumentIngestionStatus> {
+    const response = await api.get(`/api/v1/documents/${documentId}/ingestion`);
+    return response.data;
+  },
+
+  async reIngest(documentId: number): Promise<DocumentIngestionStatus> {
+    const response = await api.post(`/api/v1/documents/${documentId}/ingestion/retry`);
+    return response.data;
+  },
+
+  async upload(
+    payload: UploadDocumentPayload,
+    onUploadProgress?: (percent: number) => void,
+  ): Promise<DocumentItem> {
     const formData = new FormData();
     formData.append('title', payload.title);
     if (payload.description) formData.append('description', payload.description);
@@ -83,6 +119,12 @@ export const documentService = {
     const response = await api.post('/api/v1/documents', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onUploadProgress && progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onUploadProgress(percent);
+        }
       },
     });
     return response.data;

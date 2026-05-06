@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ShareModal from '../components/documents/ShareModal';
 import { authService } from '../services/auth';
-import { documentService, DocumentItem, ShareItem } from '../services/documents';
+import { documentService, DocumentIngestionStatus, DocumentItem, ShareItem } from '../services/documents';
 import { Flashcard as FlashcardItem } from '../services/flashcards';
 import api from '../services/api';
 import { aiService } from '../services/ai';
@@ -57,6 +57,23 @@ function getInitials(name: string) {
   if (!name) return '?';
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
+
+function getIngestionStatusLabel(status?: string) {
+  if (!status) return 'Đang chuẩn bị';
+  if (status === 'completed') return 'Hoàn tất';
+  if (status === 'failed') return 'Thất bại';
+  if (status === 'processing') return 'Đang xử lý';
+  if (status === 'queued') return 'Đang xếp hàng';
+  return 'Đang xử lý';
+}
+
+const ingestionSteps = [
+  { id: 'document_uploaded', label: 'Tải lên' },
+  { id: 'chunking_completed', label: 'Chunking' },
+  { id: 'concepts_extracted', label: 'Khái niệm' },
+  { id: 'summary_generated', label: 'Tóm tắt' },
+  { id: 'quiz_generated', label: 'Quiz' },
+];
 type DetailTab = 'info' | 'questions' | 'discussion' | 'highlight' | 'flashcards';
 
 const aiTools = [
@@ -85,6 +102,7 @@ const aiTools = [
 const DocumentDetailPage: React.FC = () => {
   const { documentId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const initialTab = queryParams.get('tab') as DetailTab || 'info';
   const parsedId = Number(documentId);
@@ -94,6 +112,10 @@ const DocumentDetailPage: React.FC = () => {
   const [document, setDocument] = useState<DocumentItem | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [ingestion, setIngestion] = useState<DocumentIngestionStatus | null>(null);
+  const [ingestionLoading, setIngestionLoading] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryError, setRetryError] = useState('');
 
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -192,6 +214,22 @@ const DocumentDetailPage: React.FC = () => {
   };
 
   const fileUrl = document ? resolveFileUrl(document.file_url) : '';
+  const summaryLines = (ingestion?.summary_content || '')
+    .split('\n')
+    .map(line => line.replace(/^•\s*/, '').trim())
+    .filter(Boolean);
+  const conceptItems = ingestion?.concepts || [];
+  const quizAvailable = Boolean(ingestion?.quiz_test_id && (ingestion?.quiz_questions_count || 0) > 0);
+  const stepIndexMap: Record<string, number> = {
+    document_uploaded: 0,
+    chunking_completed: 1,
+    concepts_extracted: 2,
+    summary_generated: 3,
+    quiz_generated: 4,
+  };
+  const currentStepIndex = ingestion?.status === 'failed'
+    ? -1
+    : stepIndexMap[ingestion?.last_event || 'document_uploaded'] ?? 0;
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -229,6 +267,34 @@ const DocumentDetailPage: React.FC = () => {
 
     bootstrap();
     loadDocument();
+  }, [parsedId]);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const loadIngestion = async () => {
+      if (!Number.isFinite(parsedId)) return;
+      setIngestionLoading(true);
+      try {
+        const data = await documentService.getIngestion(parsedId);
+        setIngestion(data);
+        if (data.status !== 'completed' && data.status !== 'failed') {
+          timeoutId = setTimeout(loadIngestion, 5000);
+        }
+      } catch {
+        setIngestion(null);
+      } finally {
+        setIngestionLoading(false);
+      }
+    };
+
+    loadIngestion();
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [parsedId]);
 
   const fetchDiscussions = async (docId: number) => {
@@ -295,6 +361,25 @@ const DocumentDetailPage: React.FC = () => {
 
   const openShare = async () => {
     setIsShareOpen(true);
+  };
+
+  const handleOpenQuiz = () => {
+    if (!ingestion?.quiz_test_id) return;
+    navigate(`/take-test/${ingestion.quiz_test_id}`);
+  };
+
+  const handleRetryIngestion = async () => {
+    if (!document) return;
+    setIsRetrying(true);
+    setRetryError('');
+    try {
+      const data = await documentService.reIngest(document.id);
+      setIngestion(data);
+    } catch (err: any) {
+      setRetryError(err.response?.data?.detail || 'Không thể kích hoạt lại pipeline.');
+    } finally {
+      setIsRetrying(false);
+    }
   };
 
 
@@ -474,7 +559,10 @@ const DocumentDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh)] bg-white font-sans text-slate-900 overflow-hidden">
+    <div
+      className="flex h-[calc(100vh)] bg-[#F6F3EE] text-slate-900 overflow-hidden"
+      style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(251, 234, 212, 0.6), transparent 40%), radial-gradient(circle at 80% 10%, rgba(212, 228, 255, 0.5), transparent 45%)' }}
+    >
       <main className="flex-1 flex flex-col h-full overflow-hidden">
 
         {/* Top Header */}
@@ -548,49 +636,165 @@ const DocumentDetailPage: React.FC = () => {
               {/* Summary View */}
               {activeTab === 'info' && (
                 <>
+                  <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pipeline UC06</p>
+                        <h4 className="text-sm font-bold text-slate-800">Tự động xử lý tài liệu</h4>
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${ingestion?.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : ingestion?.status === 'failed' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                        {getIngestionStatusLabel(ingestion?.status)}
+                      </span>
+                    </div>
+                    <div className="mt-4">
+                      <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ease-out ${ingestion?.status === 'completed' ? 'bg-emerald-500' : ingestion?.status === 'failed' ? 'bg-red-500' : 'bg-[#3B66F5]'}`}
+                          style={{ width: `${Math.round((ingestion?.progress || 0) * 100)}%` }}
+                        />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                        <span>Chunks: {ingestion?.chunks_count || 0}</span>
+                        <span>Concepts: {ingestion?.concepts_count || 0}</span>
+                        <span>Quiz: {ingestion?.quiz_questions_count || 0} câu</span>
+                      </div>
+                      <div className="mt-4 grid grid-cols-5 gap-2">
+                        {ingestionSteps.map((step, idx) => {
+                          const isDone = currentStepIndex > idx || ingestion?.status === 'completed';
+                          const isActive = currentStepIndex === idx && ingestion?.status !== 'failed' && ingestion?.status !== 'completed';
+                          const isFailed = ingestion?.status === 'failed' && currentStepIndex <= idx;
+                          return (
+                            <div key={step.id} className="flex flex-col items-center gap-2">
+                              <div className={`h-8 w-8 rounded-full border text-[11px] font-black flex items-center justify-center transition-all duration-300 ${isFailed ? 'border-red-200 text-red-500 bg-red-50' : isDone ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : isActive ? 'border-blue-500 text-blue-600 bg-blue-50' : 'border-slate-200 text-slate-400 bg-slate-50'} ${isActive ? 'animate-pulse ring-4 ring-blue-50' : ''}`}>
+                                {isDone ? '✓' : idx + 1}
+                              </div>
+                              <span className={`text-[10px] font-bold text-center transition-colors duration-300 ${isDone ? 'text-emerald-700' : isActive ? 'text-blue-700' : isFailed ? 'text-red-500' : 'text-slate-400'}`}>{step.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {ingestionLoading && (
+                        <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400">
+                          <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-500" />
+                          Đang đồng bộ trạng thái pipeline...
+                        </div>
+                      )}
+                      {ingestion?.error_message && (
+                        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 flex items-start gap-2.5">
+                          <svg className="w-4 h-4 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          <span className="text-[12px] text-red-700">{ingestion.error_message}</span>
+                        </div>
+                      )}
+                      {retryError && (
+                        <p className="mt-2 text-[11px] text-red-500">{retryError}</p>
+                      )}
+                      {ingestion?.status === 'failed' && isOwner && (
+                        <button
+                          onClick={handleRetryIngestion}
+                          className="mt-3 inline-flex items-center justify-center w-full gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-[12px] font-bold text-red-600 hover:bg-red-50 transition-colors shadow-sm"
+                          disabled={isRetrying}
+                        >
+                          {isRetrying ? (
+                            <>
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                              Đang khởi động lại...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                              Khởi động lại Pipeline
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="bg-[#F8FAFF] rounded-2xl p-6 border border-blue-50">
                     <div className="flex justify-between items-center mb-5">
-                      <h4 className="text-sm font-bold text-gray-800">AI Tóm tắt nội dung</h4>
-                      <span className="bg-[#5E6AD2] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Premium</span>
+                      <h4 className="text-sm font-bold text-gray-800">Tóm tắt học thuật</h4>
+                      <span className="bg-[#5E6AD2] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Auto</span>
                     </div>
-                    <ul className="space-y-4 text-[13px] text-gray-600 font-medium leading-relaxed">
-                      <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Định nghĩa đạo hàm riêng theo từng biến số khi các biến còn lại được giữ nguyên.</li>
-                      <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Quy tắc tính đạo hàm tương tự hàm một biến nhưng cần chú ý biến hằng.</li>
-                      <li className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span> Công thức vi phân toàn phần và ứng dụng trong tính gần đúng.</li>
-                    </ul>
+                    {summaryLines.length > 0 ? (
+                      <ul className="space-y-4 text-[13px] text-gray-600 font-medium leading-relaxed">
+                        {summaryLines.map((line, idx) => (
+                          <li key={idx} className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span>{line}</li>
+                        ))}
+                      </ul>
+                    ) : ingestionLoading || ingestion?.status !== 'completed' ? (
+                      <div className="space-y-3 animate-pulse">
+                        <div className="h-3 rounded-full bg-slate-200" />
+                        <div className="h-3 rounded-full bg-slate-200 w-11/12" />
+                        <div className="h-3 rounded-full bg-slate-200 w-10/12" />
+                        <div className="h-3 rounded-full bg-slate-200 w-9/12" />
+                      </div>
+                    ) : (
+                      <p className="text-[13px] text-slate-500">Tóm tắt đang được tạo từ nội dung tài liệu.</p>
+                    )}
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-bold text-gray-800 mb-4">Khái niệm trọng tâm</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-[#3B66F5] transition-colors cursor-pointer group">
-                        <p className="text-[10px] font-black text-[#3B66F5] uppercase tracking-wider mb-1.5 group-hover:text-[#2A52D5]">Cơ bản</p>
-                        <p className="font-bold text-gray-900 text-[13px]">Biến hằng</p>
-                      </div>
-                      <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-orange-500 transition-colors cursor-pointer group">
-                        <p className="text-[10px] font-black text-orange-500 uppercase tracking-wider mb-1.5 group-hover:text-orange-600">Nâng cao</p>
-                        <p className="font-bold text-gray-900 text-[13px]">Vi phân TP</p>
-                      </div>
-                      <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-emerald-500 transition-colors cursor-pointer group">
-                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider mb-1.5 group-hover:text-emerald-600">Ứng dụng</p>
-                        <p className="font-bold text-gray-900 text-[13px]">Cực trị</p>
-                      </div>
-                      <div className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-purple-500 transition-colors cursor-pointer group">
-                        <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1.5 group-hover:text-purple-600">Đồ thị</p>
-                        <p className="font-bold text-gray-900 text-[13px]">Mặt cong</p>
-                      </div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-bold text-gray-800">Khái niệm trọng tâm</h4>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">AI Extract</span>
                     </div>
+                    {conceptItems.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {conceptItems.map((concept) => {
+                          const badgeClass = concept.category === 'advanced'
+                            ? 'text-orange-600 bg-orange-50'
+                            : concept.category === 'applied'
+                              ? 'text-emerald-600 bg-emerald-50'
+                              : 'text-blue-600 bg-blue-50';
+                          return (
+                            <div key={concept.id} className="border border-gray-100 rounded-2xl p-4 shadow-sm hover:border-[#3B66F5] transition-colors cursor-pointer">
+                              <p className={`inline-flex rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wider ${badgeClass}`}>
+                                {concept.category}
+                              </p>
+                              <p className="mt-2 font-bold text-gray-900 text-[13px]">{concept.label}</p>
+                              <p className="text-[11px] text-slate-400 mt-1">Độ nổi bật: {Math.round(concept.score * 100)}%</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : ingestionLoading || ingestion?.status !== 'completed' ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {[0, 1, 2, 3].map((index) => (
+                          <div key={index} className="border border-gray-100 rounded-2xl p-4 shadow-sm animate-pulse">
+                            <div className="h-4 w-16 rounded-full bg-slate-200" />
+                            <div className="mt-3 h-3 w-24 rounded-full bg-slate-200" />
+                            <div className="mt-2 h-3 w-20 rounded-full bg-slate-200" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[13px] text-slate-500">Chưa có khái niệm nào được trích xuất.</p>
+                    )}
                   </div>
 
-                  <div className="flex-1 flex flex-col min-h-[160px]">
-                    <h4 className="text-sm font-bold text-gray-800 mb-3">Ghi chú của bạn</h4>
-                    <div className="flex-1 border border-gray-200 rounded-2xl bg-gray-50/50 p-4 flex flex-col focus-within:border-[#3B66F5] focus-within:bg-white transition-all shadow-sm">
-                      <textarea
-                        placeholder="Viết ghi chú nhanh về trang này..."
-                        className="w-full flex-1 bg-transparent resize-none outline-none text-[13px] text-gray-700 placeholder:text-gray-400 font-medium"
-                      />
-                      <button className="self-end text-[#3B66F5] text-sm font-bold hover:text-blue-700">Lưu</button>
+                  <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Quiz Generation</p>
+                        <h4 className="text-sm font-bold text-slate-800">Bài kiểm tra tự động</h4>
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${quizAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                        {quizAvailable ? 'Sẵn sàng' : 'Đang chuẩn bị'}
+                      </span>
                     </div>
+                    <p className="mt-3 text-[13px] text-slate-500">
+                      {quizAvailable
+                        ? `Đã tạo ${ingestion?.quiz_questions_count || 0} câu hỏi trắc nghiệm để luyện tập ngay.`
+                        : 'Hệ thống sẽ tạo bài kiểm tra sau khi hoàn tất tóm tắt và khái niệm.'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenQuiz}
+                      disabled={!quizAvailable}
+                      className="mt-4 w-full rounded-xl bg-[#3B66F5] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 disabled:opacity-60"
+                    >
+                      Bắt đầu làm bài
+                    </button>
                   </div>
                 </>
               )}

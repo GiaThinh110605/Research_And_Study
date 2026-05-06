@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.api.v1.deps import get_current_user
 from app.models.base import get_db
@@ -42,8 +42,10 @@ class TestOut(BaseModel):
 	document_id: Optional[int] = None
 	duration_minutes: Optional[int] = None
 	creator_id: int
+	creator_role: Optional[str] = None
 	created_at: datetime
 	questions_count: int = 0
+	participants_count: int = 0
 	status: str = "MỚI"
 	questions: Optional[List[Dict[str, Any]]] = None
 
@@ -90,11 +92,8 @@ def _ensure_test_creator_or_admin(test: Test, current_user: User) -> None:
 
 
 def _ensure_can_create_test(current_user: User) -> None:
-	if current_user.role not in (UserRole.LECTURER, UserRole.ADMIN):
-		raise HTTPException(
-			status_code=403,
-			detail="Only lecturers or admins can create tests",
-		)
+	# Allow all authenticated users, including STUDENTS, to create tests
+	pass
 
 
 def _extract_correct_answer(question: Dict[str, Any]) -> Any:
@@ -178,7 +177,7 @@ def list_tests(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	query = db.query(Test)
+	query = db.query(Test).options(joinedload(Test.creator))
 	if subject:
 		query = query.filter(Test.subject == subject)
 	if document_id is not None:
@@ -188,8 +187,6 @@ def list_tests(
 
 	tests = query.order_by(Test.created_at.desc()).offset(skip).limit(limit).all()
 	
-	# Fetch all user results for these tests in one go for efficiency if needed, 
-	# but for 50 records simple filter is fine.
 	results = []
 	for test in tests:
 		test_res = db.query(TestResult).filter(
@@ -204,6 +201,8 @@ def list_tests(
 			else:
 				status = "ĐANG LÀM"
 		
+		creator_role = test.creator.role.value if test.creator else "LECTURER"
+
 		results.append({
 			"id": test.id,
 			"title": test.title,
@@ -211,8 +210,10 @@ def list_tests(
 			"document_id": test.document_id,
 			"duration_minutes": test.duration_minutes,
 			"creator_id": test.creator_id,
+			"creator_role": creator_role,
 			"created_at": test.created_at,
 			"questions_count": len(test.questions) if test.questions else 0,
+			"participants_count": test.participants_count,
 			"status": status
 		})
 	
@@ -253,7 +254,7 @@ def list_my_results(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	return (
+	results = (
 		db.query(TestResult)
 		.filter(TestResult.student_id == current_user.id)
 		.order_by(TestResult.completed_at.desc())
@@ -261,6 +262,23 @@ def list_my_results(
 		.limit(limit)
 		.all()
 	)
+	
+	# Enhance with test title
+	enhanced_results = []
+	for res in results:
+		res_dict = {
+			"id": res.id,
+			"test_id": res.test_id,
+			"user_id": res.student_id,
+			"score": res.score,
+			"time_taken_seconds": res.time_taken,
+			"completed_at": res.completed_at,
+			"answers": res.submitted_answers,
+			"test_title": res.test.title if res.test else "Unknown Test"
+		}
+		enhanced_results.append(res_dict)
+		
+	return enhanced_results
 
 
 @router.get("/{test_id}", response_model=TestOut)
@@ -355,6 +373,10 @@ def submit_test(
 			time_taken=payload.time_taken_seconds
 		)
 		db.add(result)
+	
+	# Always increment participants_count to reflect total attempts
+	test.participants_count = (test.participants_count or 0) + 1
+	db.add(test)
 	
 	db.commit()
 	db.refresh(result)

@@ -32,6 +32,7 @@ import FlashcardDashboardPage from './pages/FlashcardDashboardPage';
 import FlashcardCreatePage from './pages/FlashcardCreatePage';
 import FlashcardEditPage from './pages/FlashcardEditPage';
 import FlashcardStudyPage from './pages/FlashcardStudyPage';
+import StudentCreateTestPage from './pages/StudentCreateTestPage';
 
 import DashboardLayout from './components/layout/DashboardLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
@@ -53,6 +54,7 @@ function App() {
           <Route path="/cong-dong" element={<CommunityPage />} />
           <Route path="/test-list" element={<TestListPage />} />
           <Route path="/take-test/:id" element={<TakeTestPage />} />
+          <Route path="/test/create" element={<StudentCreateTestPage />} />
           <Route path="/test-result/:id" element={<TestResultPage />} />
           <Route path="/flashcard" element={<FlashcardDashboardPage />} />
           <Route path="/flashcard/create" element={<FlashcardCreatePage />} />

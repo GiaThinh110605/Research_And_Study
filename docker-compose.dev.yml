@@ -21,6 +21,8 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://postgres:123456789@postgres:5432/ai_research_db
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy

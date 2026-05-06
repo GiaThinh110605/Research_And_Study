@@ -1,0 +1,9 @@
+upload_document => backend\app\api\v1\routes\documents.py#L557
+list_documents => backend\app\api\v1\routes\documents.py#L178
+get_document => backend\app\api\v1\routes\documents.py#L541
+get_ingestion => backend\app\api\v1\routes\documents.py#L620
+ai_summary => backend\app\api\v1\routes\ai.py#L16
+ai_mindmap => backend\app\api\v1\routes\ai.py#L45
+ingestion_summary => backend\app\core\ingestion.py#L110
+doc_detail_ui => frontend\src\pages\DocumentDetailPage.tsx#L94
+doc_questions_api => frontend\src\pages\DocumentDetailPage.tsx#L292

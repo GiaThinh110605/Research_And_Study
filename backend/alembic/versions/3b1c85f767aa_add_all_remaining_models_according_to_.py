@@ -25,7 +25,7 @@ def upgrade() -> None:
     sa.Column('entity_type', sa.String(), nullable=False),
     sa.Column('entity_id', sa.Integer(), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -35,7 +35,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('expression', sa.Text(), nullable=False),
     sa.Column('result', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -45,7 +45,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('keyword', sa.String(), nullable=False),
     sa.Column('source_url', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -56,7 +56,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('parent_id', sa.Integer(), nullable=True),
     sa.Column('content', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.ForeignKeyConstraint(['parent_id'], ['discussions.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
@@ -69,7 +69,7 @@ def upgrade() -> None:
     sa.Column('shared_with_user_id', sa.Integer(), nullable=False),
     sa.Column('permission', sa.String(), nullable=False),
     sa.Column('status', sa.String(), nullable=True),
-    sa.Column('shared_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('shared_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.ForeignKeyConstraint(['shared_with_user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -81,7 +81,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('front', sa.Text(), nullable=False),
     sa.Column('back', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -95,7 +95,7 @@ def upgrade() -> None:
     sa.Column('text_content', sa.Text(), nullable=False),
     sa.Column('color', sa.String(), nullable=True),
     sa.Column('note', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -105,7 +105,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('document_id', sa.Integer(), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('document_id')
@@ -117,7 +117,7 @@ def upgrade() -> None:
     sa.Column('similarity_score', sa.Float(), nullable=False),
     sa.Column('details', sa.JSON(), nullable=True),
     sa.Column('detected_by_user_id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['detected_by_user_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['test_result_id'], ['quiz_results.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -142,7 +142,7 @@ def upgrade() -> None:
     op.drop_column('questions', 'question_text')
     op.drop_column('questions', 'user_id')
     op.drop_column('questions', 'answer_text')
-    op.add_column('quiz_results', sa.Column('completed_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True))
+    op.add_column('quiz_results', sa.Column('completed_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True))
     op.add_column('quiz_results', sa.Column('answers', sa.JSON(), nullable=True))
     op.drop_column('quiz_results', 'submitted_at')
     op.add_column('quizzes', sa.Column('type', sa.String(), nullable=False))
@@ -172,7 +172,7 @@ def downgrade() -> None:
     op.drop_column('quizzes', 'questions')
     op.drop_column('quizzes', 'creator_id')
     op.drop_column('quizzes', 'type')
-    op.add_column('quiz_results', sa.Column('submitted_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True))
+    op.add_column('quiz_results', sa.Column('submitted_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True))
     op.drop_column('quiz_results', 'answers')
     op.drop_column('quiz_results', 'completed_at')
     op.add_column('questions', sa.Column('answer_text', sa.TEXT(), autoincrement=False, nullable=False))

@@ -6,6 +6,10 @@
       "dom.iterable",
       "es6"
     ],
+    "types": [
+      "node",
+      "react-scripts"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,

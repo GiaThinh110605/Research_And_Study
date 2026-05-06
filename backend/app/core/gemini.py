@@ -220,3 +220,59 @@ Noi dung tai lieu:
     except Exception as exc:
         logger.warning("Gemini concept extraction failed: %s", exc)
         return None
+
+
+def query_ai_with_context(
+    question: str,
+    context: str,
+    document_title: str = ""
+) -> Optional[str]:
+    """
+    Query AI with specific context (e.g., from highlight/document).
+    Used for Q&A feature in learning interface.
+    
+    Args:
+        question: Câu hỏi của người dùng
+        context: Ngữ cảnh (đoạn text bôi đen hoặc mô tả tài liệu)
+        document_title: Tiêu đề tài liệu (optional)
+    
+    Returns:
+        Câu trả lời từ AI hoặc None nếu lỗi
+    """
+    model = _get_model()
+    if not model:
+        return None
+    
+    if not question or not question.strip():
+        return None
+    
+    context_text = context.strip() if context else "Không có ngữ cảnh"
+    if len(context_text) > 8000:
+        context_text = context_text[:8000] + "..."
+    
+    document_hint = f" (Tài liệu: {document_title})" if document_title else ""
+    
+    prompt = f"""Bạn là trợ lý học thuật giúp sinh viên hiểu rõ nội dung tài liệu{document_hint}.
+Trả lời câu hỏi dựa trên ngữ cảnh được cung cấp.
+
+Yêu cầu:
+- Trả lời bằng tiếng Việt, giọng học thuật, chuyên nghiệp
+- Giải thích chi tiết, dễ hiểu
+- Tham chiếu đến ngữ cảnh được cung cấp khi có liên quan
+- Nếu không tìm thấy câu trả lời trong ngữ cảnh, hãy nói rõ điều đó
+- Độ dài: 3-10 câu tùy mức độ phức tạp
+
+Ngữ cảnh từ tài liệu:
+{context_text}
+
+Câu hỏi: {question}
+
+Câu trả lời:"""
+    
+    try:
+        response = model.generate_content(prompt)
+        answer = response.text.strip() if response and response.text else None
+        return answer if answer else None
+    except Exception as exc:
+        logger.error(f"Gemini Q&A failed: {exc}", exc_info=True)
+        return None

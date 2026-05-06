@@ -48,7 +48,7 @@ def upgrade():
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("start_offset", sa.Integer(), nullable=True),
         sa.Column("end_offset", sa.Integer(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
         sa.ForeignKeyConstraint(["document_id"], ["documents.id"], ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -61,7 +61,7 @@ def upgrade():
         sa.Column("label", sa.String(length=255), nullable=False),
         sa.Column("category", sa.String(length=30), nullable=True),
         sa.Column("score", sa.Float(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
         sa.ForeignKeyConstraint(["document_id"], ["documents.id"], ),
         sa.PrimaryKeyConstraint("id"),
     )

@@ -26,7 +26,7 @@ def upgrade() -> None:
     sa.Column('document_id', sa.Integer(), nullable=True),
     sa.Column('questions', sa.JSON(), nullable=False),
     sa.Column('duration_minutes', sa.Integer(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['creator_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -37,7 +37,7 @@ def upgrade() -> None:
     sa.Column('test_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('score', sa.Float(), nullable=False),
-    sa.Column('completed_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('completed_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('answers', sa.JSON(), nullable=True),
     sa.ForeignKeyConstraint(['test_id'], ['tests.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),

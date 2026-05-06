@@ -1,0 +1,1831 @@
+ 
+ 
+
+ 
+ĐỒ  ÁN  MÔN  HỌC  
+PHÁT
+ 
+TRIỂN
+ 
+ỨNG
+ 
+DỤNG
+ 
+WEB 
+ 
+ 
+Tên  đề  tài:  Research  And  Study  
+Nhóm:  6  
+Lớp:  DHKHDL19A  
+Giảng  viên:  Trương  Vĩnh  Linh  
+ 
+ 
+Sinh  viên:  
+-  23703881  -  Lâm  Gia  Thịnh  
+-  23677361  -  Nguyễn  Tuấn  Anh  
+-  23637321  -  Khưu  Minh  Nhật  
+-  23634341  -  Nguyễn  Hà  Mạnh  Khang  
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+MỤC  LỤC  1.  GIỚI  THIỆU  ĐỀ  TÀI ................................................................................................................... 4 
+1.1  Mô  tả  bài  toán ......................................................................................................................... 4 
+1.2  Mục  tiêu  hệ  thống ................................................................................................................... 4 
+1.3  Phạm  vi  hệ  thống .................................................................................................................... 4  
+2.  PHÂN  TÍCH  YÊU  CẦU  HỆ  THỐNG ......................................................................................... 4 
+2.1  Actors ...................................................................................................................................... 4 
+2.2  Danh  sách  Use  Case ................................................................................................................ 4 
+2.3  Use  Case  Diagram .................................................................................................................. 4 
+2.4  Đặc  tả  Use  Case ...................................................................................................................... 4 
+3.  THIẾT  KẾ  HỆ  THỐNG ............................................................................................................... 4 
+3.1  System  Architecture ................................................................................................................ 4 
+3.2  Database  Design ..................................................................................................................... 4 
+3.3  UI  Design ................................................................................................................................ 5 
+4.  TRIỂN  KHAI  HỆ  THỐNG .......................................................................................................... 5 
+4.1  Môi  trường  phát  triển .............................................................................................................. 5 
+4.2  Cấu  trúc  hệ  thống .................................................................................................................... 5 
+4.3  Chức  năng  đã  triển  khai .......................................................................................................... 5 
+4.4  API  thiết  kế ............................................................................................................................. 5 
+4.5  Giao  diện  đã  triển  khai ............................................................................................................ 5  
+4.6  Luồng  hoạt  động  hệ  thống ...................................................................................................... 5  
+7.  SỬ  DỤNG  AI  TRONG  ĐỒ  ÁN ................................................................................................... 6 
+7.1  AI  Tools .................................................................................................................................. 6 
+7.2  Prompt  sử  dụng ....................................................................................................................... 6 
+7.3  Đánh  giá  AI ............................................................................................................................. 6 
+8.  PHÂN  CÔNG  NHÓM .................................................................................................................. 6 
+9.  KẾT  LUẬN ................................................................................................................................... 6 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+10.  TÀI  LIỆU  THAM  KHẢO .......................................................................................................... 6 
+ 
+  
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+1.  GIỚI  THIỆU  ĐỀ  TÀI  
+1.1  Mô  tả  bài  toán  
+-  Bối  cảnh:  Sinh  viên  gặp  khó  khăn  trong  việc  quản  lý  tài  liệu  học  tập,  thảo  luận  
+và
+ 
+theo
+ 
+dõi
+ 
+tiến
+ 
+độ
+ 
+học
+ 
+tập
+ 
+(GPA).
+ 
+-  Vấn  đề:  Các  ứng  dụng  rời  rạc,  không  tập  trung,  thiếu  tính  tương  tác  trực  tiếp  trên  
+tài
+ 
+liệu.
+ 
+-  Giải  pháp :  Xây  dựng  nền  tảng  học  tập  tập  trung,  thông  minh  và  dễ  sử  dụng  dành  
+riêng
+ 
+cho
+ 
+sinh
+ 
+viên
+ 
+IUH.
+ 
+ 
+1.2  Mục  tiêu  hệ  thống   
+-  Tập  trung  hóa:  Xây  dựng  nền  tảng  quản  lý  tài  liệu  và  học  tập  tập  trung  cho  sinh  
+viên.
+ 
+-  Thông  minh  hóa:  Ứng  dụng  AI  để  tóm  tắt,  tạo  sơ  đồ  tư  duy  và  giải  đáp  thắc  mắc  
+từ
+ 
+tài
+ 
+liệu.
+ 
+-  Tăng  cường  tương  tác:  Tạo  môi  trường  thảo  luận  và  chia  sẻ  tài  liệu  giữa  người  
+dùng.
+ 
+-  Hỗ  trợ  đánh  giá:  Cung  cấp  công  cụ  học  Flashcard,  làm  bài  test  và  theo  dõi  tiến  
+độ
+ 
+học
+ 
+tập
+ 
+(GPA).
+ 
+-  Tối  ưu  quản  lý:  Giúp  giảng  viên  và  Admin  quản  lý  người  dùng,  học  liệu  và  kết  
+quả
+ 
+hiệu
+ 
+quả.
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+1.3  Phạm  vi  hệ  thống   Bao  gồm:  
+-  Quản  lý  tài  khoản:  Đăng  ký,  đăng  nhập  và  phân  quyền  (Student,  Lecturer,  
+Admin).
+ -  Xử  lý  tài  liệu  &  AI:  Tải  lên,  xem  tài  liệu,  tóm  tắt,  tạo  sơ  đồ  tư  duy  và  hỏi  
+đáp
+ 
+AI.
+ -  Công  cụ  học  tập:  Hệ  thống  Flashcard,  làm  bài  test  trắc  nghiệm  và  tính  
+điểm
+ 
+GPA.
+ -  Tương  tác  xã  hội:  Thảo  luận  trực  tiếp  và  chia  sẻ  tài  liệu  học  tập.  -  Quản  trị  hệ  thống:  Quản  lý  người  dùng,  ngân  hàng  câu  hỏi  và  thống  kê  kết  
+quả.
+ 
+  
+Không  bao  gồm:  
+-  Thanh  toán:  Không  hỗ  trợ  các  giao  dịch  mua  bán  tài  liệu.  -  Live  Stream:  Không  bao  gồm  tính  năng  giảng  dạy  trực  tuyến  qua  video.  -  Soạn  thảo  văn  bản:  Không  thay  thế  các  trình  soạn  thảo  chuyên  sâu  như  
+MS
+ 
+Word/Google
+ 
+Docs.
+ 
+ 
+2.  PHÂN  TÍCH  YÊU  CẦU  HỆ  THỐNG  
+2.1  Actors   
+-  User  
+-  Student  (Kế  thừa  User)  
+-
+ 
+Lecturer
+ 
+(Kế
+ 
+thừa
+ 
+User)
+ 
+-
+ 
+Admin
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+2.2  Danh  sách  Use  Case  ID  Use  Case  Name  Actors  Description  
+UC01  Đăng  ký  tài  khoản  Student,  Lecturer  Use  Case  mô  tả  quy  trình  Student  hoặc  Lecturer  tạo  tài  khoản  mới  để  truy  cập  vào  hệ  thống  ứng  dụng  Web  e-learning.  
+Admin  không  được  phép  tự  đăng  ký  qua  chức  năng  này.  
+ 
+UC02  Đăng  nhập  tài  khoản  Student,  Lecturer,  Admin  
+Use  Case  mô  tả  quy  trình  người  dùng  (Student,  Lecturer,  Admin)  đăng  nhập  vào  hệ  thống  bằng  tên  đăng  nhập  và  mật  khẩu  để  truy  cập  các  chức  năng  tương  ứng.  
+ 
+UC03  Đăng  xuất  Student,  Lecturer,  Admin  
+Use  Case  mô  tả  quy  trình  người  dùng  thoát  khỏi  phiên  làm  việc  hiện  tại  và  trở  về  trang  đăng  nhập.  
+UC04  Thảo  luận  tài  liệu  Student,  Lecturer  Use  Case  cho  phép  Student  và  Lecturer  thảo  luận,  bình  luận,  trao  đổi  ý  kiến  về  một  tài  liệu  cụ  thể  trong  hệ  thống.  (cho  tất  cả  những  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+người  có  thể  nhìn  thấy  tài  liệu)  
+UC05  Chia  sẻ  tài  liệu  Student,  Lecturer   
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+UC06  Upload  tài  liệu   Student,  Lecturer   Use  Case  mô  tả  quy  trình  Student  hoặc  Lecturer  tải  tài  liệu  +  metadata;  hệ  thống  validate  type/size,  lưu  file,  tạo  record  CSDL  và  trả  DocumentID/URL.  
+UC07  Xem  tài  liệu   Student,  Lecturer  Use  Case  mô  tả  quy  trình  Student/Lecturer  tìm  kiếm/lọc  và  mở  tài  liệu  kèm  metadata;  hệ  thống  check  quyền  public/private/share,  xem  PDF  hoặc  tải  tệp  gốc.  
+UC08  Tóm  tắt  tài  liệu   Student,  Lecturer   Use  Case  mô  tả  quy  trình  Student/Lecturer  yêu  cầu  AI  tóm  tắt;  hệ  thống  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+extract/clean  text,  gọi  LLM  tạo  summary  theo  tiêu  chí  và  lưu  CSDL  theo  DocumentID.  
+UC09  Tạo  sơ  đồ  tư  duy   Student,  Lecturer   Use  Case  mô  tả  quy  trình  Student/Lecturer  yêu  cầu  AI  tạo  mindmap;  hệ  thống  extract  text,  phân  tích  chương-mục,  sinh  JSON  tree  và  lưu  CSDL  theo  DocumentID.  
+UC10  Đặt  câu  hỏi  từ  tài  liệu   Student,  Lecturer  Use  Case  mô  tả  quy  trình  Student/Lecturer  đặt  câu  hỏi  theo  DocumentID;  hệ  thống  validate  quyền/nội  dung,  lưu  CSDL  kèm  người  hỏi/thời  điểm  và  hiển  thị  Q&A  để  GV  phản  hồi.   UC11  Tạo  flashcard  Student  Use  case  cho  phép  Student  tạo  flashcard  phục  vụ  việc  học,  có  thể  nhập  thủ  công  hoặc  tạo  tự  động  từ  tài  liệu  bằng  AI  
+UC12  Học  flashcard  Student  Use  Case  cho  phép  Student  học  flashcard  theo  từng  thẻ,  lật  thẻ  để  xem  đáp  án  và  theo  dõi  tiến  độ  ghi  nhớ  
+UC13  Làm  bài  test  trắc  nghiệm  Student  Use  case  cho  phép  Student  thực  hiện  bài  kiểm  tra  trắc  nghiệm  từ  hệ  thống  và  nhận  điểm  số  sau  khi  nộp  bài  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+UC14  Xem  kết  quả  bài  test  Student  Use  Case  cho  phép  Student  xem  lại  kết  quả  các  bài  test  đã  làm,  bao  gồm  điểm  số  và  chi  tiết  câu  trả  lời  đúng/sai  
+UC15  Tính  GPA  Student  Use  Case  cho  phép  Student  nhập  điểm  các  môn  học  và  hệ  thống  tính  toán  GPA  để  theo  dõi  kết  quả  học  tập  
+UC16  Tạo  bài  test  /  câu  hỏi   Lecturer   Cho  phép  Giảng  viên  tạo  các  bộ  câu  hỏi  trắc  nghiệm  hoặc  đề  thi  từ  tài  liệu  học  tập  (áp  dụng  mô  hình  Document-to-Learning  Kit)   
+UC17  Xem  kết  quả  sinh  viên   Lecturer  Giảng  viên  theo  dõi  điểm  số,  lịch  sử  làm  bài  và  thống  kê  chi  tiết  kết  quả  của  sinh  viên  đối  với  các  bài  kiểm  tra  đã  tạo.   
+UC18  Quản  lý  người  dùng   Admin   Admin  thực  hiện  các  thao  tác  quản  trị  tài  khoản  như  tìm  kiếm,  khóa/mở  khóa  hoặc  cập  nhật  thông  tin  người  dùng  trong  hệ  thống.   
+    
+    
+UC19  Quản  lý  Thảo  luận   Admin   Admin  kiểm  duyệt  và  gỡ  bỏ  các  bình  luận,  nội  dung  trao  đổi  độc  hại/vi  phạm  nội  quy  trong  diễn  đàn  học  tập.   
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+2.3  Use  Case  Diagram   
+ 
+2.4  Đặc  tả  Use  Case  Use  Case  ID:  UC01(Đăng  ký  tài  khoản)  
+Actors:  Student,  Lecturer  
+Main  Flow:   
+1.  Người  dùng  chọn  nút  “Đăng  ký”  trên  trang  chủ  hoặc  trang  đăng  nhập.  2.  Hệ  thống  hiển  thị  form  Đăng  ký.  3.  Người  dùng  nhập  thông  tin:  Họ  và  tên,  Tên  đăng  nhập  (Username),  Email,  Mật  khẩu,  Xác  
+nhận
+ 
+mật
+ 
+khẩu,
+ 
+Vai
+ 
+trò
+ 
+(Student
+ 
+hoặc
+ 
+Lecturer).
+ 4.  Người  dùng  tick  đồng  ý  với  Điều  khoản  dịch  vụ  và  Chính  sách  bảo  mật.  5.  Người  dùng  nhấn  nút  “Đăng  ký” .  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+6.  Hệ  thống  kiểm  tra  dữ  liệu  hợp  lệ.  7.  Hệ  thống  tạo  tài  khoản  và  lưu  vào  cơ  sở  dữ  liệu.  8.  Hệ  thống  hiển  thị  thông  báo  “Đăng  ký  thành  công!”  và  chuyển  hướng  đến  trang  Đăng  
+nhập.
+ 
+Tiền  điều  kiện:  
+1.  Người  dùng  chưa  có  tài  khoản  trong  hệ  thống.  2.  Người  dùng  đang  truy  cập  trang  chủ  hoặc  trang  đăng  nhập  của  hệ  thống.  
+Hậu  điều  kiện:  
+1.  Tài  khoản  mới  được  tạo  thành  công  và  lưu  vào  cơ  sở  dữ  liệu.  2.  Người  dùng  được  tự  động  chuyển  hướng  đến  trang  Đăng  nhập.  
+ 
+Use  Case  ID:  UC02(Đăng  nhập  tài  khoản)  
+Actors:  Student,  Lecturer,  Admin  
+Main  Flow:  
+1.  Người  dùng  truy  cập  trang  chủ  hoặc  trang  đăng  nhập  của  hệ  thống.  2.  Hệ  thống  hiển  thị  form  Đăng  nhập.  3.  Người  dùng  nhập  Tên  đăng  nhập  (Username)  và  Mật  khẩu .  4.  Người  dùng  nhấn  nút  “Đăng  nhập” .  5.  Hệ  thống  kiểm  tra  thông  tin  đăng  nhập.  6.  Nếu  thông  tin  hợp  lệ,  hệ  thống  xác  thực  thành  công,  tạo  phiên  làm  việc  (session)  và  
+chuyển
+ 
+hướng
+ 
+người
+ 
+dùng
+ 
+đến
+ 
+trang
+ 
+phù
+ 
+hợp
+ 
+theo
+ 
+vai
+ 
+trò
+ 
+(Dashboard
+ 
+của
+ 
+Student,
+ 
+Lecturer
+ 
+hoặc
+ 
+Admin).
+ 7.  Hệ  thống  hiển  thị  thông  báo  “Đăng  nhập  thành  công!”.  
+Tiền  điều  kiện:  
+●  Người  dùng  đã  có  tài  khoản  trong  hệ  thống.  ●  Người  dùng  đang  truy  cập  trang  chủ  hoặc  trang  đăng  nhập.  
+Hậu  điều  kiện:  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+●  Người  dùng  đã  đăng  nhập  thành  công  và  có  thể  truy  cập  các  chức  năng  tương  ứng  với  vai  
+trò
+ 
+của
+ 
+mình.
+ ●  Hệ  thống  ghi  nhận  phiên  đăng  nhập.  
+ 
+Use  Case  ID:  UC03(Đăng  xuất  tài  khoản)  
+Actors:  Student,  Lecturer,  Admin  
+Main  Flow:  
+1.  Người  dùng  đang  đăng  nhập  và  chọn  nút  “Đăng  xuất”   2.  Hệ  thống  xác  nhận  yêu  cầu  đăng  xuất.  3.  Hệ  thống  hủy  phiên  làm  việc  hiện  tại  (destroy  session).  4.  Hệ  thống  chuyển  hướng  người  dùng  về  trang  chủ  hoặc  trang  đăng  nhập.  5.  Hệ  thống  hiển  thị  thông  báo  “Đăng  xuất  thành  công”.  
+Tiền  điều  kiện:  
+●  Người  dùng  đang  đăng  nhập  vào  hệ  thống.  
+Hậu  điều  kiện:  
+●  Phiên  làm  việc  của  người  dùng  đã  bị  hủy.  ●  Người  dùng  không  còn  truy  cập  được  vào  các  chức  năng  yêu  cầu  đăng  nhập.  
+ 
+Use  Case  ID:  UC04  (Thảo  luận  tài  liệu)  
+Actors:  Student,  Lecturer  
+Main  Flow:  
+1.  Người  dùng  chọn  một  tài  liệu  cụ  thể  từ  danh  sách  tài  liệu  hoặc  trang  chi  tiết  tài  liệu.  2.  Hệ  thống  hiển  thị  phần  Thảo  luận  (comment  section)  của  tài  liệu  đó.  3.  Người  dùng  nhập  nội  dung  bình  luận/thảo  luận  vào  ô  văn  bản.  4.  Người  dùng  có  thể  đính  kèm  file  hoặc  hình  ảnh.  5.  Người  dùng  nhấn  nút  “Gửi”  hoặc  nhấn  phím  Tab .  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+6.  Hệ  thống  kiểm  tra  và  lưu  bình  luận  vào  cơ  sở  dữ  liệu.  7.  Hệ  thống  hiển  thị  bình  luận  mới  ngay  lập  tức  (real-time  hoặc  refresh)  kèm  theo  thông  tin  
+người
+ 
+đăng
+ 
+(tên,
+ 
+vai
+ 
+trò,
+ 
+thời
+ 
+gian).
+ 8.  Các  người  dùng  khác  có  thể  xem  và  trả  lời  bình  luận.  
+Tiền  điều  kiện:  
+●  Người  dùng  đã  đăng  nhập  thành  công.  ●  Tài  liệu  được  chọn  tồn  tại  trong  hệ  thống.  
+Hậu  điều  kiện:  
+●  Bình  luận  mới  được  lưu  trữ  và  hiển  thị  công  khai  cho  tất  cả  người  dùng  có  quyền  xem  
+ 
+Use  Case  ID:  UC05  
+Use  Case  Name:  Chia  sẻ  tài  liệu  
+Actors:  Student,  Lecturer  
+Main  Flow:  
+1.  Người  dùng  chọn  tài  liệu  muốn  chia  sẻ  (có  thể  là  tài  liệu  đã  upload  hoặc  tài  liệu  công  
+khai).
+ 2.  Người  dùng  nhấn  nút  “Chia  sẻ”  trên  trang  chi  tiết  tài  liệu  hoặc  trong  danh  sách.  3.  Hệ  thống  hiển  thị  form  chia  sẻ  với  các  lựa  chọn:  ○  Chia  sẻ  công  khai  ○  Chia  sẻ  với  người  dùng  cá  nhân  (theo  username/email)  4.  Người  dùng  chọn  đối  tượng  nhận  và  (tùy  chọn)  thêm  lời  nhắn.  5.  Người  dùng  nhấn  nút  “Xác  nhận  chia  sẻ” .  6.  Hệ  thống  lưu  thông  tin  chia  sẻ  và  gửi  thông  báo  đến  người  nhận.  7.  Hệ  thống  hiển  thị  thông  báo  “Chia  sẻ  tài  liệu  thành  công”.  
+Tiền  điều  kiện:  
+●  Người  dùng  đã  đăng  nhập  thành  công.  ●  Người  dùng  có  quyền  chia  sẻ  tài  liệu  (là  chủ  sở  hữu  hoặc  có  quyền  chia  sẻ).  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+Hậu  điều  kiện:  
+●  Tài  liệu  được  chia  sẻ  thành  công  đến  đối  tượng  đã  chọn.  ●  Người  nhận  có  thể  xem  tài  liệu  theo  quyền  được  cấp.  
+Use  case  ID:  UC06  
+Use  Case  Name:  UC06  –  Upload  tài  liệu   
+Actors:  Student/Lecturer   
+Main  Flow:  
+1.  User:  Truy  cập  chức  năng  “Upload  tài  liệu”  từ  hệ  thống  (ví  dụ:  trang  Upload).  2.  System:  Hiển  thị  form  tải  lên  tài  liệu  (các  trường:  Tiêu  đề,  Mô  tả,  Môn  học/Chủ  đề,  Công  
+khai/Private,
+ 
+Chọn
+ 
+tệp).
+ 3.  User:  Nhập  thông  tin  metadata  của  tài  liệu  và  chọn  trạng  thái  công  khai  (public/private).  4.  User:  Chọn  tệp  tài  liệu  từ  thiết  bị  (hoặc  kéo-thả  tệp  vào  vùng  upload).  5.  System:  Kiểm  tra  dữ  liệu  đầu  vào:  a.  Tiêu  đề  không  rỗng  (sau  khi  chuẩn  hoá  khoảng  trắng).  b.  Tệp  có  định  dạng  được  hỗ  trợ  (ví  dụ:  PDF,  DOC/DOCX,  PPT/PPTX,  
+XLS/XLSX,
+ 
+TXT).
+ c.  Tệp  không  vượt  quá  giới  hạn  dung  lượng  theo  cấu  hình  hệ  thống  (ví  dụ  10MB  
+trong
+ 
+môi
+ 
+trường
+ 
+hiện
+ 
+tại).
+ 6.  User:  Nhấn  nút  “Tải  lên/Upload”.  7.  System:  Thực  hiện  tải  lên:  đọc  nội  dung  tệp,  sinh  tên  lưu  trữ  duy  nhất,  lưu  tệp  vào  vùng  
+lưu
+ 
+trữ
+ 
+của
+ 
+hệ
+ 
+thống.
+ 8.  System:  Tạo  bản  ghi  tài  liệu  trong  CSDL,  gắn  đường  dẫn  tệp  (file  URL),  loại  tệp  (file  
+type),
+ 
+người
+ 
+tải
+ 
+lên
+ 
+(uploader),
+ 
+và
+ 
+metadata
+ 
+đã
+ 
+nhập.
+ 9.  System:  Trả  kết  quả  “Upload  thành  công”,  cung  cấp  DocumentID  và  chuyển  hướng  
+người
+ 
+dùng
+ 
+đến
+ 
+trang
+ 
+chi
+ 
+tiết
+ 
+tài
+ 
+liệu
+ 
+(UC07).
+ 
+Tiền  điều  kiện:  
+●  Người  dùng  đã  đăng  nhập  hợp  lệ  với  vai  trò  Student  hoặc  Lecturer.  
+●  Người  dùng  có  quyền  sử  dụng  chức  năng  tải  lên  (không  bị  khóa/không  bị  hạn  chế  bởi  
+chính
+ 
+sách
+ 
+hệ
+ 
+thống).
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+●  Tệp  nguồn  tồn  tại  trên  thiết  bị  người  dùng  và  có  thể  được  truy  cập  để  tải  lên.  
+Hậu  điều  kiện:  
+●  N ế u  thành  công:  ○  T ệ p  tài  li ệ u  đượ c  l ư u  vào  h ệ  th ố ng  l ư u  tr ữ .  ○  B ả n  ghi  tài  li ệ u  (metadata)  đượ c  t ạ o  trong  CSDL  v ớ i  các  thu ộ c  tính:  tiêu  đề ,  
+mô
+ 
+t
+ả
+,
+ 
+môn
+ 
+h
+ọ
+c/ch
+ủ
+ 
+đề
+,
+ 
+lo
+ạ
+i
+ 
+t
+ệ
+p,
+ 
+tr
+ạ
+ng
+ 
+thái
+ 
+công
+ 
+khai,
+ 
+ng
+ườ
+i
+ 
+t
+ả
+i
+ 
+lên,
+ 
+th
+ờ
+i
+ 
+đ
+i
+ể
+m
+ 
+t
+ạ
+o.
+ ●  N ế u  th ấ t  b ạ i:  ○  Không  t ạ o  b ả n  ghi  tài  li ệ u  trong  CSDL;  không  để  l ạ i  t ệ p  “m ồ  côi”  không  g ắ n  
+metadata
+ 
+(ho
+ặ
+c
+ 
+h
+ệ
+ 
+th
+ố
+ng
+ 
+ph
+ả
+i
+ 
+d
+ọ
+n
+ 
+d
+ẹ
+p
+ 
+t
+ệ
+p
+ 
+đ
+ã
+ 
+l
+ư
+u
+ 
+n
+ế
+u
+ 
+giao
+ 
+d
+ị
+ch
+ 
+CSDL
+ 
+th
+ấ
+t
+ 
+b
+ạ
+i).
+ 
+Use  case  ID:  UC07  
+Use  Case  Name:  UC07  –  Xem  tài  li ệ u   
+Actors:  Student/Lecturer   
+Main  Flow:  
+1.  User:  Ch ọ n  m ộ t  tài  li ệ u  t ừ  th ư  vi ệ n  tài  li ệ u  ho ặ c  t ừ  liên  k ế t  trang  chi  ti ế t.  2.  System:  Nh ậ n  DocumentID  và  truy  v ấ n  thông  tin  tài  li ệ u  t ừ  CSDL.  3.  System:  Ki ể m  tra  tài  li ệ u  t ồ n  t ạ i.  4.  System:  Ki ể m  tra  quy ề n  truy  c ậ p  (authorization)  d ự a  trên  tr ạ ng  thái  public/private  
+và
+ 
+quan
+ 
+h
+ệ
+ 
+chia
+ 
+s
+ẻ
+.
+ 5.  System:  Hi ể n  th ị  trang  chi  ti ế t  tài  li ệ u,  bao  g ồ m:  tiêu  đề ,  mô  t ả ,  môn  h ọ c/ch ủ  đề ,  ng ườ i  
+đă
+ng,
+ 
+lo
+ạ
+i
+ 
+t
+ệ
+p,
+ 
+th
+ờ
+i
+ 
+đ
+i
+ể
+m
+ 
+t
+ạ
+o/c
+ậ
+p
+ 
+nh
+ậ
+t.
+ 6.  System:  Hi ể n  th ị  n ộ i  dung  tài  li ệ u  theo  lo ạ i   t ệ p:  a.  N ế u  là  PDF  (ho ặ c  đị nh  d ạ ng  h ỗ  tr ợ  xem  tr ự c  ti ế p)  →  hi ể n  th ị  trong  trình  xem  
+(iframe/viewer).
+ b.  N ế u  không  h ỗ  tr ợ  xem  tr ự c  ti ế p  →  hi ể n  th ị  thông  báo  và  cung  c ấ p  nút  m ở /t ả i  
+t
+ệ
+p
+ 
+g
+ố
+c.
+ 7.  User:  Th ự c  hi ệ n  các  thao  tác  ti ế p  theo  t ừ  trang  chi  ti ế t  (ví  d ụ :  chia  s ẻ ,  th ả o  lu ậ n,  đặ t  
+câu
+ 
+h
+ỏ
+i
+…
+),
+ 
+h
+ệ
+ 
+th
+ố
+ng
+ 
+đ
+i
+ề
+u
+ 
+h
+ướ
+ng
+ 
+đế
+n
+ 
+Use
+ 
+Case
+ 
+t
+ươ
+ng
+ 
+ứ
+ng.
+ 
+Ti ề n  đ i ề u  ki ệ n:  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+●  Tài  li ệ u  (Document)  t ồ n  t ạ i  trong  h ệ  th ố ng.  
+●  Ng ườ i  dùng  có  quy ề n  truy  c ậ p  tài  li ệ u  theo  m ộ t  trong  các  đ i ề u  ki ệ n:  
+○  Tài  li ệ u  công  khai;  ho ặ c  
+○  Ng ườ i  dùng  là  ng ườ i  t ả i  lên;  ho ặ c  
+○  Tài  li ệ u  đ ã  đượ c  chia  s ẻ  h ợ p  l ệ  cho  ng ườ i  dùng  ( đượ c  phê  duy ệ t/ đượ c  c ấ p  
+quy
+ề
+n
+ 
+xem).
+ 
+H ậ u  đ i ề u  ki ệ n:  
+●  Không  phát  sinh  thay  đổ i  d ữ  li ệ u  lõi  c ủ a  tài  li ệ u  (n ế u  ch ỉ  xem).  
+●  H ệ  th ố ng  ghi  nh ậ n/hi ể n  th ị  d ữ  li ệ u  chi  ti ế t  tài  li ệ u  cho  ng ườ i  dùng  (có  th ể  kèm  log  
+truy
+ 
+c
+ậ
+p
+ 
+n
+ế
+u
+ 
+h
+ệ
+ 
+th
+ố
+ng
+ 
+có
+ 
+c
+ơ
+ 
+ch
+ế
+ 
+ghi
+ 
+log).
+ 
+Lu ồ ng  s ự  ki ệ n  ph ụ :  
+●  E1  –  Không  tìm  th ấ y  tài  li ệ u:  Ở  b ướ c  3  →  System  thông  báo  “Tài  li ệ u  không  t ồ n  t ạ i”.  
+●  E2  –  Không  đủ  quy ề n  truy  c ậ p:  Ở  b ướ c  4  →  System  thông  báo  “Không  có  quy ề n  xem  
+tài
+ 
+li
+ệ
+u”.
+ 
+●  E3  –  L ỗ i  t ả i/hi ể n  th ị  n ộ i  dung:  Ở  b ướ c  6  →  System  fallback  sang  ph ươ ng  án  t ả i  v ề /m ở  
+t
+ệ
+p
+ 
+g
+ố
+c
+ 
+và
+ 
+thông
+ 
+báo
+ 
+l
+ỗ
+i
+ 
+hi
+ể
+n
+ 
+th
+ị
+.
+ 
+Use  case  ID:  UC08  
+Use  Case  Name:  UC08  –  Tóm  t ắ t  tài  li ệ u   
+Actors:  Student/Lecturer   
+Main  Flow:  
+1.  User:  M ở  trang  chi  ti ế t  tài  li ệ u  và  ch ọ n  ch ứ c  n ă ng  “Tóm  t ắ t  tài  li ệ u”.  2.  System:  Ki ể m  tra  quy ề n  truy  c ậ p  tài  li ệ u  theo  DocumentID.  3.  System:  Ki ể m  tra  trong  CSDL  xem  tài  li ệ u  đ ã  có  b ả n  tóm  t ắ t  hay  ch ư a.  4.  System:  N ế u  ch ư a  có  (ho ặ c  ng ườ i  dùng  yêu  c ầ u  t ạ o  l ạ i),  h ệ  th ố ng  trích  xu ấ t  v ă n  b ả n  t ừ  
+t
+ệ
+p
+ 
+tài
+ 
+li
+ệ
+u
+ 
+và
+ 
+chu
+ẩ
+n
+ 
+hoá
+ 
+d
+ữ
+ 
+li
+ệ
+u
+ 
+(lo
+ạ
+i
+ 
+b
+ỏ
+ 
+nhi
+ễ
+u,
+ 
+x
+ử
+ 
+lý
+ 
+encoding).
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+5.  System:  G ử i  v ă n  b ả n  (và  tham  s ố  c ấ u  hình  tóm  t ắ t  n ế u  có)  t ớ i  AI  Service  để  th ự c  hi ệ n  
+NLP
+ 
+summarization.
+ 6.  AI  Service:  Sinh  n ộ i  dung  tóm  t ắ t  và  tr ả  v ề  k ế t  qu ả  cho  h ệ  th ố ng.  7.  System:  L ư u  b ả n  tóm  t ắ t  vào  CSDL  (g ắ n  DocumentID,  đ ánh  d ấ u  ngu ồ n  t ạ o  “AI”,  th ờ i  
+đ
+i
+ể
+m
+ 
+t
+ạ
+o).
+ 8.  System:  Hi ể n  th ị  tóm  t ắ t  cho  ng ườ i  dùng  trên  giao  di ệ n,  đồ ng  th ờ i  cho  phép  ng ườ i  
+dùng
+ 
+ti
+ế
+p
+ 
+t
+ụ
+c
+ 
+các
+ 
+thao
+ 
+tác
+ 
+h
+ọ
+c
+ 
+t
+ậ
+p
+ 
+khác.
+ 
+Ti ề n  đ i ề u  ki ệ n:  
+●  Ng ườ i  dùng  đ ã  đă ng  nh ậ p  (t ố i  thi ể u  để  g ắ n  ho ạ t  độ ng  v ớ i  tài  kho ả n  và  ki ể m  soát  truy  
+c
+ậ
+p).
+ ●  Tài  li ệ u  t ồ n  t ạ i  và  ng ườ i  dùng  có  quy ề n  truy  c ậ p  theo  chính  sách  (public/owner/ đượ c  
+chia
+ 
+s
+ẻ
+).
+ ●  H ệ  th ố ng  có  kh ả  n ă ng  trích  xu ấ t  v ă n  b ả n  t ừ  lo ạ i  t ệ p  t ươ ng  ứ ng  (ho ặ c  có  b ả n  text  đ ã  
+đượ
+c
+ 
+chu
+ẩ
+n
+ 
+b
+ị
+ 
+tr
+ướ
+c).
+ ●  D ị ch  v ụ  AI  s ẵ n  sàng  (ho ặ c  h ệ  th ố ng  có  c ơ  ch ế  thay  th ế /caching).  
+H ậ u  đ i ề u  ki ệ n:  
+●  N ế u  thành  công:  ○  B ả n  tóm  t ắ t  đượ c  t ạ o  và  l ư u  trong  CSDL,  liên  k ế t  1–1  v ớ i  tài  li ệ u  
+(DocumentID).
+ ○  K ế t  qu ả  tóm  t ắ t  hi ể n  th ị  cho  ng ườ i  dùng  t ạ i  ng ữ  c ả nh  tài  li ệ u.  ●  N ế u  th ấ t  b ạ i:  ○  Không  t ạ o/c ậ p  nh ậ t  b ả n  tóm  t ắ t;  h ệ  th ố ng  tr ả  l ỗ i  và  gi ữ  nguyên  tr ạ ng  thái  d ữ  
+li
+ệ
+u.
+ 
+Lu ồ ng  s ự  ki ệ n  ph ụ :  
+●  Ở  b ướ c  3:  N ế u  thi ế u  n ộ i  dung  ->  h ệ  th ố ng  hi ể n  th ị  l ỗ i  và  yêu  c ầ u  nh ậ p  đầ y  đủ .E1  –  
+Không
+ 
+đủ
+ 
+quy
+ề
+n
+ 
+truy
+ 
+c
+ậ
+p
+ 
+tài
+ 
+li
+ệ
+u:
+ 
+Ở
+ 
+b
+ướ
+c
+ 
+2
+ 
+→
+ 
+System
+ 
+t
+ừ
+ 
+ch
+ố
+i
+ 
+x
+ử
+ 
+lý.
+ 
+●  E2  –  Không  trích  xu ấ t  đượ c  v ă n  b ả n:  Ở  b ướ c  4  (t ệ p  scan  ả nh/không  có  text/ đị nh  d ạ ng  
+không
+ 
+h
+ỗ
+ 
+tr
+ợ
+)
+ 
+→
+ 
+System
+ 
+thông
+ 
+báo
+ 
+l
+ỗ
+i
+ 
+và
+ 
+khuy
+ế
+n
+ 
+ngh
+ị
+ 
+đổ
+i
+ 
+đị
+nh
+ 
+d
+ạ
+ng
+ 
+ho
+ặ
+c
+ 
+cung
+ 
+c
+ấ
+p
+ 
+b
+ả
+n
+ 
+text.
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+●  E3  –  AI  Service  l ỗ i/timeout:  Ở  b ướ c  5–6  →  System  tr ả  l ỗ i  “không  th ể  t ạ o  tóm  t ắ t”,  
+không
+ 
+l
+ư
+u
+ 
+k
+ế
+t
+ 
+qu
+ả
+.
+ 
+●  E4  –  Tài  li ệ u  quá  l ớ n:  Ở  b ướ c  5  →  System  áp  d ụ ng  chính  sách  c ắ t  đ o ạ n/chunking  ho ặ c  
+t
+ừ
+ 
+ch
+ố
+i
+ 
+và
+ 
+yêu
+ 
+c
+ầ
+u
+ 
+gi
+ớ
+i
+ 
+h
+ạ
+n
+ 
+ph
+ạ
+m
+ 
+vi.
+ 
+ 
+Use  case  ID:  UC09  
+Use  Case  Name:  UC09  –  T ạ o  s ơ  đồ  t ư  duy   
+Actors:  Student/Lecturer   
+Main  Flow:  
+1.  User:  M ở  trang  chi  ti ế t  tài  li ệ u  và  ch ọ n  ch ứ c  n ă ng  “T ạ o  s ơ  đồ  t ư  duy”.  2.  System:  Ki ể m  tra  quy ề n  truy  c ậ p  tài  li ệ u.  3.  System:  Ki ể m  tra  CSDL  xem  mindmap  c ủ a  tài  li ệ u  đ ã  t ồ n  t ạ i  ch ư a.  4.  System:  N ế u  ch ư a  có  (ho ặ c  ng ườ i  dùng  yêu  c ầ u  t ạ o  l ạ i),  h ệ  th ố ng  trích  xu ấ t  v ă n  b ả n  t ừ  
+tài
+ 
+li
+ệ
+u
+ 
+và
+ 
+phân
+ 
+đ
+o
+ạ
+n
+ 
+theo
+ 
+c
+ấ
+u
+ 
+trúc
+ 
+n
+ộ
+i
+ 
+dung
+ 
+(tiêu
+ 
+đề
+,
+ 
+m
+ụ
+c,
+ 
+các
+ 
+ý
+ 
+chính).
+ 5.  System:  G ử i  d ữ  li ệ u  đ ã  c ấ u  trúc  sang  AI  Service  để  sinh  mindmap  (root  topic,  các  
+nhánh
+ 
+chính/ph
+ụ
+,
+ 
+quan
+ 
+h
+ệ
+ 
+phân
+ 
+c
+ấ
+p).
+ 6.  AI  Service:  Tr ả  v ề  mindmap  ở  d ạ ng  c ấ u  trúc  (ví  d ụ  JSON)  ho ặ c  outline  có  th ể  chuy ể n  
+đổ
+i.
+ 7.  System:  Ki ể m  tra  tính  h ợ p  l ệ  c ủ a  c ấ u  trúc  mindmap  (không  r ỗ ng,  không  l ỗ i  đị nh  
+d
+ạ
+ng),
+ 
+l
+ư
+u
+ 
+vào
+ 
+CSDL
+ 
+g
+ắ
+n
+ 
+DocumentID.
+ 8.  System:  Render  và  hi ể n  th ị  mindmap  cho  ng ườ i  dùng;  cho  phép  ng ườ i  dùng  ti ế p  t ụ c  
+dùng
+ 
+làm
+ 
+tài
+ 
+li
+ệ
+u
+ 
+h
+ọ
+c
+ 
+t
+ậ
+p/ôn
+ 
+t
+ậ
+p.
+ 
+Ti ề n  đ i ề u  ki ệ n:  
+●  Ng ườ i  dùng  đ ã  đă ng  nh ậ p.  
+●  Tài  li ệ u  t ồ n  t ạ i  và  ng ườ i  dùng  có  quy ề n  truy  c ậ p.  
+●  H ệ  th ố ng  có  th ể  trích  xu ấ t/chu ẩ n  hoá  n ộ i  dung  v ă n  b ả n  để  làm  đầ u  vào  cho  AI.  
+●  AI  Service  s ẵ n  sàng  th ự c  thi  yêu  c ầ u  t ạ o  mindmap.  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+H ậ u  đ i ề u  ki ệ n:  
+●  N ế u  thành  công:  
+○  Mindmap  đượ c  t ạ o  và  l ư u  trong  CSDL,  liên  k ế t  1–1  v ớ i  tài  li ệ u  (DocumentID).  
+○  Mindmap  hi ể n  th ị  đượ c  trên  giao  di ệ n  (d ạ ng  s ơ  đồ  ho ặ c  d ạ ng  outline).  
+●  N ế u  th ấ t  b ạ i:  
+○  Không  t ạ o/c ậ p  nh ậ t  mindmap;  d ữ  li ệ u  h ệ  th ố ng  gi ữ  nguyên.  
+Lu ồ ng  s ự  ki ệ n  ph ụ :  
+●  E1  –  Không  đủ  quy ề n:  Ở  b ướ c  2  →  t ừ  ch ố i  x ử  lý.  
+●  E2  –  Không  trích  xu ấ t  đượ c  n ộ i  dung:  Ở  b ướ c  4  →  thông  báo  l ỗ i  và  d ừ ng.  
+●  E3  –  AI  t ạ o  c ấ u  trúc  không  h ợ p  l ệ /timeout:  Ở  b ướ c  5–6  →  System  không  l ư u  k ế t  qu ả  
+và
+ 
+thông
+ 
+báo
+ 
+l
+ỗ
+i.
+ 
+●  E4  –  Mindmap  quá  l ớ n/khó  hi ể n  th ị :  Ở  b ướ c  8  →  System  fallback  sang  hi ể n  th ị  d ạ ng  
+outline
+ 
+và
+ 
+đề
+ 
+ngh
+ị
+ 
+gi
+ả
+m
+ 
+m
+ứ
+c
+ 
+chi
+ 
+ti
+ế
+t.
+ 
+ 
+Use  case  ID:  UC10  
+Use  Case  Name:  UC10  –  Đ ặ t  câu  h ỏ i  t ừ  tài  li ệ u   
+Main  Flow:  
+1.  User:  Mở  trang  chi  tiết  một  tài  liệu  và  chuyển  tới  mục  “Đặt  câu  hỏi”.  2.  System:  Kiểm  tra  tài  liệu  tồn  tại  và  quyền  truy  cập  của  người  dùng.  3.  System:  Hiển  thị  form  nhập  câu  hỏi  (text)  và  danh  sách  các  câu  hỏi  hiện  có  của  tài  liệu.  4.  User:  Nhập  nội  dung  câu  hỏi.  5.  System:  Thực  hiện  validation:  nội  dung  không  rỗng,  độ  dài  hợp  lệ,  loại  bỏ  khoảng  trắng  
+thừa.
+ 6.  User:  Nhấn  nút  “Gửi  câu  hỏi”.  7.  System:  Lưu  câu  hỏi  vào  CSDL  (DocumentID,  UserID,  content,  created_at).  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+8.  System:  Hiển  thị  thông  báo  “Gửi  câu  hỏi  thành  công”  và  cập  nhật  danh  sách  Q&A  (hiển  
+thị
+ 
+câu
+ 
+hỏi
+ 
+mới).
+ 9.  User:  (Tuỳ  chọn)  Lecturer  hoặc  người  dùng  khác  nhập  và  gửi  câu  trả  lời;  hệ  thống  lưu  và  
+hiển
+ 
+thị
+ 
+câu
+ 
+trả
+ 
+lời
+ 
+theo
+ 
+chính
+ 
+sách
+ 
+hệ
+ 
+thống.
+ 
+Tiền  điều  kiện:  
+●  Ng ườ i  dùng  đ ã  đă ng  nh ậ p  h ợ p  l ệ .  
+●  Tài  li ệ u  t ồ n  t ạ i  và  ng ườ i  dùng  có  quy ề n  xem  tài  li ệ u.  
+●  N ộ i  dung  câu  h ỏ i  do  ng ườ i  dùng  nh ậ p  đ áp  ứ ng  yêu  c ầ u  t ố i  thi ể u  (không  r ỗ ng,  không  
+v
+ượ
+t
+ 
+gi
+ớ
+i
+ 
+h
+ạ
+n
+ 
+độ
+ 
+dài
+ 
+theo
+ 
+quy
+ 
+đị
+nh).
+ 
+Hậu  điều  kiện:  
+●  N ế u  thành  công:  Câu  h ỏ i  đượ c  l ư u  vào  CSDL,  liên  k ế t  v ớ i  DocumentID  và  UserID;  danh  
+sách
+ 
+Q&A
+ 
+c
+ậ
+p
+ 
+nh
+ậ
+t
+ 
+hi
+ể
+n
+ 
+th
+ị
+ 
+câu
+ 
+h
+ỏ
+i
+ 
+m
+ớ
+i.
+ 
+●  N ế u  th ấ t  b ạ i:  Không  l ư u  câu  h ỏ i;  h ệ  th ố ng  tr ả  thông  báo  l ỗ i  rõ  ràng.  
+Luồng  sự  kiện  phụ:  
+●  E1  –  Ch ư a  đă ng  nh ậ p:  Ở  b ướ c  1/6  →  System  yêu  c ầ u  đă ng  nh ậ p  tr ướ c  khi  g ử i.  
+●  E2  –  Tài  li ệ u  không  t ồ n  t ạ i:  Ở  b ướ c  2  →  System  tr ả  “Tài  li ệ u  không  t ồ n  t ạ i”.  
+●  E3  –  Không  đủ  quy ề n  xem  tài  li ệ u:  Ở  b ướ c  2  →  System  t ừ  ch ố i,  không  cho  t ạ o  câu  h ỏ i.  
+●  E4  –  N ộ i  dung  câu  h ỏ i  r ỗ ng/không  h ợ p  l ệ :  Ở  b ướ c  5  →  System  hi ể n  th ị  l ỗ i  validation.  
+●  E5  –  L ỗ i  l ư u  CSDL:  Ở  b ướ c  7  →  System  tr ả  l ỗ i,  không  t ạ o  b ả n  ghi  câu  h ỏ i.  
+●  E6  –  G ợ i  ý  AI  th ấ t  b ạ i  (n ế u  b ậ t  AI  suggestion):  System  ch ỉ  t ắ t  ph ầ n  g ợ i  ý  và  không  ả nh  
+h
+ưở
+ng
+ 
+lu
+ồ
+ng
+ 
+đặ
+t
+ 
+câu
+ 
+h
+ỏ
+i
+ 
+chính.
+ 
+ 
+Use  case  ID:  UC11  
+Use  Case  Name:  Tạo  Flashcard  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+Actors:  Student  
+Main  Flow:  
+1.  Student  truy  cập  chức  năng  “Tạo  flashcard”.  2.  Hệ  thống  hiển  thị  form  tạo  flashcard.  3.  Student  nhập  nội  dung  gồm:  mặt  trước  (câu  hỏi)  và  mặt  sau  (đáp  án).  4.  Student  có  thể  chọn  tạo  thủ  công  hoặc  tạo  từ  tài  liệu  bằng  AI  (API  của  Gemini).  5.  Student  nhấn  nút  “Lưu  flashcard”.  6.  Hệ  thống  kiểm  tra  dữ  liệu  hợp  lệ.  7.  Hệ  thống  lưu  flashcard  vào  cơ  sở  dữ  liệu  8.  Hệ  thống  hiển  thị  thông  báo  “Tạo  flashcard  thành  công”  
+Tiền  điều  kiện:  
+●  Student  đã  đăng  nhập  hệ  thống.  
+Hậu  điều  kiện:  
+●  Flashcard  được  lưu  vào  hệ  thống  và  sẵn  sàng  để  sử  dụng.  
+Luồng  sự  kiện  phụ:  
+●  Ở  bước  3:  Nếu  thiếu  nội  dung  ->  hệ  thống  hiển  thị  lỗi  và  yêu  cầu  nhập  đầy  đủ.  
+ 
+Use  case  ID:  UC12  
+Use  Case  Name:  Học  Flashcard  
+Actors:  Student  
+Main  Flow:  
+1.  Student  truy  cập  chức  năng  “Học  flashcard”.  2.  Hệ  thống  hiển  thị  danh  sách  bộ  flashcard.  3.  Student  chọn  một  bộ  flashcard.  4.  Hệ  thống  hiển  thị  từng  thẻ  (mặt  trước).  5.  Student  nhấn  “Lật  thẻ”  để  xem  đáp  án.  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+6.  Student  đánh  dấu  mức  độ  ghi  nhớ  (Nhớ  /  Chưa  nhớ).  7.  Hệ  thống  ghi  nhận  tiến  độ  học.  8.  Hệ  thống  chuyển  sang  thẻ  tiếp  theo  cho  đến  khi  hoàn  thành.  9.  Hệ  thống  hiển  thị  thống  kê  kết  quả  học.  
+Tiền  điều  kiện:  
+●  Student  đã  đăng  nhập  hệ  thống.  ●  Có  ít  nhất  một  bộ  flashcard.  
+Hậu  điều  kiện:  
+●  Tiến  độ  học  flashcard  được  lưu  lại.   
+Luồng  sự  kiện  phụ:  
+●  Ở  bước  2:  Nếu  không  có  flashcard  ->  hiển  thị  “Chưa  có  dữ  liệu”.  
+ 
+Use  case  ID:  UC13  
+Use  Case  Name:  Làm  bài  test  trắc  nghiệm  
+Actors:  Student  
+Main  Flow:  
+1.  Student  truy  cập  danh  sách  bài  test.  2.  Student  chọn  một  bài  test.  3.  Hệ  thống  hiển  thị  thông  tin  bài  test  (thời  gian,  số  câu  hỏi).  4.  Student  nhấn  “Bắt  đầu”.  5.  Hệ  thống  hiển  thị  các  câu  hỏi  và  đáp  án.  6.  Student  chọn  đáp  án  cho  từng  câu  hỏi.  7.  Student  nhấn  “Nộp  bài”.  8.  Hệ  thống  chấm  điểm  tự  động.  9.  Hệ  thống  hiển  thị  kết  quả  bài  test.  
+Tiền  điều  kiện:  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+●  Student  đã  đăng  nhập  hệ  thống.  ●  Bài  test  tồn  tại  và  khả  dụng.  
+Hậu  điều  kiện:  
+●  Kết  quả  bài  test  được  lưu  vào  hệ  thống.  
+Luồng  sự  kiện  phụ:  
+●  Ở  bước  6:  Nếu  chưa  trả  lời  hết  ->  hệ  thống  cảnh  báo.  ●  Hết  thời  gian  ->  hệ  thống  tự  động  nộp  bài.  
+ 
+Use  case  ID:  UC14  
+Use  Case  Name:  Xem  kết  quả  bài  test  
+Actors:  Student  
+Main  Flow:  
+1.  Student  truy  cập  mục  “Kết  quả  học  tập”.  2.  Hệ  thống  hiển  thị  danh  sách  bài  test  đã  làm.  3.  Student  chọn  một  bài  test.  4.  Hệ  thống  hiển  thị  chi  tiết:  ●  Điểm  số  ●  Câu  đúng/sai  ●  Đáp  án  đúng  ●  Thời  gian  làm  bài  5.  Student  xem  lại  kết  quả.  
+Tiền  điều  kiện:  
+●  Student  đã  đăng  nhập  hệ  thống.  ●  Có  dữ  liệu  bài  test  đã  làm.  
+Hậu  điều  kiện:  
+●  Không  thay  đổi  dữ  liệu  hệ  thống.  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+Luồng  sự  kiện  phụ:  
+●  Ở  bước  2:  Nếu  chưa  có  kết  quả  ->  hiển  thị  “Chưa  có  dữ  liệu”.   
+ 
+Use  case  ID:  UC15  
+Use  Case  Name:  Tính  GPA  
+Actors:  Student  
+Main  Flow:  
+1.  Student  truy  cập  chức  năng  “Tính  GPA”.  2.  Hệ  thống  tự  động  lấy  dữ  liệu:  ●  Các  bài  test  đã  làm  ●  Điểm  số  tương  ứng  3.  Hệ  thống  hiển  thị  danh  sách  môn  học  +  điểm  (mapping  từ  test)  4.  Student  có  thể  chỉnh  sửa  hoặc  bổ  sung  điểm  môn  5.  Student  nhấn  “Tính  GPA”.  6.  Hệ  thống  tính  GPA  dựa  trên:  ●  Số  tín  chỉ  ●  Điểm  từng  môn  7.  Hệ  thống  hiển  thị  GPA  hiện  tại.  
+Tiền  điều  kiện:  
+●  Student  đã  đăng  nhập  hệ  thống.  ●  Có  dữ  liệu  học  tập  hoặc  bài  test  
+Hậu  điều  kiện:  
+●  GPA  phản  ánh  đúng  kết  quả  học  tập  tổng  hợp  
+Luồng  sự  kiện  phụ:  
+●  Nếu  chưa  có  dữ  liệu  ->  hiển  thị   “Chưa  có  dữ  liệu  học  tập  
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+Use  Case  ID:  UC16  (Tạo  bài  test  /  câu  hỏi)  
+Actors:  Lecturer  
+Main  Flow:   
+1.  Giảng  viên  chọn  chức  năng  "Tạo  bài  kiểm  tra".  
+2.  Hệ  thống  hiển  thị  form  điền  thông  tin  cơ  bản.  
+3.  Giảng  viên  nhập  Tiêu  đề,  Môn  học,  Thời  gian  làm  bài.  
+4.  Giảng  viên  chọn  phương  thức:  tạo  thủ  công  hoặc  tự  động  bằng  AI  từ  tài  liệu.  
+5.  Giảng  viên  kiểm  tra  lại  bộ  câu  hỏi,  thiết  lập  đáp  án  đúng  và  nhấn  "Lưu  bài  kiểm  tra".  
+6.  Hệ  thống  lưu  dữ  liệu  vào  cơ  sở  dữ  liệu  và  thông  báo  "Tạo  bài  kiểm  tra  thành  công".  
+Tiền  điều  kiện:  
+●  Giảng  viên  đã  đăng  nhập  hệ  thống.   
+Hậu  điều  kiện:  
+●  Bài  kiểm  tra  và  danh  sách  câu  hỏi  được  lưu  vào  hệ  thống  và  hiển  thị  trạng  thái  sẵn  sàng.  ●  Mỗi  bài  kiểm  tra  sẽ  tạo  ra  một  mã  số(random)  ●  Giảng  viên  có  thể  share  mã  số  đó  cho  sinh  viên  
+Luồng  sự  kiện  phụ:  
+●  Ở  bước  4:  Nếu  tài  liệu  bị  lỗi  hoặc  AI  không  trích  xuất  được,  hệ  thống  báo  lỗi  và  yêu  cầu  
+giảng
+ 
+viên
+ 
+nhập
+ 
+câu
+ 
+hỏi
+ 
+thủ
+ 
+công.
+ ●  Ở  bước  5:  Nếu  điền  thiếu  thông  tin  bắt  buộc  hoặc  câu  hỏi  chưa  có  đáp  án,  hệ  thống  hiển  
+thị
+ 
+cảnh
+ 
+báo
+ 
+đỏ
+ 
+tại
+ 
+trường
+ 
+bị
+ 
+thiếu.
+ 
+ 
+Use  Case  ID:  UC17  (Xem  kết  quả  sinh  viên)  
+Actors:  Lecturer  
+Main  Flow:   
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+1.  Giảng  viên  truy  cập  mục  "Bài  kiểm  tra  đã  tạo"  và  chọn  một  bài  kiểm  tra.  
+2.  Hệ  thống  hiển  thị  danh  sách  sinh  viên  đã  nộp  bài  kèm  điểm  số.  
+3.  Giảng  viên  chọn  xem  chi  tiết  bài  làm  của  một  sinh  viên.  
+4.  Hệ  thống  hiển  thị  chi  tiết  câu  trả  lời  của  sinh  viên,  thống  kê  câu  đúng/sai  và  thời  gian  
+hoàn
+ 
+thành.
+ 
+Tiền  điều  kiện:  
+●  Giảng  viên  đã  đăng  nhập  hệ  thống.  Bài  kiểm  tra  đã  có  ít  nhất  một  sinh  viên  nộp  bài.  
+Hậu  điều  kiện:  
+●  Không  thay  đổi  dữ  liệu  của  hệ  thống.  
+Luồng  sự  kiện  phụ:  
+●  Ở  bước  2:  Nếu  chưa  có  sinh  viên  nào  hoàn  thành  bài  test,  hệ  thống  hiển  thị  thông  báo  
+"Chưa
+ 
+có
+ 
+dữ
+ 
+liệu
+ 
+kết
+ 
+quả".
+ 
+ 
+Use  Case  ID:  UC18  (Quản  lý  người  dùng)  
+Actors:  Admin  
+Main  Flow:   
+1.  Admin  truy  cập  trang  Quản  lý  người  dùng .  
+2.  Hệ  thống  hiển  thị  Dashboard  quản  lý  gồm:  
+-  Số  liệu  thống  kê :  Tổng  số  người  dùng,  số  lượng  Sinh  viên  và  Giảng  viên.  
+-  Danh  sách  người  dùng :  Hiển  thị  Họ  tên,  Email,  MSSV/MGV,  Vai  trò,  Trạng  thái  và  
+Ngày
+ 
+tạo.
+ 
+3.  Admin  thực  hiện  các  thao  tác  mục  tiêu:  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+-  Tìm  kiếm  và  Lọc :  Nhập  từ  khóa  (Tên/Email/MSSV)  và  chọn  bộ  lọc  theo  Vai  trò  (Sinh  
+viên/Giảng
+ 
+viên/Admin)
+ 
+hoặc
+ 
+Trạng
+ 
+thái
+ 
+(Đang
+ 
+hoạt
+ 
+động/Đã
+ 
+khóa).
+ 
+Hệ
+ 
+thống
+ 
+cập
+ 
+nhật
+ 
+danh
+ 
+sách
+ 
+tức
+ 
+thì.
+ 
+-  Thêm  người  dùng  mới :  Nhấn  nút  "+  Thêm  người  dùng  mới" ,  hệ  thống  hiển  thị  form  
+nhập
+ 
+liệu.
+ 
+Admin
+ 
+điền
+ 
+thông
+ 
+tin
+ 
+và
+ 
+nhấn
+ 
+"Lưu".
+ 
+-  Thao  tác  trên  dòng :  Admin  chọn  biểu  tượng  Chỉnh  sửa  (3  chấm)  để  cập  nhật  thông  tin   
+4.  Hệ  thống  yêu  cầu  xác  nhận  đối  với  các  thay  đổi  quan  trọng.  
+5.  Admin  xác  nhận,  hệ  thống  cập  nhật  cơ  sở  dữ  liệu  và  hiển  thị  thông  báo  thành  công.  
+Tiền  điều  kiện:  
+●  Admin  đã  xác  thực  và  đăng  nhập  hệ  thống.  
+Hậu  điều  kiện:  
+●  Tài  khoản  mới  được  khởi  tạo  hoặc  thông  tin/trạng  thái  của  người  dùng  hiện  tại  được  cập  
+nhật
+ 
+thành
+ 
+công
+ 
+trong
+ 
+bảng
+ 
+users.
+ 
+ 
+Luồng  sự  kiện  phụ:  
+●  Ở  bước  3:  Nếu  không  tìm  thấy  thông  tin  khớp  với  từ  khóa,  hệ  thống  thông  báo  "Không  
+tìm
+ 
+thấy
+ 
+người
+ 
+dùng".
+ ●  Ở  bước  5:  Nếu  Admin  chọn  "Hủy",  hộp  thoại  đóng  lại  và  không  có  thay  đổi  nào  xảy  ra.  
+ 
+Use  Case  ID:  UC19  (Quản  lý  Thảo  luận)  
+Actors:  Admin  
+Main  Flow:   
+1.  Admin  truy  cập  menu  "Quản  lý  Thảo  luận".  
+2.  Hệ  thống  hiển  thị  danh  sách  các  bình  luận  (ưu  tiên  hiển  thị  các  bình  luận  bị  user  
+report).
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+3.  Admin  đọc  nội  dung  và  chọn  thao  tác  "Xóa  bình  luận"  đối  với  nội  dung  độc  hại/vi  
+phạm.
+ 
+4.  Hệ  thống  yêu  cầu  xác  nhận  thao  tác.  
+5.  Admin  xác  nhận  đồng  ý.  
+6.  Hệ  thống  xóa  bình  luận  khỏi  cơ  sở  dữ  liệu  và  thông  báo  "Đã  xóa  bình  luận".  
+Tiền  điều  kiện:  
+●  Admin  đã  đăng  nhập  hệ  thống.  Có  ít  nhất  một  luồng  thảo  luận  tồn  tại.  
+Hậu  điều  kiện:  
+●  Bình  luận  vi  phạm  bị  xóa  vĩnh  viễn  khỏi  hệ  thống.  
+3.  THIẾT  KẾ  HỆ  THỐNG  
+3.1  System  Architecture  
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+3.2  Database  Design  
+ 
+3.3  UI  Design  
+ 
+ 
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+ 
+ 
+ 
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+4.  TRIỂN  KHAI  HỆ  THỐNG  
+4.1  Môi  trường  phát  triển  Frontend:  React  Js  
+Backend:
+ 
+Fastapi
+ 
+Database:
+ 
+Postgres
+ 
+Tools:
+ 
+ 
+ IDE:  Visual  Studio  Code,  Antigrivity,  Cursor,  Codex,  Windsurd  
+○  Quản  lý  package:  npm  (Frontend),  Poetry/Pip  (Backend)  ○  Version  Control:  Git  &  GitHub  ○  API  Testing:  Swagger  UI  (tích  hợp  sẵn  trong  FastAPI)  +  Postman  ○  Text  Extraction:  PyMuPDF,  python-docx  ○  AI  Integration:  Google  Gemini  API  ○  Containerization  (tùy  chọn):  Docker  &  Docker  Compose  (dùng  để  chạy  local)  
+ 
+4.2  Cấu  trúc  hệ  thống  
+ 
+C ấ u  trúc  th ư  m ụ c  Backend:  
+ 
+C ấ u  trúc  th ư  m ụ c  Frontend  
+ 
+4.3  Chức  năng  đã  triển  khai  -  Đ ă ng  ký  -  Đ ă ng  nh ậ p  
+4.4  API  thiết  kế  Method  API  Description  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+POST  /api/auth/register  Đăng  ký  tài  khoản  mới  (Student  hoặc  Lecturer)  -  UC01  
+POST  /api/auth/login  Đăng  nhập  vào  hệ  thống  và  trả  về  JWT  token  -  UC02  
+POST  /api/auth/logout  Đăng  xuất  và  hủy  phiên  làm  việc  hiện  tại  -  UC03  
+POST  /api/documents/{document_id}/comments  (type=question)  
+Thêm  bình  luận/thảo  luận  mới  vào  tài  liệu  -  UC04  
+GET  /api/documents/{document_id}/comments  
+Lấy  danh  sách  bình  luận  của  một  tài  liệu  -  UC04  
+PUT  /api/comments/{id}  Cập  nhật  bình  luận  người  dùng  -  UC04  
+DELETE   /api/comments/{id}  (Sinh  viên  và  admin)  Xóa  bình  luận  người  dùng  -  UC04  
+POST  /api/documents/{document_id}/share  
+Chia  sẻ  tài  liệu  với  người  dùng  khác  hoặc  công  khai  -  UC05  
+POST  /api/v1/documents  Tải  tài  liệu  mới  lên  hệ  thống,  lưu  trữ  tệp  vật  lý  và  thông  tin  metadata  (Tiêu  đề,  Môn  học,  Quyền  riêng  tư)  -  UC06  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+GET  /api/v1/documents  Lấy  danh  sách  tài  liệu  với  các  bộ  lọc  tìm  kiếm,  môn  học,  loại  file  và  phân  trang  -  UC07  
+GET  /api/v1/documents/{document_id}  
+Lấy  thông  tin  chi  tiết  của  một  tài  liệu  cụ  thể  theo  ID  để  hiển  thị  nội  dung  và  công  cụ  AI  -  UC07  
+POST  /api/v1/flashcards/  Tạo  flashcard  thủ  công  (front,  back)  cho  một  tài  liệu  -  UC11  
+POST  /api/v1/flashcards/generate  
+Tạo  flashcard  bằng  AI  từ  nội  dung  tài  liệu  (Gemini)  -  UC11  
+POST  /api/v1/flashcards/bulk  Lưu  danh  sách  flashcard  (kết  hợp  AI  +  manual)  sau  khi  user  review  -  UC11  
+GET  /api/v1/flashcards/?document_id={id}  
+Lấy  danh  sách  flashcard  theo  tài  liệu  -  UC11  
+DELETE  /api/v1/flashcards/{flashcard_id}  
+Xóa  một  flashcard  trong  danh  sách  nháp  hoặc  đã  lưu  -  UC11  
+PUT  /api/v1/flashcards/{flashcard_id}  
+Cập  nhật  nội  dung  flashcard  (front/back)  -  UC11  
+GET  /api/v1/flashcards/?document_id={id}&skip=0&limit=100  
+Lấy  danh  sách  flashcard  theo  tài  liệu  để  học  -  UC12  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+GET  /api/v1/flashcards/  Lấy  toàn  bộ  flashcard  của  user  (khi  không  truyền  document_id)  -  UC12  
+GET  /api/v1/tests/  Lấy  danh  sách  bài  test  (có  filter,  phân  trang)  -  UC13  
+GET  /api/v1/tests/{test_id}  Lấy  chi  tiết  bài  test  và  danh  sách  câu  hỏi  -  UC13  
+POST   /api/v1/tests/{test_id}/submit  
+Nộp  bài  test  và  trả  về  kết  quả  (score,  rank,  thời  gian)  -  UC13  
+GET  /api/v1/tests/result/{result_id}  
+Xem  chi  tiết  kết  quả  bài  test  (điểm,  đáp  án,  thứ  hạng)  -  UC14  
+POST  /api/v1/gpt/calculate  Tính  GPA  thông  qua  các  bài  test  -  UC15  
+POST  /api/v1/tests/  Tạo  đề  thi/bài  kiểm  tra  mới  kèm  danh  sách  câu  hỏi  (chỉ  dành  cho  Giảng  viên)  bằng  cách  tự  nhập  từng  câu  hỏi  hoặc  upload  file  word-  UC16  
+GET  /api/v1/tests/{test_id}  Lấy  thông  tin  chi  tiết  của  một  đề  thi  bao  gồm  danh  sách  câu  hỏi  để  làm  bài  -  UC16  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+GET  /api/v1/tests/{test_id}/results  
+Lecturer  có  thể  xem  kết  quả  -  UC17  
+GET  /api/v1/tests/my-results  Lấy  danh  sách  lịch  sử  kết  quả  các  bài  thi  của  cá  nhân  người  dùng  đang  đăng  nhập  -  UC17  
+GET  /api/v1/tests/{test_id}/results  
+Giảng  viên  xem  danh  sách  kết  quả  của  tất  cả  sinh  viên  đã  tham  gia  đề  thi  đó  -  UC17  
+GET  /api/v1/users/  Admin  lấy  danh  sách  toàn  bộ  người  dùng  để  quản  lý  tài  khoản  -  UC18  
+GET  /api/v1/users/me  Lấy  thông  tin  cá  nhân  của  người  dùng  hiện  tại  đang  đăng  nhập  -  UC18  
+PUT  /api/v1/users/{user_id}  Admin  cập  nhật  thông  tin  hoặc  vai  trò  cho  một  người  dùng  bất  kỳ  -  UC18  
+DELETE  /api/v1/users/{user_id}  Admin  thực  hiện  xóa  tài  khoản  người  dùng  khỏi  hệ  thống  -  UC18  
+GET  /api/v1/documents/admin/list  
+Admin  truy  xuất  danh  sách  tài  liệu  đầy  đủ  để  thực  hiện  kiểm  soát  nội  dung  -  UC19  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+PATCH  /api/v1/documents/admin/{id}/visibility  
+Admin  thay  đổi  trạng  thái  hiển  thị  (công  khai/ẩn)  của  tài  liệu  -  UC19  
+DELETE  /api/v1/documents/admin/{id}  
+Admin  xóa  tài  liệu  vi  phạm  hoặc  không  còn  sử  dụng  -  UC19  
+4.5  Giao  diện  đã  triển  khai  [Chèn  screenshot]  
+4.6  Luồng  hoạt  động  hệ  thống  [Mô  tả  sequence  /  flow]  
+5.  TEST  CASE 
+ID  Use  Case  Input  Expected  Result  
+     
+6.  DEMO  HỆ  THỐNG 
+Demo  link:  
+User:  
+Password:  
+Admin:  
+Password:  
+7.  SỬ  DỤNG  AI  TRONG  ĐỒ  ÁN  
+7.1  AI  Tools  Liệt  kê  công  cụ  và  các  trường  hợp  sử  dụng  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  
+
+ 
+7.2  Prompt  sử  dụng  
+7.3  Đánh  giá  AI  
+8.  PHÂN  CÔNG  NHÓM  
+Member  Task  
+Thịnh  -  Viết  báo  cáo  +  hướng  dẫn  Github  cho  team  -  Làm  từ   UC01  ->  UC05  (code  và  test,  viết  báo  cáo)  
+Anh  -  Làm  từ  UC06  ->  UC10  (code,  test,  viết  báo  cáo)  
+Khang  -  Làm  từ  UC11  ->  UC15  (code,  test,  viết  báo  cáo)  
+Nhật  -  Làm  từ  UC16  ->  UC21  (code,  test,  viết  báo  cáo)  
+9.  KẾT  LUẬN   
+10.  TÀI  LIỆU  THAM  KHẢO  [1]  ................................................  
+Phát  tri ể n  ứ ng  d ụ ng  Web  -  IUH  

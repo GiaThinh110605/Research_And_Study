@@ -14,6 +14,8 @@ from app.models.base import get_db
 from app.models.document import Document
 from app.models.document_ingestion import DocumentIngestion
 from app.models.document_concept import DocumentConcept
+from app.models.document_chunk import DocumentChunk
+from app.models.document_chunk import DocumentChunk
 from app.models.document_share import DocumentShare
 from app.models.discussion import Discussion
 from app.models.flashcard import Flashcard, FlashcardSet
@@ -877,3 +879,16 @@ def list_document_shares(
         )
 
     return results
+
+@router.get("/{document_id}/chunks")
+def get_document_chunks(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu")
+        
+    chunks = db.query(DocumentChunk).filter(DocumentChunk.document_id == document_id).order_by(DocumentChunk.chunk_index).all()
+    return [{"id": c.id, "content": c.content, "chunk_index": c.chunk_index} for c in chunks]

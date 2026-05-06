@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ShareModal from '../components/documents/ShareModal';
+import AIQAPanel from '../components/AIQAPanel';
 import { authService } from '../services/auth';
 import { documentService, DocumentIngestionStatus, DocumentItem, ShareItem } from '../services/documents';
 import { Flashcard as FlashcardItem } from '../services/flashcards';
@@ -28,7 +29,7 @@ interface QuestionItem {
   content: string;
   answer: string | null;
   created_at: string;
-  user: DiscussionUser | null;
+  user?: DiscussionUser | null;
 }
 
 interface HighlightItem {
@@ -116,6 +117,13 @@ const DocumentDetailPage: React.FC = () => {
   const [ingestionLoading, setIngestionLoading] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryError, setRetryError] = useState('');
+
+  // UC07 UI States
+  const [readingMode, setReadingMode] = useState<'pdf' | 'text'>('pdf');
+  const [chunks, setChunks] = useState<{id: number, content: string, chunk_index: number}[]>([]);
+  const [selectedText, setSelectedText] = useState('');
+  const [selectionRect, setSelectionRect] = useState<{top: number, left: number, width: number} | null>(null);
+  const [showHighlightModal, setShowHighlightModal] = useState(false);
 
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -216,7 +224,7 @@ const DocumentDetailPage: React.FC = () => {
   const fileUrl = document ? resolveFileUrl(document.file_url) : '';
   const summaryLines = (ingestion?.summary_content || '')
     .split('\n')
-    .map(line => line.replace(/^•\s*/, '').trim())
+    .map((line: string) => line.replace(/^•\s*/, '').trim())
     .filter(Boolean);
   const conceptItems = ingestion?.concepts || [];
   const quizAvailable = Boolean(ingestion?.quiz_test_id && (ingestion?.quiz_questions_count || 0) > 0);
@@ -345,8 +353,18 @@ const DocumentDetailPage: React.FC = () => {
     }
   };
 
+  const fetchChunks = async (docId: number) => {
+    try {
+      const res = await api.get(`/api/v1/documents/${docId}/chunks`);
+      setChunks(res.data);
+    } catch (err) {
+      console.error('Lỗi tải chunks:', err);
+    }
+  };
+
   useEffect(() => {
     if (parsedId) {
+      fetchChunks(parsedId);
       if (activeTab === 'discussion') {
         fetchDiscussions(parsedId);
       } else if (activeTab === 'questions') {
@@ -491,18 +509,22 @@ const DocumentDetailPage: React.FC = () => {
       alert('Vui lòng đăng nhập để tạo highlight'); return;
     }
     try {
-      await api.post('/api/v1/highlights/', {
+      const response = await api.post('/api/v1/highlights/', {
         document_id: parsedId,
         page_number: highPage,
         text_content: highText.trim(),
         color: highColor,
-        note: highNote.trim() || undefined,
+        note: highNote.trim() || null,
       });
+      console.log('Highlight created:', response.data);
       setHighText('');
       setHighNote('');
       await fetchHighlights(parsedId);
-    } catch {
-      alert('Tạo highlight thất bại');
+      alert('✅ Lưu highlight thành công!');
+    } catch (err: any) {
+      console.error('Highlight error:', err);
+      const errorMsg = err.response?.data?.detail || err.message || 'Tạo highlight thất bại';
+      alert(`❌ ${errorMsg}`);
     }
   };
 
@@ -588,46 +610,201 @@ const DocumentDetailPage: React.FC = () => {
 
         {/* Content Area */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left: Document Viewer */}
-          <div className="flex-1 h-full overflow-y-auto p-8 bg-[#F8FAFF]">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 h-full overflow-hidden">
-              {document.file_type.toUpperCase() === 'PDF' ? (
-                <iframe title="PDF Viewer" src={fileUrl} className="w-full h-full" />
+          {/* Vùng 1: Left Sidebar (Cấu trúc & Highlight) */}
+          <div className="w-[280px] bg-white h-full overflow-y-auto border-r border-gray-100 flex flex-col shrink-0 p-5">
+            <h3 className="font-black text-[13px] uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>
+              Cấu trúc tài liệu
+            </h3>
+            <ul className="space-y-3 mb-8">
+              {summaryLines.length > 0 ? (
+                summaryLines.slice(0, 6).map((line: string, idx: number) => (
+                  <li key={idx} className="text-[13px] font-medium text-slate-600 hover:text-[#3B66F5] cursor-pointer line-clamp-2 pl-3 border-l-2 border-transparent hover:border-[#3B66F5] transition-colors" onClick={() => setReadingMode('text')}>
+                    {line.replace(/^[•\-\*]\s*/, '')}
+                  </li>
+                ))
               ) : (
-                <div className="h-full flex items-center justify-center text-center p-8">
-                  <div>
-                    <p className="text-lg font-bold text-slate-700">Tài liệu không phải PDF</p>
-                    <p className="mt-2 text-sm text-slate-500">Hệ thống vẫn hỗ trợ tải về và đọc bằng ứng dụng tương ứng.</p>
-                    <a href={fileUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-xl bg-[#3B66F5] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-600 transition-colors">Tải tài liệu gốc</a>
+                <p className="text-[12px] text-slate-400 italic">Cấu trúc đang được AI trích xuất...</p>
+              )}
+            </ul>
+            
+            <h3 className="font-black text-[13px] uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              Highlight của bạn
+            </h3>
+            <ul className="space-y-3">
+              {highlights.length === 0 ? (
+                <p className="text-[12px] text-slate-400 italic">Chưa có highlight nào. Hãy bôi đen văn bản trong chế độ AI Reading.</p>
+              ) : (
+                highlights.map(hl => (
+                  <li key={hl.id} className="text-[12px] p-3 rounded-xl border-l-4 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors relative group" style={{borderLeftColor: hl.color || 'yellow'}} onClick={() => setReadingMode('text')}>
+                    <p className="font-semibold text-slate-700 line-clamp-3">"{hl.text_content}"</p>
+                    {hl.note && <p className="mt-2 text-slate-500 italic bg-white p-2 rounded border border-slate-100">{hl.note}</p>}
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteHighlight(hl.id); }} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-sm">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+
+          {/* Vùng 2: Center: Document Viewer */}
+          <div className="flex-1 h-full overflow-y-auto p-6 bg-[#F8FAFF] relative" id="document-content-area">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-bold text-lg text-slate-800 line-clamp-1 flex-1 mr-4">{document?.title}</h2>
+              <div className="flex bg-white rounded-xl p-1 border shadow-sm">
+                <button 
+                  onClick={() => setReadingMode('pdf')}
+                  className={`px-4 py-2 text-[13px] font-bold rounded-lg transition-all ${readingMode === 'pdf' ? 'bg-[#3B66F5] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                >
+                  <span className="flex items-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> PDF Gốc</span>
+                </button>
+                <button 
+                  onClick={() => setReadingMode('text')}
+                  className={`px-4 py-2 text-[13px] font-bold rounded-lg transition-all ${readingMode === 'text' ? 'bg-[#3B66F5] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                >
+                  <span className="flex items-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> AI Reading</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 h-[calc(100%-60px)] overflow-hidden relative">
+              {readingMode === 'pdf' ? (
+                document?.file_type.toUpperCase() === 'PDF' ? (
+                  <iframe title="PDF Viewer" src={fileUrl} className="w-full h-full" />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-center p-8">
+                    <div>
+                      <p className="text-lg font-bold text-slate-700">Tài liệu không phải PDF</p>
+                      <a href={fileUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-xl bg-[#3B66F5] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-600 transition-colors">Tải tài liệu gốc</a>
+                    </div>
                   </div>
+                )
+              ) : (
+                <div 
+                  className="h-full overflow-y-auto p-10 prose max-w-none text-slate-800 leading-loose text-[15px] font-medium selection:bg-yellow-200 selection:text-slate-900"
+                  onMouseUp={(e: React.MouseEvent<HTMLDivElement>) => {
+                    const selection = window.getSelection();
+                    if (selection && selection.rangeCount > 0 && selection.toString().trim().length > 0) {
+                      const range = selection.getRangeAt(0);
+                      const rect = range.getBoundingClientRect();
+                      const containerRect = e.currentTarget.getBoundingClientRect();
+                      setSelectedText(selection.toString().trim());
+                      setSelectionRect({
+                        top: rect.top - containerRect.top - 45,
+                        left: rect.left - containerRect.left + (rect.width / 2) - 150,
+                        width: rect.width
+                      });
+                    } else {
+                      if (!showHighlightModal) setSelectionRect(null);
+                    }
+                  }}
+                >
+                  {chunks.length > 0 ? (
+                    chunks.map(chunk => (
+                      <p key={chunk.id} className="mb-6 whitespace-pre-wrap">{chunk.content}</p>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-500" />
+                      <p className="font-bold">Đang tải cấu trúc AI Reading...</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Quick Actions / Floating Toolbar */}
+            {selectionRect && readingMode === 'text' && !showHighlightModal && (
+              <div 
+                className="absolute bg-white rounded-xl shadow-2xl border border-slate-200 flex items-center p-1.5 z-50 animate-in fade-in zoom-in duration-200"
+                style={{ top: selectionRect.top, left: Math.max(0, selectionRect.left) }}
+              >
+                <button onClick={() => setShowHighlightModal(true)} className="flex flex-col items-center justify-center w-16 h-14 hover:bg-slate-50 rounded-lg text-[11px] font-bold text-slate-700 transition-colors group">
+                  <div className="w-5 h-5 rounded-full bg-yellow-400 mb-1 group-hover:scale-110 transition-transform shadow-inner border border-yellow-500"></div> Highlight
+                </button>
+                <div className="w-px h-8 bg-slate-100 mx-1"></div>
+                <button onClick={() => {
+                  setActiveTab('questions');
+                  setQuestionInput(`Tôi chưa hiểu rõ đoạn văn này:\n"${selectedText}"\n\nBạn có thể giải thích chi tiết hơn không?`);
+                  setSelectionRect(null);
+                }} className="flex flex-col items-center justify-center w-16 h-14 hover:bg-slate-50 rounded-lg text-[11px] font-bold text-[#3B66F5] transition-colors group">
+                  <svg className="w-5 h-5 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                  Hỏi AI
+                </button>
+                <div className="w-px h-8 bg-slate-100 mx-1"></div>
+                <button onClick={() => {
+                  alert('Tính năng tự động tạo Flashcard đang được phát triển!');
+                  setSelectionRect(null);
+                }} className="flex flex-col items-center justify-center w-16 h-14 hover:bg-slate-50 rounded-lg text-[11px] font-bold text-purple-600 transition-colors group">
+                  <svg className="w-5 h-5 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  Flashcard
+                </button>
+              </div>
+            )}
+
+            {/* Highlight Popup Modal */}
+            {showHighlightModal && selectionRect && (
+               <div 
+                 className="absolute bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 z-50 w-[280px] animate-in fade-in zoom-in duration-200"
+                 style={{ top: selectionRect.top, left: Math.max(0, selectionRect.left - 40) }}
+               >
+                 <p className="text-[11px] font-bold uppercase text-slate-400 mb-3 tracking-wider">Tạo thẻ ghi nhớ</p>
+                 <div className="flex gap-3 mb-4">
+                   {['#FDE047', '#86EFAC', '#93C5FD', '#F9A8D4'].map(color => (
+                     <button key={color} onClick={() => setHighColor(color)} className={`w-6 h-6 rounded-full shadow-sm border-2 ${highColor === color ? 'border-slate-800 scale-110' : 'border-transparent'}`} style={{backgroundColor: color}} />
+                   ))}
+                 </div>
+                 <textarea 
+                   value={highNote}
+                   onChange={e => setHighNote(e.target.value)}
+                   placeholder="Thêm ghi chú cá nhân..." 
+                   className="w-full text-[13px] p-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 ring-blue-100 outline-none mb-3 resize-none h-[80px]"
+                 />
+                 <div className="flex gap-2">
+                   <button onClick={() => { setShowHighlightModal(false); setSelectionRect(null); }} className="flex-1 px-3 py-2 bg-slate-100 text-slate-600 text-[12px] font-bold rounded-xl hover:bg-slate-200">Hủy</button>
+                   <button onClick={() => {
+                     setHighText(selectedText);
+                     setTimeout(handleHighlightSubmit, 0); // Need to wait for state to update
+                     setShowHighlightModal(false); 
+                     setSelectionRect(null);
+                   }} className="flex-1 px-3 py-2 bg-[#3B66F5] text-white text-[12px] font-bold rounded-xl hover:bg-blue-600 shadow-md">Lưu thẻ</button>
+                 </div>
+               </div>
+            )}
           </div>
 
-          {/* Right: Sidebar */}
-          <div className="w-[400px] bg-white h-full overflow-hidden border-l border-gray-100 flex flex-col shrink-0">
+          {/* Vùng 3: Right Sidebar (AI Panel) */}
+          <div className="w-[400px] bg-white h-full overflow-hidden border-l border-slate-200 flex flex-col shrink-0">
             {/* Tabs */}
-            <div className="flex items-center justify-between px-6 pt-5 border-b border-gray-100">
+            <div className="flex items-center justify-between px-6 pt-5 border-b border-gray-100 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('info')}
-                className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'info' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                className={`flex shrink-0 items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'info' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
                 Tóm tắt
               </button>
               <button
+                onClick={() => setActiveTab('questions')}
+                className={`flex shrink-0 items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'questions' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                Hỏi AI
+              </button>
+              <button
                 onClick={() => setActiveTab('flashcards')}
-                className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'flashcards' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                className={`flex shrink-0 items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'flashcards' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                 Sơ đồ
               </button>
               <button
                 onClick={() => setActiveTab('discussion')}
-                className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'discussion' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                className={`flex shrink-0 items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'discussion' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
                 Thảo luận
               </button>
             </div>
@@ -797,6 +974,17 @@ const DocumentDetailPage: React.FC = () => {
                     </button>
                   </div>
                 </>
+              )}
+
+              {/* Questions View (Hỏi AI) */}
+              {activeTab === 'questions' && (
+                <div className="h-[calc(100vh-250px)] overflow-hidden">
+                  <AIQAPanel 
+                    documentId={parsedId}
+                    currentUserId={currentUserId}
+                    highlightText={selectedText}
+                  />
+                </div>
               )}
 
               {/* Discussion View */}

@@ -37,7 +37,7 @@ def upgrade():
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
         sa.Column('flashcard_id', sa.Integer(), nullable=False),
-        sa.Column('last_reviewed', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+        sa.Column('last_reviewed', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
         sa.Column('review_count', sa.Integer(), default=0),
         sa.Column('difficulty_rating', sa.Integer(), default=0),
         sa.Column('next_review', sa.DateTime(timezone=True), nullable=True),

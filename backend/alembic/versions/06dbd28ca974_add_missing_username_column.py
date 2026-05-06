@@ -27,7 +27,7 @@ def upgrade() -> None:
     sa.Column('document_id', sa.Integer(), nullable=True),
     sa.Column('is_ai_generated', sa.Boolean(), nullable=True),
     sa.Column('metadata_json', sa.JSON(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ),
@@ -43,7 +43,7 @@ def upgrade() -> None:
     sa.Column('test_id', sa.Integer(), nullable=True),
     sa.Column('semester', sa.String(length=20), nullable=True),
     sa.Column('source_type', sa.String(length=20), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['student_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['test_id'], ['tests.id'], ),
@@ -57,7 +57,7 @@ def upgrade() -> None:
     sa.Column('options', sa.JSON(), nullable=False),
     sa.Column('correct_option_index', sa.Integer(), nullable=False),
     sa.Column('points', sa.Float(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['test_id'], ['tests.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -114,7 +114,7 @@ def upgrade() -> None:
     op.add_column('test_results', sa.Column('max_score', sa.Float(), nullable=False))
     op.add_column('test_results', sa.Column('submitted_answers', sa.JSON(), nullable=True))
     op.add_column('test_results', sa.Column('time_taken', sa.Integer(), nullable=True))
-    op.add_column('test_results', sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True))
+    op.add_column('test_results', sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True))
     op.drop_index('idx_test_result_test', table_name='test_results')
     op.drop_index('idx_test_result_user', table_name='test_results')
     op.drop_constraint('test_results_user_id_fkey', 'test_results', type_='foreignkey')
@@ -202,7 +202,7 @@ def downgrade() -> None:
     sa.Column('id', sa.INTEGER(), server_default=sa.text("nextval('quizzes_id_seq'::regclass)"), autoincrement=True, nullable=False),
     sa.Column('title', sa.VARCHAR(), autoincrement=False, nullable=False),
     sa.Column('document_id', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.Column('type', sa.VARCHAR(), autoincrement=False, nullable=False),
     sa.Column('creator_id', sa.INTEGER(), autoincrement=False, nullable=False),
     sa.Column('questions', postgresql.JSON(astext_type=sa.Text()), autoincrement=False, nullable=False),
@@ -216,7 +216,7 @@ def downgrade() -> None:
     op.create_table('questions',
     sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
     sa.Column('document_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.Column('asked_by_user_id', sa.INTEGER(), autoincrement=False, nullable=False),
     sa.Column('content', sa.TEXT(), autoincrement=False, nullable=False),
     sa.Column('answer', sa.TEXT(), autoincrement=False, nullable=True),
@@ -231,7 +231,7 @@ def downgrade() -> None:
     sa.Column('similarity_score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=False),
     sa.Column('details', postgresql.JSON(astext_type=sa.Text()), autoincrement=False, nullable=True),
     sa.Column('detected_by_user_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.ForeignKeyConstraint(['detected_by_user_id'], ['users.id'], name='plagiarism_reports_detected_by_user_id_fkey'),
     sa.ForeignKeyConstraint(['test_result_id'], ['quiz_results.id'], name='plagiarism_reports_test_result_id_fkey'),
     sa.PrimaryKeyConstraint('id', name='plagiarism_reports_pkey')
@@ -242,7 +242,7 @@ def downgrade() -> None:
     sa.Column('quiz_id', sa.INTEGER(), autoincrement=False, nullable=False),
     sa.Column('user_id', sa.INTEGER(), autoincrement=False, nullable=False),
     sa.Column('score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=False),
-    sa.Column('completed_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('completed_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.Column('answers', postgresql.JSON(astext_type=sa.Text()), autoincrement=False, nullable=True),
     sa.ForeignKeyConstraint(['quiz_id'], ['quizzes.id'], name='quiz_results_quiz_id_fkey'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='quiz_results_user_id_fkey'),
@@ -253,7 +253,7 @@ def downgrade() -> None:
     sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.INTEGER(), autoincrement=False, nullable=False),
     sa.Column('flashcard_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('last_reviewed', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('last_reviewed', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.Column('review_count', sa.INTEGER(), autoincrement=False, nullable=True),
     sa.Column('difficulty_rating', sa.INTEGER(), autoincrement=False, nullable=True),
     sa.Column('next_review', postgresql.TIMESTAMP(timezone=True), autoincrement=False, nullable=True),
@@ -268,7 +268,7 @@ def downgrade() -> None:
     sa.Column('user_id', sa.INTEGER(), autoincrement=False, nullable=False),
     sa.Column('expression', sa.TEXT(), autoincrement=False, nullable=False),
     sa.Column('result', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='calculator_logs_user_id_fkey'),
     sa.PrimaryKeyConstraint('id', name='calculator_logs_pkey')
     )
@@ -281,7 +281,7 @@ def downgrade() -> None:
     sa.Column('text_content', sa.TEXT(), autoincrement=False, nullable=False),
     sa.Column('color', sa.VARCHAR(), autoincrement=False, nullable=True),
     sa.Column('note', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], name='highlights_document_id_fkey'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='highlights_user_id_fkey'),
     sa.PrimaryKeyConstraint('id', name='highlights_pkey')
@@ -294,7 +294,7 @@ def downgrade() -> None:
     sa.Column('entity_type', sa.VARCHAR(), autoincrement=False, nullable=False),
     sa.Column('entity_id', sa.INTEGER(), autoincrement=False, nullable=False),
     sa.Column('description', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='activity_logs_user_id_fkey'),
     sa.PrimaryKeyConstraint('id', name='activity_logs_pkey')
     )
@@ -304,7 +304,7 @@ def downgrade() -> None:
     sa.Column('user_id', sa.INTEGER(), autoincrement=False, nullable=False),
     sa.Column('keyword', sa.VARCHAR(), autoincrement=False, nullable=False),
     sa.Column('source_url', sa.VARCHAR(), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), autoincrement=False, nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='external_searches_user_id_fkey'),
     sa.PrimaryKeyConstraint('id', name='external_searches_pkey')
     )

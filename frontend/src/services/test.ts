@@ -13,7 +13,9 @@ export interface TestOut {
   title: string;
   subject?: string;
   created_at: string;
+  creator_role?: string;
   questions_count: number;
+  participants_count?: number;
   duration_minutes?: number;
   status: 'HOÀN THÀNH' | 'ĐANG LÀM' | 'MỚI';
   questions?: ITestQuestion[];
@@ -82,6 +84,10 @@ export const testService = {
   },
   getTestResults: async (id: number): Promise<TestResultOut[]> => {
     const response = await api.get(`/api/v1/tests/${id}/results`);
+    return response.data;
+  },
+  getMyResults: async (): Promise<TestResultOut[]> => {
+    const response = await api.get(`/api/v1/tests/my-results`);
     return response.data;
   }
 };

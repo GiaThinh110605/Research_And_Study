@@ -10,7 +10,7 @@ class Test(Base):
     title = Column(String(255), nullable=False)
     subject = Column(String(100), nullable=True)
     duration_minutes = Column(Integer, nullable=True)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     participants_count = Column(Integer, default=0)

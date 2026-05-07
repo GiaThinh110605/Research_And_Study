@@ -18,7 +18,6 @@ export interface TestOut {
   participants_count?: number;
   duration_minutes?: number;
   status: 'HOÀN THÀNH' | 'ĐANG LÀM' | 'MỚI';
-  created_by: number;
   questions?: ITestQuestion[];
 }
 
@@ -47,7 +46,7 @@ export interface TestStats {
 export interface TestQueryParams {
   subject?: string;
   document_id?: number;
-  created_by?: number;
+  creator_id?: number;
   skip?: number;
   limit?: number;
 }

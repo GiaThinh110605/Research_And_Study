@@ -308,7 +308,7 @@ def process_document_ingestion(document_id: int) -> None:
                     quiz = Test(
                         title=quiz_title,
                         subject=document.subject or "",
-                        created_by=document.uploader_id,
+                        creator_id=document.uploader_id,
                         document_id=document_id,
                         questions=quiz_questions,
                         duration_minutes=20,

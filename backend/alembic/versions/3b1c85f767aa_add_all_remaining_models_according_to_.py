@@ -146,15 +146,16 @@ def upgrade() -> None:
     op.add_column('quiz_results', sa.Column('answers', sa.JSON(), nullable=True))
     op.drop_column('quiz_results', 'submitted_at')
     op.add_column('quizzes', sa.Column('type', sa.String(), nullable=False))
-    op.add_column('quizzes', sa.Column('creator_id', sa.Integer(), nullable=False))
+    # op.add_column('quizzes', sa.Column('creator_id', sa.Integer(), nullable=False))
+    # op.drop_column('quizzes', 'created_by')
     op.add_column('quizzes', sa.Column('questions', sa.JSON(), nullable=False))
     op.add_column('quizzes', sa.Column('duration_minutes', sa.Integer(), nullable=True))
     op.alter_column('quizzes', 'document_id',
                existing_type=sa.INTEGER(),
                nullable=True)
     op.drop_constraint('quizzes_created_by_fkey', 'quizzes', type_='foreignkey')
-    op.create_foreign_key(None, 'quizzes', 'users', ['creator_id'], ['id'])
-    op.drop_column('quizzes', 'created_by')
+    # op.create_foreign_key(None, 'quizzes', 'users', ['creator_id'], ['id'])
+    pass
     op.add_column('summaries', sa.Column('generated_by', sa.String(), nullable=True))
     # ### end Alembic commands ###
 

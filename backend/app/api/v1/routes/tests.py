@@ -41,7 +41,7 @@ class TestOut(BaseModel):
 	subject: Optional[str] = None
 	document_id: Optional[int] = None
 	duration_minutes: Optional[int] = None
-	creator_id: int
+	created_by: int
 	creator_role: Optional[str] = None
 	created_at: datetime
 	questions_count: int = 0
@@ -87,7 +87,7 @@ class TestResultOut(BaseModel):
 def _ensure_test_creator_or_admin(test: Test, current_user: User) -> None:
 	if current_user.role == UserRole.ADMIN:
 		return
-	if test.creator_id != current_user.id:
+	if test.created_by != current_user.id:
 		raise HTTPException(status_code=403, detail="Not enough permissions")
 
 
@@ -171,7 +171,7 @@ def get_test_stats(
 def list_tests(
 	subject: Optional[str] = Query(default=None),
 	document_id: Optional[int] = Query(default=None),
-	creator_id: Optional[int] = Query(default=None),
+	created_by: Optional[int] = Query(default=None),
 	skip: int = Query(default=0, ge=0),
 	limit: int = Query(default=100, ge=1, le=200),
 	db: Session = Depends(get_db),
@@ -182,8 +182,8 @@ def list_tests(
 		query = query.filter(Test.subject == subject)
 	if document_id is not None:
 		query = query.filter(Test.document_id == document_id)
-	if creator_id is not None:
-		query = query.filter(Test.creator_id == creator_id)
+	if created_by is not None:
+		query = query.filter(Test.created_by == created_by)
 
 	tests = query.order_by(Test.created_at.desc()).offset(skip).limit(limit).all()
 	
@@ -209,7 +209,7 @@ def list_tests(
 			"subject": test.subject,
 			"document_id": test.document_id,
 			"duration_minutes": test.duration_minutes,
-			"creator_id": test.creator_id,
+			"created_by": test.created_by,
 			"creator_role": creator_role,
 			"created_at": test.created_at,
 			"questions_count": len(test.questions) if test.questions else 0,
@@ -236,7 +236,7 @@ def create_test(
 	test = Test(
 		title=payload.title,
 		subject=payload.subject,
-		creator_id=current_user.id,
+		created_by=current_user.id,
 		document_id=payload.document_id,
 		questions=payload.questions,
 		duration_minutes=payload.duration_minutes,

@@ -28,7 +28,7 @@ class DocumentOut(DocumentBase):
     updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class DocumentConceptOut(BaseModel):
@@ -38,7 +38,7 @@ class DocumentConceptOut(BaseModel):
     score: float
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class DocumentIngestionOut(BaseModel):
@@ -57,7 +57,7 @@ class DocumentIngestionOut(BaseModel):
     concepts: List[DocumentConceptOut] = []
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class DocumentListResponse(BaseModel):
@@ -86,7 +86,7 @@ class DocumentShareOut(BaseModel):
     shared_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class AdminDocumentOverview(BaseModel):

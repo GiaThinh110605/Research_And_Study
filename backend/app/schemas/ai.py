@@ -12,16 +12,16 @@ class SummaryOut(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class MindmapOut(BaseModel):
     id: int
     document_id: int
-    data: Dict[str, Any]
+    content: Dict[str, Any]
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class FlashcardGenerateRequest(BaseModel):

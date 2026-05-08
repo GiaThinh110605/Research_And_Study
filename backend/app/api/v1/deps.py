@@ -8,7 +8,7 @@ from typing import Optional
 from app.core.config import settings
 from app.core.security import ALGORITHM
 from app.models.base import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -41,7 +41,7 @@ def get_current_user(
 def get_current_active_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    if current_user.role != "admin":
+    if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=403, detail="The user doesn't have enough privileges"
         )

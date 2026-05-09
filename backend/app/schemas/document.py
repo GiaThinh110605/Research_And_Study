@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Literal
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 
 class DocumentBase(BaseModel):
@@ -27,8 +27,7 @@ class DocumentOut(DocumentBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentConceptOut(BaseModel):
@@ -37,8 +36,7 @@ class DocumentConceptOut(BaseModel):
     category: str
     score: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentIngestionOut(BaseModel):
@@ -56,8 +54,7 @@ class DocumentIngestionOut(BaseModel):
     completed_at: Optional[datetime] = None
     concepts: List[DocumentConceptOut] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentListResponse(BaseModel):

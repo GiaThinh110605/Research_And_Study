@@ -30,3 +30,4 @@ class Document(Base):
     ingestion = relationship("DocumentIngestion", back_populates="document", uselist=False, cascade="all, delete-orphan")
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
     concepts = relationship("DocumentConcept", back_populates="document", cascade="all, delete-orphan")
+    questions = relationship("Question", back_populates="document", cascade="all, delete-orphan")

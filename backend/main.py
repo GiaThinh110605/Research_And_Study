@@ -6,6 +6,40 @@ from fastapi.staticfiles import StaticFiles
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.middleware.auth import AuthMiddleware
+from app.models.base import engine, Base, SessionLocal
+import app.models  # Import all models to ensure they are registered with Base
+from app.models.user import User, UserRole
+from app.core.security import get_password_hash
+
+# Create all tables on startup (Dev only convenience)
+Base.metadata.create_all(bind=engine)
+
+# Initialize default admin user if not exists
+def init_default_user():
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == "admin").first()
+        if not user:
+            admin = User(
+                username="admin",
+                email="admin@example.com",
+                password_hash=get_password_hash("admin123"),
+                full_name="Admin User",
+                role=UserRole.ADMIN,
+                is_active=True
+            )
+            db.add(admin)
+            db.commit()
+            print("✓ Default admin user created (username: admin, password: admin123)")
+        else:
+            print("✓ Admin user already exists")
+    except Exception as e:
+        print(f"✗ Error initializing default user: {e}")
+    finally:
+        db.close()
+
+# Initialize on startup
+init_default_user()
 
 app = FastAPI(
     title="AI Research Paper Navigator API",

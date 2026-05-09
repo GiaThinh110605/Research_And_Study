@@ -18,14 +18,20 @@ def extract_text_from_file(file_path: str) -> Optional[str]:
             reader = PdfReader(file_path)
             text = ""
             for page in reader.pages:
-                text += page.extract_text() + "\n"
-            return text
-        elif ext in ['.doc', '.docx']:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+            return text.strip() if text.strip() else None
+            
+        elif ext == '.docx':
             doc = docx.Document(file_path)
-            return "\n".join([para.text for para in doc.paragraphs])
+            text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+            return text if text.strip() else None
+            
         elif ext == '.txt':
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return f.read()
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                return content.strip() if content.strip() else None
         else:
             return None
     except Exception as e:

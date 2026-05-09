@@ -1,8 +1,5 @@
 import os
-try:
-    from pydantic import BaseSettings
-except ImportError:
-    from pydantic.v1 import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional, List
 
 class Settings(BaseSettings):
@@ -26,8 +23,15 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # xAI Grok
+    GROK_API_KEY: Optional[str] = os.getenv("GROK_API_KEY")
+    GROK_MODEL: str = os.getenv("GROK_MODEL", "grok-4.3")
+    GROK_BASE_URL: str = os.getenv("GROK_BASE_URL", "https://api.x.ai/v1")
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="allow"
+    )
 
 settings = Settings()

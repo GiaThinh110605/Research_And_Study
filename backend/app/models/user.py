@@ -33,3 +33,4 @@ class User(Base):
     flashcard_sets = relationship("FlashcardSet", back_populates="owner")
     discussions = relationship("Discussion", back_populates="user")
     grades = relationship("StudentGrade", back_populates="student")
+    questions = relationship("Question", back_populates="user")

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class FlashcardBase(BaseModel):
     front: str
@@ -17,22 +17,15 @@ class FlashcardUpdate(BaseModel):
     last_reviewed: Optional[datetime] = None
 
 class Flashcard(FlashcardBase):
-    id: int
-    set_id: int
-    status: str
-    mastery_level: int
-    last_reviewed: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FlashcardSetBase(BaseModel):
     title: str
     description: Optional[str] = None
-    subject: Optional[str] = None
-    document_id: Optional[int] = None
+    document_id: int
 
 class FlashcardSetCreate(FlashcardSetBase):
     pass
@@ -40,20 +33,20 @@ class FlashcardSetCreate(FlashcardSetBase):
 class FlashcardSetUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    subject: Optional[str] = None
 
-class FlashcardSet(FlashcardSetBase):
+class FlashcardSetOut(FlashcardSetBase):
     id: int
     owner_id: int
-    is_ai_generated: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
     flashcards: List[Flashcard] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
+
+# Alias for compatibility
+FlashcardSet = FlashcardSetOut
 
 class FlashcardBulkCreate(BaseModel):
     set_id: int
-    flashcards: List[FlashcardBase]
+    flashcards: List[dict] # [{front, back}, ...]
+
     clear_existing: Optional[bool] = False

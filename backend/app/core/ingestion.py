@@ -10,11 +10,15 @@ from app.models.document_concept import DocumentConcept
 from app.models.document_ingestion import DocumentIngestion
 from app.models.summary import Summary
 from app.models.test import Test
+from app.models.mindmap import Mindmap
+from app.models.flashcard import Flashcard, FlashcardSet
 from app.core.file_utils import extract_text_from_file
 from app.core.gemini import (
     generate_summary_from_text,
     generate_quiz_from_text,
     extract_concepts_from_text,
+    generate_mindmap_from_text,
+    generate_flashcards_from_text,
 )
 
 logger = logging.getLogger(__name__)
@@ -320,10 +324,61 @@ def process_document_ingestion(document_id: int) -> None:
         except Exception as quiz_exc:
             logger.warning("Quiz generation failed: %s", quiz_exc, extra={"document_id": document_id})
 
+        # ── Stage 6: Mindmap generation ──────────────────────────
+        try:
+            mindmap_data = generate_mindmap_from_text(raw_text)
+            if mindmap_data:
+                logger.info("Mindmap generated", extra={"document_id": document_id})
+                mindmap = db.query(Mindmap).filter(Mindmap.document_id == document_id).first()
+                if mindmap:
+                    mindmap.data = mindmap_data
+                else:
+                    mindmap = Mindmap(document_id=document_id, data=mindmap_data)
+                    db.add(mindmap)
+                db.commit()
+        except Exception as mm_exc:
+            logger.warning("Mindmap generation failed: %s", mm_exc, extra={"document_id": document_id})
+
+        # ── Stage 7: Flashcard generation ────────────────────────
+        try:
+            flashcards_data = generate_flashcards_from_text(raw_text, count=8)
+            if flashcards_data:
+                logger.info("Flashcards generated", extra={"document_id": document_id, "count": len(flashcards_data)})
+                set_title = f"Thẻ ghi nhớ: {document.title}"
+                fset = (
+                    db.query(FlashcardSet)
+                    .filter(FlashcardSet.document_id == document_id, FlashcardSet.title == set_title)
+                    .first()
+                )
+                if not fset:
+                    fset = FlashcardSet(
+                        title=set_title,
+                        subject=document.subject,
+                        owner_id=document.uploader_id,
+                        document_id=document_id,
+                        is_ai_generated=True
+                    )
+                    db.add(fset)
+                    db.commit()
+                    db.refresh(fset)
+                
+                # Delete old flashcards in this set and add new ones
+                db.query(Flashcard).filter(Flashcard.set_id == fset.id).delete()
+                for item in flashcards_data:
+                    db.add(Flashcard(
+                        set_id=fset.id,
+                        front=item.get("front", ""),
+                        back=item.get("back", ""),
+                        status="new"
+                    ))
+                db.commit()
+        except Exception as fc_exc:
+            logger.warning("Flashcard generation failed: %s", fc_exc, extra={"document_id": document_id})
+
         # ── Finalize ─────────────────────────────────────────────
         ingestion.status = "completed"
         ingestion.progress = 1.0
-        ingestion.last_event = "quiz_generated"
+        ingestion.last_event = "ingestion_finalized"
         ingestion.completed_at = datetime.utcnow()
         ingestion.error_message = None
         db.commit()

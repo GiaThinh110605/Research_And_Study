@@ -1,452 +1,741 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
+import { 
+  Calculator, 
+  Trash2, 
+  Plus, 
+  Target, 
+  BookOpen, 
+  Award,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+  History,
+  Info
+} from 'lucide-react';
+import { gpaService, SubjectCalculateResponse, SemesterCalculateResponse, CumulativeCalculateResponse } from '../services/gpa';
 
-interface Subject {
-  id: string;
-  name: string;
-  credits: number;
-  grade: number;
-}
-
-interface HistoryItem {
-  id: string;
-  title: string;
-  gpa: number;
-  classification: string;
-  totalCredits: number;
-  timestamp: string;
-}
+type TabType = 'subject' | 'semester' | 'cumulative';
 
 const GPAPage: React.FC = () => {
-  const [subjects, setSubjects] = useState<Subject[]>(() => {
-    const saved = localStorage.getItem('gpa_subjects');
-    return saved ? JSON.parse(saved) : [
-      { id: '1', name: 'Triết học Mác - Lênin', credits: 3, grade: 0 },
-      { id: '2', name: 'Kỹ thuật lập trình', credits: 4, grade: 0 },
-      { id: '3', name: 'Toán cao cấp', credits: 3, grade: 0 }
-    ];
+  const [activeTab, setActiveTab] = useState<TabType>('subject');
+
+  // UC-01 State - Using strings to allow empty inputs
+  const [subjectData, setSubjectData] = useState({
+    credits: '3',
+    midterm: '0',
+    final: '0',
+    regular: Array(9).fill(''),
+    practical: Array(5).fill('')
   });
+  const [subjectResult, setSubjectResult] = useState<SubjectCalculateResponse | null>(null);
 
-  const [scale, setScale] = useState<'hệ 10' | 'hệ 4.0'>('hệ 10');
-  const [semester, setSemester] = useState<string>('1');
-  const [academicYear, setAcademicYear] = useState<string>(() => {
-    const year = new Date().getFullYear();
-    return `${year}-${year + 1}`;
-  });
-  const [targetGpa, setTargetGpa] = useState<number>(3.2);
-  const [history, setHistory] = useState<HistoryItem[]>(() => {
-    const saved = localStorage.getItem('gpa_history');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // UC-02 State
+  const [semesterSubjects, setSemesterSubjects] = useState([
+    { id: '1', name: 'Môn học 1', credits: '3', score10: '', score4: '' }
+  ]);
+  const [semesterResult, setSemesterResult] = useState<SemesterCalculateResponse | null>(null);
 
-  // Persist to local storage
-  useEffect(() => {
-    localStorage.setItem('gpa_subjects', JSON.stringify(subjects));
-  }, [subjects]);
+  // UC-03 State
+  const [cumulativeSemesters, setCumulativeSemesters] = useState([
+    { id: '1', name: 'Học kỳ 1', credits: '20', gpa10: '', gpa4: '' }
+  ]);
+  const [cumulativeResult, setCumulativeResult] = useState<CumulativeCalculateResponse | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem('gpa_history', JSON.stringify(history));
-  }, [history]);
-
-  const convertTo4Scale = (g10: number): number => {
-    if (g10 >= 9.0) return 4.0; // A+
-    if (g10 >= 8.5) return 3.8; // A
-    if (g10 >= 8.0) return 3.5; // B+
-    if (g10 >= 7.0) return 3.0; // B
-    if (g10 >= 6.0) return 2.5; // C+
-    if (g10 >= 5.5) return 2.0; // C
-    if (g10 >= 5.0) return 1.5; // D+
-    if (g10 >= 4.0) return 1.0; // D
-    return 0; // F
+  // --- Helpers ---
+  const clampValue = (val: string, min: number, max: number): string => {
+    if (val === '') return '';
+    const num = parseFloat(val);
+    if (isNaN(num)) return '';
+    if (num < min) return min.toString();
+    if (num > max) return max.toString();
+    return val;
   };
 
-  const getClassification = (g4: number): string => {
-    if (g4 >= 3.6) return 'XUẤT SẮC';
-    if (g4 >= 3.2) return 'GIỎI';
-    if (g4 >= 2.5) return 'KHÁ';
-    if (g4 >= 2.0) return 'TRUNG BÌNH';
-    return 'YẾU';
-  };
-
-  const { gpa10, gpa4, totalCredits } = useMemo(() => {
-    let totalW10 = 0;
-    let totalW4 = 0;
-    let totalC = 0;
-
-    subjects.forEach((s: Subject) => {
-      const credits = Number(s.credits) || 0;
-      const grade = Number(s.grade) || 0;
+  // --- UC-01 Handlers ---
+  const handleCalculateSubject = async () => {
+    try {
+      const regScores = subjectData.regular.filter(s => s !== '').map(Number);
+      const pracScores = subjectData.practical.filter(s => s !== '').map(Number);
       
-      if (credits > 0) {
-        totalW10 += grade * credits;
-        totalW4 += convertTo4Scale(grade) * credits;
-        totalC += credits;
-      }
+      const res = await gpaService.calculateSubject({
+        credits: parseInt(subjectData.credits) || 0,
+        regular_scores: regScores,
+        practical_scores: pracScores,
+        midterm_score: parseFloat(subjectData.midterm) || 0,
+        final_score: parseFloat(subjectData.final) || 0
+      });
+      setSubjectResult(res);
+    } catch (err: any) {
+      const msg = err.response?.data?.detail?.[0]?.msg || err.response?.data?.detail || err.message || 'Vui lòng kiểm tra lại dữ liệu nhập!';
+      alert(msg);
+    }
+  };
+
+  const handleClearSubject = () => {
+    setSubjectData({
+      credits: '3',
+      midterm: '0',
+      final: '0',
+      regular: Array(9).fill(''),
+      practical: Array(5).fill('')
     });
-
-    const g10 = totalC > 0 ? (totalW10 / totalC) : 0;
-    const g4 = totalC > 0 ? (totalW4 / totalC) : 0;
-
-    return {
-      gpa10: Math.round(g10 * 100) / 100,
-      gpa4: Math.round(g4 * 100) / 100,
-      totalCredits: totalC
-    };
-  }, [subjects]);
-
-  const classification = getClassification(gpa4);
-
-  const addSubject = () => {
-    setSubjects([...subjects, { id: Date.now().toString(), name: '', credits: 3, grade: 0 }]);
+    setSubjectResult(null);
   };
 
-  const removeSubject = (id: string) => {
-    setSubjects(subjects.filter(s => s.id !== id));
+  // --- UC-02 Handlers ---
+  const addSemesterSubject = () => {
+    setSemesterSubjects([...semesterSubjects, { id: Date.now().toString(), name: `Môn học ${semesterSubjects.length + 1}`, credits: '3', score10: '', score4: '' }]);
   };
 
-  const updateSubject = (id: string, field: keyof Subject, value: any) => {
-    let validatedValue = value;
-    
-    if (field === 'grade') {
-      const num = parseFloat(value);
-      if (isNaN(num)) validatedValue = 0;
-      else validatedValue = Math.max(0, Math.min(10, num));
-    } else if (field === 'credits') {
-      const num = parseInt(value);
-      if (isNaN(num)) validatedValue = 0;
-      else validatedValue = Math.max(0, num);
-    }
-
-    setSubjects(prev => prev.map((s: Subject) => s.id === id ? { ...s, [field]: validatedValue } : s));
+  const removeSemesterSubject = (id: string) => {
+    setSemesterSubjects(semesterSubjects.filter(s => s.id !== id));
   };
 
-  const clearAll = () => {
-    if (window.confirm('Bạn có muốn xóa tất cả dữ liệu đang nhập?')) {
-      setSubjects([
-        { id: '1', name: '', credits: 3, grade: 0 },
-        { id: '2', name: '', credits: 4, grade: 0 }
-      ]);
+  const handleCalculateSemester = async () => {
+    try {
+      const subjects = semesterSubjects.map(s => ({
+        name: s.name,
+        credits: Number(s.credits) || 0,
+        score_10: Number(s.score10) || 0,
+        score_4: s.score4 ? Number(s.score4) : undefined
+      }));
+      const res = await gpaService.calculateSemester(subjects);
+      setSemesterResult(res);
+    } catch (err: any) {
+      const msg = err.response?.data?.detail?.[0]?.msg || err.response?.data?.detail || err.message || 'Vui lòng kiểm tra lại dữ liệu nhập!';
+      alert(msg);
     }
   };
 
-  const saveResult = () => {
-    const title = `Học kỳ ${semester} - Năm học ${academicYear}`;
-    if (totalCredits === 0) {
-      alert('Vui lòng nhập ít nhất một môn học có số tín chỉ lớn hơn 0.');
-      return;
+  // --- UC-03 Handlers ---
+  const addCumulativeSemester = () => {
+    setCumulativeSemesters([...cumulativeSemesters, { id: Date.now().toString(), name: `Học kỳ ${cumulativeSemesters.length + 1}`, credits: '20', gpa10: '', gpa4: '' }]);
+  };
+
+  const removeCumulativeSemester = (id: string) => {
+    setCumulativeSemesters(cumulativeSemesters.filter(s => s.id !== id));
+  };
+
+  const handleCalculateCumulative = async () => {
+    try {
+      const semesters = cumulativeSemesters.map(s => ({
+        name: s.name,
+        total_credits: Number(s.credits) || 0,
+        gpa_10: Number(s.gpa10) || 0,
+        gpa_4: s.gpa4 ? Number(s.gpa4) : undefined
+      }));
+      const res = await gpaService.calculateCumulative(semesters);
+      setCumulativeResult(res);
+    } catch (err: any) {
+      const msg = err.response?.data?.detail?.[0]?.msg || err.response?.data?.detail || err.message || 'Vui lòng kiểm tra lại dữ liệu nhập!';
+      alert(msg);
     }
-    const newItem: HistoryItem = {
-      id: Date.now().toString(),
-      title,
-      gpa: scale === 'hệ 10' ? gpa10 : gpa4,
-      classification,
-      totalCredits,
-      timestamp: new Date().toLocaleString('vi-VN')
-    };
-    setHistory((prev: HistoryItem[]) => [newItem, ...prev]);
-    alert('Đã lưu kết quả vào lịch sử!');
+  };
+
+  const convert10to4 = (s10: number) => {
+    if (s10 >= 9.0) return 4.0;
+    if (s10 >= 8.5) return 3.8;
+    if (s10 >= 8.0) return 3.5;
+    if (s10 >= 7.0) return 3.0;
+    if (s10 >= 6.0) return 2.5;
+    if (s10 >= 5.5) return 2.0;
+    if (s10 >= 5.0) return 1.5;
+    if (s10 >= 4.0) return 1.0;
+    return 0.0;
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <style>{`
-        @media print {
-          .no-print, button, .action-buttons {
-            display: none !important;
-          }
-          
-          .print-container {
-            display: block !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-
-          .col-span-12, .lg:col-span-8, .lg:col-span-4 {
-            width: 100% !important;
-            display: block !important;
-            margin-bottom: 30px !important;
-          }
-
-          table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            width: 100% !important;
-          }
-          
-          th, td {
-            border: 1px solid #ddd !important;
-            padding: 12px 15px !important;
-            font-size: 14px !important;
-          }
-
-          input {
-            border: none !important;
-            padding: 0 !important;
-            font-size: 14px !important;
-            background: transparent !important;
-          }
-
-          /* Đảm bảo màu sắc hiển thị khi in */
-          .bg-blue-50 { background-color: #eff6ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .bg-[#EBF4FF] { background-color: #ebf4ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .text-[#3B66F5] { color: #3b66f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          
-          .print-summary {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8fafc !important;
-            border-radius: 20px;
-            border: 1px solid #e2e8f0;
-          }
-        }
-        
-        .print-header { display: none; }
-      `}</style>
-
-      <div className="print-header">
-        <h1 className="text-2xl font-bold text-gray-900">KẾT QUẢ TÍNH ĐIỂM GPA CÁ NHÂN</h1>
-        <p className="text-gray-500">Trường Đại học Công nghiệp TP.HCM - IUH</p>
-        <p className="text-sm text-gray-400 mt-2">Ngày xuất: {new Date().toLocaleDateString('vi-VN')}</p>
+    <div className="max-w-6xl mx-auto space-y-6 pb-20">
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-1 flex items-center gap-1 mb-6">
+        <button 
+          onClick={() => setActiveTab('subject')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${activeTab === 'subject' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}
+        >
+          <FileText size={18} />
+          Điểm môn học
+        </button>
+        <button 
+          onClick={() => setActiveTab('semester')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${activeTab === 'semester' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}
+        >
+          <History size={18} />
+          Điểm học kỳ
+        </button>
+        <button 
+          onClick={() => setActiveTab('cumulative')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${activeTab === 'cumulative' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}
+        >
+          <Award size={18} />
+          Điểm tích lũy
+        </button>
       </div>
 
-      <div className="flex justify-between items-start no-print">
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Tính GPA cá nhân</h1>
-          <p className="text-gray-500 text-lg max-w-2xl">
-            Công cụ giúp sinh viên IUH theo dõi kết quả học tập, tính toán điểm trung bình tích lũy và dự đoán xếp loại tốt nghiệp.
+      {/* Main Card Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-100 mb-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
+              <Calculator className="text-white" size={24} />
+            </div>
+            <h1 className="text-3xl font-black tracking-tight">
+              {activeTab === 'subject' && 'Nhập điểm các thành phần'}
+              {activeTab === 'semester' && 'Nhập điểm các môn học trong học kỳ'}
+              {activeTab === 'cumulative' && 'Nhập điểm tích lũy các học kỳ'}
+            </h1>
+          </div>
+          <p className="text-indigo-100 font-medium max-w-xl text-lg">
+            {activeTab === 'subject' && 'Điền đầy đủ thông tin các loại điểm để tính điểm tổng kết học phần theo đúng quy định của IUH.'}
+            {activeTab === 'semester' && 'Thêm từng môn học đã hoàn thành để tính điểm trung bình chung học kỳ (GPA).'}
+            {activeTab === 'cumulative' && 'Thêm điểm trung bình của từng học kỳ để tính điểm tích lũy toàn khóa (CGPA).'}
           </p>
         </div>
-        <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
-          <button 
-            onClick={() => setScale('hệ 10')}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${scale === 'hệ 10' ? 'bg-[#3B66F5] text-white shadow-md shadow-blue-200' : 'text-gray-500 hover:text-gray-900'}`}
-          >
-            Hệ 10
-          </button>
-          <button 
-            onClick={() => setScale('hệ 4.0')}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${scale === 'hệ 4.0' ? 'bg-[#3B66F5] text-white shadow-md shadow-blue-200' : 'text-gray-500 hover:text-gray-900'}`}
-          >
-            Hệ 4.0
-          </button>
-        </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8 print-container">
-        {/* Left Column - Input */}
-        <div className="col-span-12 lg:col-span-8 space-y-8">
-          <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100">
-            <div className="p-8 border-b border-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                <svg className="w-5 h-5 text-[#3B66F5] no-print" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h7" /></svg>
-                <span className="no-print">Nhập điểm học phần</span>
-                <span className="hidden print:block">Học kỳ {semester} - Năm học {academicYear}</span>
-              </h2>
-              
-              <div className="flex flex-wrap items-center gap-4 no-print">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Học kỳ</span>
-                  <select 
-                    value={semester}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSemester(e.target.value)}
-                    className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:border-[#3B66F5] transition-all"
-                  >
-                    <option value="1">Học kỳ 1</option>
-                    <option value="2">Học kỳ 2</option>
-                    <option value="3">Học kỳ hè</option>
-                  </select>
+      {/* --- TAB 1: SUBJECT --- */}
+      {activeTab === 'subject' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Top 3 Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 group hover:border-indigo-200 transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <BookOpen size={18} />
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Năm học</span>
+                <h3 className="font-black text-slate-400 uppercase tracking-widest text-[11px]">Số tín chỉ *</h3>
+              </div>
+              <input 
+                type="number"
+                min="1"
+                value={subjectData.credits}
+                onChange={(e) => setSubjectData({...subjectData, credits: e.target.value})}
+                onBlur={(e) => setSubjectData({...subjectData, credits: clampValue(e.target.value, 1, 50)})}
+                placeholder="3"
+                className="w-full text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-200"
+              />
+              <p className="text-[11px] text-slate-400 font-bold mt-2">Ví dụ: 3, 4, 5...</p>
+            </div>
+
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 group hover:border-blue-200 transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <CheckCircle2 size={18} />
+                </div>
+                <h3 className="font-black text-slate-400 uppercase tracking-widest text-[11px]">Điểm giữa kỳ *</h3>
+              </div>
+              <input 
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                value={subjectData.midterm}
+                onChange={(e) => setSubjectData({...subjectData, midterm: e.target.value})}
+                onBlur={(e) => setSubjectData({...subjectData, midterm: clampValue(e.target.value, 0, 10)})}
+                placeholder="8.5"
+                className="w-full text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-200"
+              />
+              <p className="text-[11px] text-blue-400 font-bold mt-2 italic">Thang điểm 10</p>
+            </div>
+
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 group hover:border-emerald-200 transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                  <Target size={18} />
+                </div>
+                <h3 className="font-black text-slate-400 uppercase tracking-widest text-[11px]">Điểm cuối kỳ *</h3>
+              </div>
+              <input 
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                value={subjectData.final}
+                onChange={(e) => setSubjectData({...subjectData, final: e.target.value})}
+                onBlur={(e) => setSubjectData({...subjectData, final: clampValue(e.target.value, 0, 10)})}
+                placeholder="9.0"
+                className="w-full text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-200"
+              />
+              <p className="text-[11px] text-emerald-400 font-bold mt-2 italic">Thang điểm 10</p>
+            </div>
+          </div>
+
+          {/* Regular Scores Grid */}
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
+                <div className="w-2 h-8 bg-orange-400 rounded-full"></div>
+                Điểm thường xuyên*
+              </h3>
+              <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest bg-orange-50 px-3 py-1.5 rounded-full">(Tối đa 9 cột)</span>
+            </div>
+            <div className="grid grid-cols-3 md:grid-cols-9 gap-4">
+              {subjectData.regular.map((score, idx) => (
+                <div key={idx} className="space-y-2">
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter text-center">ĐIỂM {idx + 1}</p>
                   <input 
-                    type="text"
-                    value={academicYear}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAcademicYear(e.target.value)}
-                    placeholder="2023-2024"
-                    className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 w-32 outline-none focus:border-[#3B66F5] transition-all"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    value={score}
+                    onChange={(e) => {
+                      const newReg = [...subjectData.regular];
+                      newReg[idx] = e.target.value;
+                      setSubjectData({...subjectData, regular: newReg});
+                    }}
+                    onBlur={(e) => {
+                        const newReg = [...subjectData.regular];
+                        newReg[idx] = clampValue(e.target.value, 0, 10);
+                        setSubjectData({...subjectData, regular: newReg});
+                    }}
+                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl text-center font-black text-slate-900 focus:ring-2 focus:ring-orange-400/20 focus:border-orange-400 focus:bg-white outline-none transition-all"
                   />
                 </div>
+              ))}
+            </div>
+            <p className="mt-6 text-[11px] text-slate-400 font-medium italic">* Nhập các điểm kiểm tra thường xuyên (để trống nếu không có)</p>
+          </div>
 
-                <button 
-                  onClick={clearAll}
-                  className="text-gray-400 hover:text-red-500 text-sm font-bold flex items-center gap-2 transition-colors ml-2"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  Xóa
-                </button>
+          {/* Practical Scores Grid */}
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
+                <div className="w-2 h-8 bg-cyan-400 rounded-full"></div>
+                Điểm thực hành*
+              </h3>
+              <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest bg-cyan-50 px-3 py-1.5 rounded-full">(Tối đa 5 cột)</span>
+            </div>
+            <div className="grid grid-cols-5 gap-6 max-w-4xl">
+              {subjectData.practical.map((score, idx) => (
+                <div key={idx} className="space-y-2">
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter text-center">BÀI TH {idx + 1}</p>
+                  <input 
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    value={score}
+                    onChange={(e) => {
+                      const newPrac = [...subjectData.practical];
+                      newPrac[idx] = e.target.value;
+                      setSubjectData({...subjectData, practical: newPrac});
+                    }}
+                    onBlur={(e) => {
+                        const newPrac = [...subjectData.practical];
+                        newPrac[idx] = clampValue(e.target.value, 0, 10);
+                        setSubjectData({...subjectData, practical: newPrac});
+                    }}
+                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl text-center font-black text-slate-900 focus:ring-2 focus:ring-cyan-400/20 focus:border-cyan-400 focus:bg-white outline-none transition-all"
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-[11px] text-slate-400 font-medium italic">* Nhập các điểm thực hành (để trống nếu không có)</p>
+          </div>
+
+          {/* Subject Result */}
+          {subjectResult && (
+            <div className="bg-indigo-50 border-2 border-indigo-100 rounded-3xl p-8 animate-in zoom-in duration-300">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="text-center">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">ĐIỂM TỔNG KẾT (10)</p>
+                  <p className="text-5xl font-black text-indigo-700 tracking-tight">{subjectResult.score_10}</p>
+                </div>
+                <div className="text-center border-x border-indigo-200 px-8">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">ĐIỂM HỆ 4</p>
+                  <p className="text-5xl font-black text-indigo-700 tracking-tight">{subjectResult.score_4}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">XẾP LOẠI</p>
+                  <div className={`text-xl font-black uppercase tracking-widest py-2 px-4 rounded-xl inline-block mt-1 ${subjectResult.is_passed ? 'bg-indigo-600 text-white' : 'bg-rose-500 text-white'}`}>
+                    {subjectResult.grade_letter} ({subjectResult.classification})
+                  </div>
+                </div>
+                <div className="text-center flex flex-col items-center justify-center">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">TRẠNG THÁI</p>
+                  <div className={`flex items-center gap-2 font-black uppercase text-sm ${subjectResult.is_passed ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {subjectResult.is_passed ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+                    {subjectResult.is_passed ? 'ĐẠT' : 'KHÔNG ĐẠT'}
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-gray-50/50 text-[11px] font-black tracking-widest text-gray-400 uppercase border-b border-gray-100">
-                    <th className="px-8 py-4">TÊN MÔN HỌC / MÃ HỌC PHẦN</th>
-                    <th className="px-8 py-4 w-32">SỐ TÍN CHỈ</th>
-                    <th className="px-8 py-4 w-32">ĐIỂM SỐ</th>
-                    <th className="px-8 py-4 w-16 no-print"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {subjects.map((s: Subject) => (
-                    <tr key={s.id} className="group hover:bg-gray-50/50 transition-colors">
-                      <td className="px-8 py-5">
-                        <input 
-                          type="text" 
-                          placeholder="Ví dụ: Triết học Mác - Lênin"
-                          value={s.name}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSubject(s.id, 'name', e.target.value)}
-                          className="w-full bg-gray-50/50 border border-transparent hover:border-gray-200 focus:border-[#3B66F5] focus:bg-white px-4 py-3 rounded-2xl outline-none text-gray-900 font-bold placeholder:text-gray-300 transition-all shadow-sm focus:shadow-blue-100/50 print:bg-transparent print:px-0"
-                        />
-                      </td>
-                      <td className="px-8 py-5">
-                        <input 
-                          type="number" 
-                          value={s.credits}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSubject(s.id, 'credits', parseInt(e.target.value) || 0)}
-                          className="w-20 bg-gray-50 px-3 py-3 rounded-2xl text-center font-bold text-gray-900 border border-transparent hover:border-gray-200 focus:border-[#3B66F5] outline-none transition-all shadow-sm print:bg-transparent print:w-auto"
-                        />
-                      </td>
-                      <td className="px-8 py-5">
-                        <input 
-                          type="number" 
-                          step="0.1"
-                          max="10"
-                          min="0"
-                          value={s.grade}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSubject(s.id, 'grade', parseFloat(e.target.value) || 0)}
-                          className="w-20 bg-blue-50/50 px-3 py-3 rounded-2xl text-center font-bold text-[#3B66F5] border border-transparent hover:border-blue-200 focus:border-[#3B66F5] outline-none transition-all shadow-sm print:bg-transparent print:w-auto"
-                        />
-                      </td>
-                      <td className="px-8 py-5 opacity-0 group-hover:opacity-100 transition-opacity no-print">
-                        <button 
-                          onClick={() => removeSubject(s.id)}
-                          className="p-2 text-gray-300 hover:text-red-500 transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-8 bg-gray-50/30 no-print">
-              <button 
-                onClick={addSubject}
-                className="w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center gap-3 text-gray-400 font-bold hover:border-[#3B66F5] hover:text-[#3B66F5] hover:bg-blue-50/50 transition-all group"
-              >
-                <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:bg-[#3B66F5] group-hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-center gap-4 pt-8">
+            <button 
+              onClick={handleCalculateSubject}
+              className="flex items-center gap-3 bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <Calculator size={20} />
+              Tính điểm
+            </button>
+            <button 
+              onClick={handleClearSubject}
+              className="flex items-center gap-3 bg-slate-800 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-slate-200 hover:bg-slate-900 active:scale-95 transition-all"
+            >
+              <Trash2 size={20} />
+              Xóa trắng
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB 2: SEMESTER --- */}
+      {activeTab === 'semester' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+            <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-600">
+                  <BookOpen size={20} />
                 </div>
-                + Thêm môn học
+                Danh sách môn học
+              </h3>
+            </div>
+            
+            <div className="p-8 space-y-4">
+              {semesterSubjects.map((sub, idx) => (
+                <div key={sub.id} className="flex flex-wrap md:flex-nowrap items-end gap-6 p-6 rounded-3xl border border-slate-50 hover:border-indigo-100 hover:bg-indigo-50/20 transition-all group">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 text-xs shrink-0">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-[200px] space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên môn học *</p>
+                    <input 
+                      type="text"
+                      value={sub.name}
+                      onChange={(e) => {
+                        const newSubs = [...semesterSubjects];
+                        newSubs[idx].name = e.target.value;
+                        setSemesterSubjects(newSubs);
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 font-bold text-slate-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all"
+                      placeholder="Nhập tên môn"
+                    />
+                  </div>
+                  <div className="w-32 space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Số tín chỉ *</p>
+                    <input 
+                      type="number"
+                      min="1"
+                      value={sub.credits}
+                      onChange={(e) => {
+                        const newSubs = [...semesterSubjects];
+                        newSubs[idx].credits = e.target.value;
+                        setSemesterSubjects(newSubs);
+                      }}
+                      onBlur={(e) => {
+                        const newSubs = [...semesterSubjects];
+                        newSubs[idx].credits = clampValue(e.target.value, 1, 50);
+                        setSemesterSubjects(newSubs);
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 font-black text-slate-900 focus:border-indigo-500 outline-none transition-all text-center"
+                    />
+                  </div>
+                  <div className="w-40 space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Điểm (Hệ 10) *</p>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="10"
+                      value={sub.score10}
+                      onChange={(e) => {
+                        const newSubs = [...semesterSubjects];
+                        newSubs[idx].score10 = e.target.value;
+                        setSemesterSubjects(newSubs);
+                      }}
+                      onBlur={(e) => {
+                        const newSubs = [...semesterSubjects];
+                        newSubs[idx].score10 = clampValue(e.target.value, 0, 10);
+                        setSemesterSubjects(newSubs);
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 font-black text-indigo-600 focus:border-indigo-500 outline-none transition-all text-center"
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div className="w-40 space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ 4</p>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="4"
+                      value={sub.score4}
+                      onChange={(e) => {
+                        const newSubs = [...semesterSubjects];
+                        newSubs[idx].score4 = e.target.value;
+                        setSemesterSubjects(newSubs);
+                      }}
+                      onBlur={(e) => {
+                        const newSubs = [...semesterSubjects];
+                        newSubs[idx].score4 = clampValue(e.target.value, 0, 4);
+                        setSemesterSubjects(newSubs);
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 font-black text-emerald-600 focus:border-emerald-500 outline-none transition-all text-center"
+                      placeholder={sub.score10 ? convert10to4(Number(sub.score10)).toString() : 'Tự động'}
+                    />
+                  </div>
+                  <button 
+                    onClick={() => removeSemesterSubject(sub.id)}
+                    className="p-3 text-slate-300 hover:text-rose-500 transition-colors"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              ))}
+              
+              <button 
+                onClick={addSemesterSubject}
+                className="w-full py-5 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center gap-3 text-slate-400 font-black hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50/50 transition-all group"
+              >
+                <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                  <Plus size={20} />
+                </div>
+                Thêm môn học mới
               </button>
             </div>
           </div>
 
-          {/* History Section - Optional for print, usually we only want the current calc */}
-          <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 no-print">
-            <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              Lịch sử tính điểm
-            </h2>
-            <div className="space-y-4">
-              {history.length > 0 ? history.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-6 bg-gray-50/50 rounded-3xl border border-gray-100/50 hover:border-blue-100 hover:bg-white transition-all group">
-                  <div className="flex items-center gap-6">
-                    <div className="w-14 h-14 rounded-full bg-blue-50 text-[#3B66F5] flex items-center justify-center font-black text-sm">
-                      {item.title.split(' ')[1] === 'kỳ' ? 'HK' + item.title.split(' ')[2] : 'ALL'}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-lg">{item.title}</h4>
-                      <p className="text-gray-400 text-sm font-medium">Cập nhật lúc: {item.timestamp}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-black text-[#3B66F5] tracking-tight">{item.gpa}</div>
-                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{item.classification}</div>
+          {/* Semester Result Card */}
+          {semesterResult && (
+            <div className="bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-100 rounded-3xl p-10 shadow-xl shadow-indigo-50/50 flex flex-col md:flex-row items-center justify-between gap-10 animate-in zoom-in duration-300">
+              <div className="flex items-center gap-8">
+                <div className="w-24 h-24 bg-white rounded-[32px] shadow-lg shadow-indigo-100 flex items-center justify-center">
+                  <Award className="text-indigo-600" size={48} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">GPA HỌC KỲ</p>
+                  <div className="flex items-baseline gap-2">
+                    <h2 className="text-7xl font-black text-indigo-700 tracking-tighter">{semesterResult.gpa_4}</h2>
+                    <span className="text-2xl font-bold text-slate-300">/ 4.0</span>
                   </div>
                 </div>
-              )) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 mx-auto mb-4">
-                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                  </div>
-                  <p className="text-gray-400 font-bold">Chưa có lịch sử tính điểm nào được lưu.</p>
+              </div>
+              
+              <div className="flex flex-wrap justify-center gap-4">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 min-w-[140px] text-center">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">GPA HỆ 10</p>
+                  <p className="text-3xl font-black text-slate-900">{semesterResult.gpa_10}</p>
                 </div>
-              )}
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 min-w-[140px] text-center">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">TỔNG TÍN CHỈ</p>
+                  <p className="text-3xl font-black text-slate-900">{semesterResult.total_credits}</p>
+                </div>
+                <div className="bg-indigo-600 p-6 rounded-3xl shadow-lg shadow-indigo-200 min-w-[140px] text-center">
+                  <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">XẾP LOẠI</p>
+                  <p className="text-2xl font-black text-white">{semesterResult.classification}</p>
+                </div>
+              </div>
             </div>
+          )}
+
+          <div className="flex items-center justify-center gap-4 pt-8">
+            <button 
+              onClick={handleCalculateSemester}
+              className="flex items-center gap-3 bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <Calculator size={20} />
+              Tính GPA học kỳ
+            </button>
+            <button 
+              onClick={() => {
+                setSemesterSubjects([{ id: '1', name: 'Môn học 1', credits: '3', score10: '', score4: '' }]);
+                setSemesterResult(null);
+              }}
+              className="flex items-center gap-3 bg-slate-800 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-slate-200 hover:bg-slate-900 active:scale-95 transition-all"
+            >
+              <Trash2 size={20} />
+              Xóa trắng
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Right Column - Results */}
-        <div className="col-span-12 lg:col-span-4 space-y-8 print-summary">
-          <div className="bg-[#EBF4FF] rounded-[40px] p-10 relative overflow-hidden shadow-xl shadow-blue-100/50 border border-white">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/20 rounded-full -mr-16 -mt-16 blur-3xl no-print"></div>
-            <div className="relative z-10">
-              <div className="text-[11px] font-black tracking-[0.2em] text-[#3B66F5]/60 uppercase mb-4">GPA HIỆN TẠI</div>
-              <div className="flex items-baseline gap-3 mb-12">
-                <span className="text-8xl font-black text-gray-900 tracking-tighter leading-none">
-                  {scale === 'hệ 10' ? gpa10 : gpa4}
-                </span>
-                <span className="text-2xl font-bold text-gray-400">/ {scale === 'hệ 10' ? '10' : '4.0'}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-10">
-                <div className="bg-white/50 backdrop-blur-md p-5 rounded-3xl border border-white/50 shadow-sm print:bg-white print:border-gray-200">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">TỔNG TÍN CHỈ</div>
-                  <div className="text-2xl font-black text-gray-900 leading-none">{totalCredits}</div>
+      {/* --- TAB 3: CUMULATIVE --- */}
+      {activeTab === 'cumulative' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+            <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+              <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-violet-600">
+                  <Target size={20} />
                 </div>
-                <div className="bg-white/50 backdrop-blur-md p-5 rounded-3xl border border-white/50 shadow-sm print:bg-white print:border-gray-200">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">XẾP LOẠI</div>
-                  <div className="text-2xl font-black text-[#3B66F5] leading-none">{classification}</div>
+                Kết quả học kỳ đã học
+              </h3>
+            </div>
+            
+            <div className="p-8 space-y-4">
+              {cumulativeSemesters.map((sem, idx) => (
+                <div key={sem.id} className="flex flex-wrap md:flex-nowrap items-end gap-6 p-6 rounded-3xl border border-slate-50 hover:border-violet-100 hover:bg-violet-50/20 transition-all group">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 text-xs shrink-0">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-[200px] space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên học kỳ *</p>
+                    <input 
+                      type="text"
+                      value={sem.name}
+                      onChange={(e) => {
+                        const newSems = [...cumulativeSemesters];
+                        newSems[idx].name = e.target.value;
+                        setCumulativeSemesters(newSems);
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 font-bold text-slate-900 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 outline-none transition-all"
+                      placeholder="Học kỳ 1"
+                    />
+                  </div>
+                  <div className="w-40 space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng tín chỉ *</p>
+                    <input 
+                      type="number"
+                      min="1"
+                      value={sem.credits}
+                      onChange={(e) => {
+                        const newSems = [...cumulativeSemesters];
+                        newSems[idx].credits = e.target.value;
+                        setCumulativeSemesters(newSems);
+                      }}
+                      onBlur={(e) => {
+                        const newSems = [...cumulativeSemesters];
+                        newSems[idx].credits = clampValue(e.target.value, 1, 500);
+                        setCumulativeSemesters(newSems);
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 font-black text-slate-900 focus:border-violet-500 outline-none transition-all text-center"
+                    />
+                  </div>
+                  <div className="w-40 space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GPA Hệ 10 *</p>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="10"
+                      value={sem.gpa10}
+                      onChange={(e) => {
+                        const newSems = [...cumulativeSemesters];
+                        newSems[idx].gpa10 = e.target.value;
+                        setCumulativeSemesters(newSems);
+                      }}
+                      onBlur={(e) => {
+                        const newSems = [...cumulativeSemesters];
+                        newSems[idx].gpa10 = clampValue(e.target.value, 0, 10);
+                        setCumulativeSemesters(newSems);
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 font-black text-violet-600 focus:border-violet-500 outline-none transition-all text-center"
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div className="w-40 space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GPA Hệ 4</p>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="4"
+                      value={sem.gpa4}
+                      onChange={(e) => {
+                        const newSems = [...cumulativeSemesters];
+                        newSems[idx].gpa4 = e.target.value;
+                        setCumulativeSemesters(newSems);
+                      }}
+                      onBlur={(e) => {
+                        const newSems = [...cumulativeSemesters];
+                        newSems[idx].gpa4 = clampValue(e.target.value, 0, 4);
+                        setCumulativeSemesters(newSems);
+                      }}
+                      className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 font-black text-emerald-600 focus:border-emerald-500 outline-none transition-all text-center"
+                      placeholder={sem.gpa10 ? convert10to4(Number(sem.gpa10)).toString() : 'Tự động'}
+                    />
+                  </div>
+                  <button 
+                    onClick={() => removeCumulativeSemester(sem.id)}
+                    className="p-3 text-slate-300 hover:text-rose-500 transition-colors"
+                  >
+                    <Trash2 size={20} />
+                  </button>
                 </div>
-              </div>
-
-              <div className="space-y-3 no-print">
-                <button 
-                  onClick={saveResult}
-                  className="w-full bg-white text-gray-900 font-black py-5 rounded-3xl shadow-lg shadow-blue-200/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-wider text-sm"
-                >
-                  Lưu kết quả
-                </button>
-                <button 
-                  onClick={() => window.print()}
-                  className="w-full py-5 rounded-3xl flex items-center justify-center gap-3 font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-wider text-xs"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2h6a2 2 0 012 2v2" /></svg>
-                  Xuất file PDF
-                </button>
-              </div>
+              ))}
+              
+              <button 
+                onClick={addCumulativeSemester}
+                className="w-full py-5 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center gap-3 text-slate-400 font-black hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50/50 transition-all group"
+              >
+                <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:bg-violet-500 group-hover:text-white transition-all">
+                  <Plus size={20} />
+                </div>
+                Thêm học kỳ mới
+              </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 no-print">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.047a1 1 0 01.894.448l6.82 10.33a1 1 0 010 1.046l-6.82 10.33a1 1 0 01-1.788 0l-6.82-10.33a1 1 0 010-1.046l6.82-10.33a1 1 0 01.894-.448zM12 4.14L6.812 12 12 19.86l5.188-7.86L12 4.14z" clipRule="evenodd" /></svg>
+          {/* Cumulative Result Card */}
+          {cumulativeResult && (
+            <div className="bg-gradient-to-br from-violet-50 to-white border-2 border-violet-100 rounded-3xl p-10 shadow-xl shadow-violet-50/50 flex flex-col md:flex-row items-center justify-between gap-10 animate-in zoom-in duration-300">
+              <div className="flex items-center gap-8">
+                <div className="w-24 h-24 bg-white rounded-[32px] shadow-lg shadow-violet-100 flex items-center justify-center">
+                  <Target className="text-violet-600" size={48} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-black text-violet-400 uppercase tracking-[0.2em] mb-2">GPA TÍCH LŨY (CGPA)</p>
+                  <div className="flex items-baseline gap-2">
+                    <h2 className="text-7xl font-black text-violet-700 tracking-tighter">{cumulativeResult.cgpa_4}</h2>
+                    <span className="text-2xl font-bold text-slate-300">/ 4.0</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Mục tiêu tiếp theo</h3>
+              
+              <div className="flex flex-wrap justify-center gap-4">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 min-w-[140px] text-center">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">CGPA HỆ 10</p>
+                  <p className="text-3xl font-black text-slate-900">{cumulativeResult.cgpa_10}</p>
+                </div>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 min-w-[140px] text-center">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">TỔNG TÍN CHỈ</p>
+                  <p className="text-3xl font-black text-slate-900">{cumulativeResult.total_credits}</p>
+                </div>
+                <div className="bg-violet-600 p-6 rounded-3xl shadow-lg shadow-violet-200 min-w-[140px] text-center">
+                  <p className="text-[10px] font-black text-violet-100 uppercase tracking-widest mb-1">XẾP LOẠI</p>
+                  <p className="text-2xl font-black text-white">{cumulativeResult.classification}</p>
+                </div>
               </div>
             </div>
-            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-              Bạn cần đạt trung bình <span className="text-gray-900 font-bold">{(gpa4 + 0.3).toFixed(1)}</span> ở 15 tín chỉ tiếp theo để nâng GPA lên <span className="text-[#3B66F5] font-black">{(gpa4 + 0.1).toFixed(2)}</span>.
-            </p>
-            <div className="space-y-4">
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tiến độ</span>
-                <span className="text-sm font-black text-[#3B66F5]">{(gpa4 / 4 * 100).toFixed(0)}%</span>
-              </div>
-              <div className="h-3 bg-blue-50 rounded-full overflow-hidden">
-                <div className="h-full bg-[#3B66F5] rounded-full transition-all duration-1000 ease-out" style={{ width: `${(gpa4 / 4 * 100)}%` }}></div>
-              </div>
-              <div className="flex justify-between items-start mt-2">
-                <span className="text-[10px] font-bold text-gray-300">KHỞI ĐẦU: 0.0</span>
-                <span className="text-[10px] font-bold text-gray-900">MỤC TIÊU: 4.0</span>
-              </div>
-            </div>
+          )}
+
+          <div className="flex items-center justify-center gap-4 pt-8">
+            <button 
+              onClick={handleCalculateCumulative}
+              className="flex items-center gap-3 bg-violet-600 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-violet-200 hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <Calculator size={20} />
+              Tính GPA tích lũy
+            </button>
+            <button 
+              onClick={() => {
+                setCumulativeSemesters([{ id: '1', name: 'Học kỳ 1', credits: '20', gpa10: '', gpa4: '' }]);
+                setCumulativeResult(null);
+              }}
+              className="flex items-center gap-3 bg-slate-800 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-slate-200 hover:bg-slate-900 active:scale-95 transition-all"
+            >
+              <Trash2 size={20} />
+              Xóa trắng
+            </button>
           </div>
+        </div>
+      )}
+
+      {/* Footer Info */}
+      <div className="pt-12 text-center space-y-4">
+        <h4 className="text-xl font-black text-slate-800">Giới thiệu công cụ tính GPA cho sinh viên IUH</h4>
+        <p className="text-slate-500 text-sm max-w-3xl mx-auto leading-relaxed">
+          Công cụ hỗ trợ sinh viên tính điểm trung bình học phần, điểm trung bình học kỳ và điểm tích lũy theo quy chế đào tạo tín chỉ của IUH. Hệ thống tự động chuyển đổi từ thang điểm 10 sang thang điểm 4 và xếp loại học lực tương ứng.
+        </p>
+        <div className="flex items-center justify-center gap-2 text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-full w-fit mx-auto">
+          <Info size={14} />
+          Lưu ý: Kết quả tính toán chỉ mang tính chất tham khảo dựa trên dữ liệu bạn nhập vào.
         </div>
       </div>
     </div>

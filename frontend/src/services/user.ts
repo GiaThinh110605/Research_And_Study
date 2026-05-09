@@ -24,5 +24,10 @@ export const userService = {
   updateMe: async (data: any) => {
     const response = await api.put('/api/v1/users/me', data);
     return response.data;
+  },
+  
+  createUser: async (data: any) => {
+    const response = await api.post('/api/v1/users/', data);
+    return response.data;
   }
 };

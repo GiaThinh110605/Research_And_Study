@@ -15,16 +15,26 @@ const AdminModeration: React.FC = () => {
   const [filteredComments, setFilteredComments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     fetchComments();
+    fetchCurrentUser();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const data = await authService.getCurrentUser();
+      setCurrentUser(data);
+    } catch (error) {
+      console.error("Failed to fetch current user", error);
+    }
+  };
 
   const fetchComments = async () => {
     try {
       setIsLoading(true);
-      // Try fetching all discussions/comments
-      const res = await api.get('/api/v1/discussions/');
+      const res = await api.get('/api/v1/discussions/admin/list');
       setComments(res.data || []);
       setFilteredComments(res.data || []);
     } catch (error) {
@@ -213,11 +223,11 @@ const AdminModeration: React.FC = () => {
             
             <div className="flex items-center gap-3 pl-5 border-l border-slate-100">
               <div className="text-right">
-                <p className="text-[13px] font-bold text-slate-700 leading-tight">Admin UniStudy</p>
+                <p className="text-[13px] font-bold text-slate-700 leading-tight">{currentUser?.full_name || 'Admin'}</p>
                 <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5 tracking-wide">QUẢN TRỊ VIÊN</p>
               </div>
-              <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                 <div className="w-full h-full bg-slate-900"></div>
+              <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm text-white text-[10px] font-bold">
+                 {currentUser?.full_name?.substring(0, 2).toUpperCase() || 'AD'}
               </div>
             </div>
           </div>
@@ -305,11 +315,9 @@ const AdminModeration: React.FC = () => {
                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-8 py-5 align-top">
                         <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[12px] font-bold shrink-0">
-                             {getInitials(comment.user?.full_name || 'Khuyết Danh')}
-                          </div>
+                          <img src={comment.user_avatar} alt={comment.user_name} className="w-9 h-9 rounded-full object-cover shadow-sm border border-slate-100" />
                           <div className="mt-0.5">
-                            <p className="text-[13px] font-bold text-slate-800">{comment.user?.full_name || 'Khuyết Danh'}</p>
+                            <p className="text-[13px] font-bold text-slate-800">{comment.user_name}</p>
                             <p className="text-[11px] text-slate-400 font-medium mt-0.5">ID: #{comment.id}</p>
                           </div>
                         </div>
@@ -333,9 +341,9 @@ const AdminModeration: React.FC = () => {
                          {timeAgo(comment.created_at)}
                       </td>
                       <td className="px-8 py-5 align-top">
-                         <Link to={`/documents/${comment.document_id}`} className="text-[13px] text-blue-600 font-medium hover:underline block leading-snug">
-                            Doc #{comment.document_id}
-                         </Link>
+                         <span className="text-[13px] text-blue-600 font-medium block leading-snug">
+                            {comment.document_title}
+                         </span>
                       </td>
                       <td className="px-8 py-5 align-top">
                          <div className="flex flex-col gap-2">

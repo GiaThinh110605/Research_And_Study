@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FileText, CheckCircle2, Clock, Edit2, Trash2, Plus, Zap } from 'lucide-react';
 import { testService, TestOut } from '../services/test';
+import { authService } from '../services/auth';
 
 const LecturerTestsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [tests, setTests] = useState<TestOut[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -13,7 +15,9 @@ const LecturerTestsPage: React.FC = () => {
 
   const fetchTests = async () => {
     try {
-      const data = await testService.getTests();
+      // Đầu tiên lấy thông tin user hiện tại để lọc theo creator_id
+      const currentUser = await authService.getCurrentUser();
+      const data = await testService.getTests({ creator_id: currentUser.id });
       setTests(data);
     } catch (error) {
       console.error('Error fetching tests:', error);
@@ -128,7 +132,10 @@ const LecturerTestsPage: React.FC = () => {
                   Xem kết quả
                 </Link>
                 <div className="flex gap-4">
-                  <button className="flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition">
+                  <button 
+                    onClick={() => navigate(`/lecturer/bai-kiem-tra/tao?id=${test.id}`)}
+                    className="flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition"
+                  >
                     <Edit2 className="w-4 h-4" /> Sửa
                   </button>
                   <button onClick={() => handleDelete(test.id)} className="flex items-center gap-1 text-sm font-bold text-red-500 hover:text-red-700 transition">

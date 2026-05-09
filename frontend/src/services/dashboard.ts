@@ -30,5 +30,9 @@ export const dashboardService = {
   getStudentDashboard: async (): Promise<StudentDashboardData> => {
     const response = await api.get('/api/v1/dashboard/student');
     return response.data;
+  },
+  getAdminDashboard: async (): Promise<any> => {
+    const response = await api.get('/api/v1/dashboard/admin');
+    return response.data;
   }
 };

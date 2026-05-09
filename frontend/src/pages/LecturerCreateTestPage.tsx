@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Info, Plus, Copy, Trash2, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 import { testService } from '../services/test';
 
@@ -17,11 +17,45 @@ interface Question {
 
 const LecturerCreateTestPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const testId = searchParams.get('id');
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState<number>(60);
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(!!testId);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (testId) {
+      const fetchTestData = async () => {
+        try {
+          const test = await testService.getTest(parseInt(testId));
+          setTitle(test.title);
+          setDuration(test.duration_minutes || 60);
+          
+          if (test.questions && test.questions.length > 0) {
+            const formattedQuestions = test.questions.map((q: any) => ({
+              id: q.id || Date.now() + Math.random(),
+              content: q.text,
+              options: q.options.map((optText: string, optIdx: number) => ({
+                id: (q.id || '') + '-' + optIdx,
+                text: optText,
+                isCorrect: q.answer === optIdx
+              }))
+            }));
+            setQuestions(formattedQuestions);
+          }
+        } catch (err) {
+          console.error("Lỗi khi tải dữ liệu đề thi:", err);
+          setError("Không thể tải dữ liệu đề thi để chỉnh sửa.");
+        } finally {
+          setIsFetching(false);
+        }
+      };
+      fetchTestData();
+    }
+  }, [testId]);
 
   const [questions, setQuestions] = useState<Question[]>([
     {
@@ -143,7 +177,11 @@ const LecturerCreateTestPage: React.FC = () => {
         })
       };
 
-      await testService.createTest(payload);
+      if (testId) {
+        await testService.updateTest(parseInt(testId), payload);
+      } else {
+        await testService.createTest(payload);
+      }
       navigate('/lecturer/bai-kiem-tra');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Đã có lỗi xảy ra khi tạo bài kiểm tra');
@@ -160,8 +198,12 @@ const LecturerCreateTestPage: React.FC = () => {
           <ArrowLeft className="w-4 h-4 mr-1" />
           Quay lại trang quản lý
         </Link>
-        <h1 className="text-3xl font-black text-gray-900 mb-2">Tạo đề thi mới</h1>
-        <p className="text-gray-500">Thiết lập thông tin và câu hỏi cho bài kiểm tra học thuật.</p>
+        <h1 className="text-3xl font-black text-gray-900 mb-2">
+          {testId ? 'Chỉnh sửa đề thi' : 'Tạo đề thi mới'}
+        </h1>
+        <p className="text-gray-500">
+          {testId ? 'Cập nhật lại nội dung và câu hỏi cho bài kiểm tra.' : 'Thiết lập thông tin và câu hỏi cho bài kiểm tra học thuật.'}
+        </p>
       </div>
 
       {error && (

@@ -35,7 +35,7 @@ const DashboardLayout: React.FC = () => {
         const storedAvatar = localStorage.getItem('user_avatar');
         setUser({
           name: me.full_name || me.username || 'Người dùng',
-          role: me.role === 'admin' ? 'Quản trị viên' : (me.role === 'lecturer' ? 'Giảng viên' : 'Sinh viên'),
+          role: me.role?.toUpperCase() === 'ADMIN' ? 'Quản trị viên' : (me.role?.toUpperCase() === 'LECTURER' ? 'Giảng viên' : 'Sinh viên'),
           avatar: storedAvatar || me.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(me.full_name || me.username || 'U')}&background=EBF4FF&color=3B66F5&size=128`
         });
       } catch (err) {

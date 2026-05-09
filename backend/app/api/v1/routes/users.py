@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.v1.deps import get_current_user, get_current_active_admin
 from app.models.base import get_db
 from app.models.user import User, UserRole
-from app.schemas.user import UserOut, UserUpdate, UserUpdateByAdmin
+from app.schemas.user import UserOut, UserUpdate, UserUpdateByAdmin, UserCreate
 from app.core.security import get_password_hash
 
 router = APIRouter()
@@ -23,6 +23,45 @@ def search_users(
         (User.email.ilike(f"%{q}%")) | (User.username.ilike(f"%{q}%"))
     ).limit(10).all()
     return users
+
+@router.post("/", response_model=UserOut)
+def create_user(
+    *,
+    db: Session = Depends(get_db),
+    user_in: UserCreate,
+    current_user: User = Depends(get_current_active_admin),
+) -> Any:
+    """
+    Create new user. (Admin only)
+    """
+    user = db.query(User).filter(User.email == user_in.email).first()
+    if user:
+        raise HTTPException(
+            status_code=400,
+            detail="The user with this email already exists in the system.",
+        )
+    
+    # Also check username if provided
+    if user_in.username:
+        user_username = db.query(User).filter(User.username == user_in.username).first()
+        if user_username:
+            raise HTTPException(
+                status_code=400,
+                detail="The user with this username already exists in the system.",
+            )
+
+    db_user = User(
+        email=user_in.email,
+        username=user_in.username or user_in.email,
+        full_name=user_in.full_name,
+        password_hash=get_password_hash(user_in.password),
+        role=user_in.role or UserRole.STUDENT,
+        is_active=True,
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 @router.get("/", response_model=List[UserOut])
 def read_users(

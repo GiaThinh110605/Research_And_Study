@@ -17,11 +17,29 @@ const AdminUserManagement: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('Tất cả vai trò');
   const [statusFilter, setStatusFilter] = useState('Trạng thái');
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newUser, setNewUser] = useState({
+    email: '',
+    full_name: '',
+    password: '',
+    role: 'STUDENT'
+  });
   const itemsPerPage = 10;
 
   useEffect(() => {
     fetchUsers();
+    fetchCurrentUser();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const data = await authService.getCurrentUser();
+      setCurrentUser(data);
+    } catch (error) {
+      console.error("Failed to fetch current user", error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -61,13 +79,13 @@ const AdminUserManagement: React.FC = () => {
     }
     
     if (roleFilter !== 'Tất cả vai trò') {
-      const roleMap: Record<string, string> = { 'Sinh viên': 'student', 'Giảng viên': 'lecturer', 'Quản trị viên': 'admin' };
-      result = result.filter(u => u.role === roleMap[roleFilter]);
+      const roleMap: Record<string, string> = { 'Sinh viên': 'STUDENT', 'Giảng viên': 'LECTURER', 'Quản trị viên': 'ADMIN' };
+      result = result.filter(u => u.role?.toUpperCase() === roleMap[roleFilter]);
     }
 
     if (statusFilter !== 'Trạng thái') {
       const isActiveStatus = statusFilter === 'Hoạt động';
-      result = result.filter(u => u.is_active === isActiveStatus);
+      result = result.filter(u => (u.is_active !== false) === isActiveStatus);
     }
 
     setFilteredUsers(result);
@@ -85,6 +103,21 @@ const AdminUserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       console.error("Failed to update status", error);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      await userService.createUser(newUser);
+      setShowAddModal(false);
+      setNewUser({ email: '', full_name: '', password: '', role: 'STUDENT' });
+      fetchUsers();
+    } catch (error: any) {
+      alert(error.response?.data?.detail || "Không thể tạo người dùng");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -191,11 +224,11 @@ const AdminUserManagement: React.FC = () => {
             
             <div className="flex items-center gap-3 pl-5 border-l border-slate-100">
               <div className="text-right">
-                <p className="text-[13px] font-bold text-slate-700 leading-tight">Admin UniStudy</p>
+                <p className="text-[13px] font-bold text-slate-700 leading-tight">{currentUser?.full_name || 'Admin'}</p>
                 <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5 tracking-wide">QUẢN TRỊ VIÊN</p>
               </div>
-              <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                 <div className="w-full h-full bg-slate-900"></div>
+              <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm text-white text-[10px] font-bold">
+                 {currentUser?.full_name?.substring(0, 2).toUpperCase() || 'AD'}
               </div>
             </div>
           </div>
@@ -210,7 +243,10 @@ const AdminUserManagement: React.FC = () => {
                 <h2 className="text-[28px] font-bold text-slate-800 tracking-tight">Quản lý người dùng</h2>
                 <p className="text-slate-500 text-[13px] mt-1.5 font-medium">Quản lý tài khoản người dùng, phân quyền truy cập và giám sát trạng thái hoạt động của hệ thống.</p>
               </div>
-              <button className="bg-[#4F46E5] text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-indigo-600 transition-colors text-[13px] shadow-sm">
+              <button 
+                onClick={() => setShowAddModal(true)}
+                className="bg-[#4F46E5] text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-indigo-600 transition-colors text-[13px] shadow-sm"
+              >
                 <Plus className="w-[18px] h-[18px]" />
                 Thêm người dùng
               </button>
@@ -313,8 +349,9 @@ const AdminUserManagement: React.FC = () => {
                       <td colSpan={5} className="px-6 py-8 text-center text-slate-500 font-medium">Không tìm thấy người dùng nào.</td>
                     </tr>
                   ) : currentData.map((user, idx) => {
-                    const isStudent = user.role === 'student';
-                    const isAdmin = user.role === 'admin';
+                    const role = user.role?.toUpperCase();
+                    const isStudent = role === 'STUDENT';
+                    const isAdmin = role === 'ADMIN';
                     const roleLabel = isStudent ? 'Sinh viên' : isAdmin ? 'Quản trị viên' : 'Giảng viên';
                     const isActive = user.is_active !== false;
 
@@ -447,6 +484,83 @@ const AdminUserManagement: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Add User Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-lg font-bold text-slate-800">Thêm người dùng mới</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+                <LogOut className="w-5 h-5 rotate-180" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+              <div>
+                <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Họ và tên</label>
+                <input 
+                  type="text" 
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-[13px] outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                  placeholder="Ví dụ: Nguyễn Văn A"
+                  value={newUser.full_name}
+                  onChange={e => setNewUser({...newUser, full_name: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Email</label>
+                <input 
+                  type="email" 
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-[13px] outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                  placeholder="email@example.com"
+                  value={newUser.email}
+                  onChange={e => setNewUser({...newUser, email: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Mật khẩu</label>
+                <input 
+                  type="password" 
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-[13px] outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                  placeholder="********"
+                  value={newUser.password}
+                  onChange={e => setNewUser({...newUser, password: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Vai trò</label>
+                <select 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-[13px] outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                  value={newUser.role}
+                  onChange={e => setNewUser({...newUser, role: e.target.value})}
+                >
+                  <option value="STUDENT">Sinh viên</option>
+                  <option value="LECTURER">Giảng viên</option>
+                  <option value="ADMIN">Quản trị viên</option>
+                </select>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl text-[13px] hover:bg-slate-50 transition-all"
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl text-[13px] shadow-lg shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-50 transition-all"
+                >
+                  {isLoading ? 'Đang tạo...' : 'Tạo người dùng'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

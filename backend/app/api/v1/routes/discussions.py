@@ -7,7 +7,8 @@ from app.models.discussion import Discussion
 from app.models.document import Document
 from app.models.user import User
 from app.schemas.discussion import DiscussionCreate, DiscussionUpdate, DiscussionOut
-from app.api.v1.deps import get_current_user
+from app.api.v1.deps import get_current_user, get_current_active_admin
+from app.models.user import UserRole
 
 router = APIRouter()
 
@@ -160,3 +161,39 @@ def delete_discussion(
     db.query(Discussion).filter(Discussion.parent_id == discussion_id).delete()
     db.delete(discussion)
     db.commit()
+
+@router.get("/admin/list")
+def admin_list_discussions(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    """Lấy tất cả bình luận (Admin only)."""
+    discussions = (
+        db.query(Discussion)
+        .options(
+            joinedload(Discussion.user),
+            joinedload(Discussion.document)
+        )
+        .order_by(Discussion.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    # Format for moderation UI
+    results = []
+    for d in discussions:
+        results.append({
+            "id": d.id,
+            "content": d.content,
+            "user_name": d.user.full_name if d.user else "Người dùng ẩn danh",
+            "user_avatar": f"https://ui-avatars.com/api/?name={d.user.full_name if d.user else 'A'}&background=random",
+            "document_title": d.document.title if d.document else "Tài liệu đã xóa",
+            "created_at": d.created_at,
+            "is_question": d.is_question,
+            "is_reported": False, # Mock for now or add to model later
+            "status": "APPROVED" # Mock for now
+        })
+    return results

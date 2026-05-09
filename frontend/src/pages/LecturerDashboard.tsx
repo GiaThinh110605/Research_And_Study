@@ -12,11 +12,41 @@ import {
   Layout,
   TrendingUp,
   HelpCircle,
-  ExternalLink
+  ExternalLink,
+  BookOpen
 } from 'lucide-react';
+import { testService, TestOut } from '../services/test';
+import { authService } from '../services/auth';
 
 const LecturerDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [tests, setTests] = React.useState<TestOut[]>([]);
+  const [user, setUser] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [userData, testsData] = await Promise.all([
+          authService.getCurrentUser(),
+          testService.getTests() // Lấy tất cả đề thi, hoặc có thể lọc theo creator_id nếu cần
+        ]);
+        
+        setUser(userData);
+        // Lọc lấy các đề thi của chính giảng viên này và lấy 3 cái mới nhất
+        const myTests = testsData
+          .filter((t: any) => t.creator_id === userData.id)
+          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        setTests(myTests);
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Mock data for the performance chart
   const chartData = [35, 45, 60, 50, 75, 85, 65, 55];
@@ -28,11 +58,11 @@ const LecturerDashboard: React.FC = () => {
         <div className="space-y-1">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard Giảng Viên</h1>
           <p className="text-slate-500 font-medium leading-relaxed">
-            Chào mừng trở lại, <span className="text-indigo-600 font-bold">Cô Trần Thị B</span>. Dưới đây là tóm tắt hoạt động nghiên cứu và giảng dạy của bạn.
+            Chào mừng trở lại, <span className="text-indigo-600 font-bold">{user?.full_name || 'Giảng viên'}</span>. Dưới đây là tóm tắt hoạt động nghiên cứu và giảng dạy của bạn.
           </p>
         </div>
         <button 
-          onClick={() => navigate('/lecturer/create-test')}
+          onClick={() => navigate('/lecturer/bai-kiem-tra/tao')}
           className="flex items-center gap-3 bg-[#3B66F5] text-white px-8 py-4 rounded-[20px] font-black text-sm shadow-2xl shadow-indigo-200/50 hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all"
         >
           <Plus size={20} />
@@ -82,7 +112,7 @@ const LecturerDashboard: React.FC = () => {
             <div className="flex justify-between items-start relative z-10">
               <div className="space-y-1">
                 <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest">TỔNG SỐ ĐỀ THI</p>
-                <h4 className="text-5xl font-black text-indigo-600 tracking-tighter">24</h4>
+                <h4 className="text-5xl font-black text-indigo-600 tracking-tighter">{tests.length}</h4>
               </div>
               <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
                 <FileText size={28} />
@@ -94,8 +124,10 @@ const LecturerDashboard: React.FC = () => {
           <div className="flex-1 bg-emerald-500 rounded-[40px] p-8 relative overflow-hidden group cursor-default shadow-2xl shadow-emerald-200/50">
             <div className="flex justify-between items-start relative z-10">
               <div className="space-y-1">
-                <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">SINH VIÊN HOẠT ĐỘNG</p>
-                <h4 className="text-5xl font-black text-white tracking-tighter">1,402</h4>
+                <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">BÀI LÀM SINH VIÊN</p>
+                <h4 className="text-5xl font-black text-white tracking-tighter">
+                  {tests.reduce((acc, t) => acc + (t.participants_count || 0), 0)}
+                </h4>
               </div>
               <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white group-hover:scale-110 transition-transform">
                 <Users size={28} />
@@ -111,7 +143,7 @@ const LecturerDashboard: React.FC = () => {
         <div className="flex justify-between items-end">
           <h3 className="text-xl font-black text-slate-900 tracking-tight">Đề thi đã tạo gần đây</h3>
           <button 
-            onClick={() => navigate('/lecturer/tests')}
+            onClick={() => navigate('/lecturer/bai-kiem-tra')}
             className="flex items-center gap-1.5 text-indigo-600 font-black text-xs uppercase tracking-widest hover:translate-x-1 transition-transform"
           >
             Xem tất cả
@@ -120,35 +152,36 @@ const LecturerDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          {[
-            { id: 1, title: "Kiểm tra giữa kỳ: Hóa học hữu cơ II", subject: "Hóa học", duration: 60, attempts: 145, time: "2 giờ trước", status: "HOẠT ĐỘNG", color: "bg-indigo-600" },
-            { id: 2, title: "Giải tích 1: Ôn tập chương Đạo hàm", subject: "Toán học", duration: 45, attempts: 0, time: "1 ngày trước", status: "NHÁP", color: "bg-orange-500" },
-            { id: 3, title: "Tiếng Anh chuyên ngành: Công nghệ Nano", subject: "Ngoại ngữ", duration: 30, attempts: 89, time: "3 ngày trước", status: "HOẠT ĐỘNG", color: "bg-emerald-500" }
-          ].map((test) => (
+          {tests.slice(0, 2).map((test, idx) => (
             <div key={test.id} className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-indigo-100/40 transition-all duration-300 group relative">
               <div className="flex justify-between items-start mb-6">
-                <div className={`w-12 h-12 ${test.color} rounded-2xl flex items-center justify-center text-white shadow-lg shadow-black/5 group-hover:scale-110 transition-transform`}>
+                <div className={`w-12 h-12 ${idx === 0 ? 'bg-indigo-600' : 'bg-emerald-500'} rounded-2xl flex items-center justify-center text-white shadow-lg shadow-black/5 group-hover:scale-110 transition-transform`}>
                   <Layout size={24} />
                 </div>
-                <span className={`px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase border ${
-                  test.status === 'HOẠT ĐỘNG' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'
-                }`}>
-                  {test.status}
+                <span className={`px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase border bg-emerald-50 text-emerald-600 border-emerald-100`}>
+                  HOẠT ĐỘNG
                 </span>
               </div>
 
               <div className="space-y-4 mb-8">
                 <h4 className="text-[17px] font-black text-slate-900 leading-tight line-clamp-2">{test.title}</h4>
                 <div className="flex items-center gap-4 text-slate-400 text-[11px] font-bold">
-                  <span className="flex items-center gap-1.5"><Clock size={14} /> {test.duration} phút</span>
-                  <span className="flex items-center gap-1.5"><Users size={14} /> {test.attempts} bài làm</span>
+                  <span className="flex items-center gap-1.5"><Clock size={14} /> {test.duration_minutes || 60} phút</span>
+                  <span className="flex items-center gap-1.5"><Users size={14} /> {test.participants_count || 0} bài làm</span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-5 border-t border-slate-50">
-                <span className="text-[10px] font-bold text-slate-300 italic">Cập nhật {test.time}</span>
+                <span className="text-[10px] font-bold text-slate-300 italic">
+                  {new Date(test.created_at).toLocaleDateString('vi-VN')}
+                </span>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"><Edit3 size={18} /></button>
+                  <button 
+                    onClick={() => navigate(`/lecturer/bai-kiem-tra/tao?id=${test.id}`)}
+                    className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+                  >
+                    <Edit3 size={18} />
+                  </button>
                   <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"><MoreVertical size={18} /></button>
                 </div>
               </div>
@@ -157,7 +190,7 @@ const LecturerDashboard: React.FC = () => {
 
           {/* Add New Test Placeholder */}
           <div 
-            onClick={() => navigate('/lecturer/create-test')}
+            onClick={() => navigate('/lecturer/bai-kiem-tra/tao')}
             className="group border-2 border-dashed border-slate-200 rounded-[32px] p-8 flex flex-col items-center justify-center text-center space-y-4 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all cursor-pointer relative"
           >
             <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 group-hover:text-indigo-500 group-hover:bg-white group-hover:shadow-lg transition-all">
@@ -186,7 +219,10 @@ const LecturerDashboard: React.FC = () => {
             <p className="text-slate-500 font-medium">Tham khảo tài liệu hướng dẫn giảng viên để tìm hiểu cách tạo đề thi trắc nghiệm thông minh với sự hỗ trợ của AI.</p>
           </div>
         </div>
-        <button className="bg-white text-slate-900 px-8 py-3.5 rounded-2xl font-black text-sm border border-slate-100 hover:bg-slate-50 hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 shrink-0">
+        <button 
+          onClick={() => navigate('/lecturer/tai-lieu')}
+          className="bg-white text-slate-900 px-8 py-3.5 rounded-2xl font-black text-sm border border-slate-100 hover:bg-slate-50 hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 shrink-0"
+        >
           Xem tài liệu
           <ExternalLink size={16} />
         </button>

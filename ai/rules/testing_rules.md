@@ -1,0 +1,9 @@
+- Tuân thủ mô hình Testing Pyramid (ưu tiên Unit Tests).
+- Sử dụng Vitest/Jest cho các bài kiểm tra logic và component.
+- Sử dụng Playwright hoặc Cypress cho kiểm thử E2E (end-to-end).
+- Áp dụng cấu trúc Arrange-Act-Assert (AAA) cho mọi test case.
+- Mỗi tính năng mới hoặc sửa lỗi phải đi kèm với test tương ứng.
+- Đảm bảo Coverage tối thiểu 80% cho các logic nghiệp vụ quan trọng.
+- Mocking tất cả các service và API bên ngoài khi chạy unit test.
+- Tên test case phải rõ ràng, mô tả đúng hành vi được kiểm tra.
+- Chạy test tự động (CI/CD) trước khi merge code mới.

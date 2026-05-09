@@ -121,14 +121,14 @@ def generate_mindmap(
 
     existing_mindmap = db.query(Mindmap).filter(Mindmap.document_id == document_id).first()
     if existing_mindmap:
-        existing_mindmap.data = mindmap_data
+        existing_mindmap.content = mindmap_data
         db.commit()
         db.refresh(existing_mindmap)
         return existing_mindmap
 
     mindmap = Mindmap(
         document_id=document_id,
-        data=mindmap_data
+        content=mindmap_data
     )
     db.add(mindmap)
     db.commit()

@@ -16,7 +16,7 @@ class SummaryOut(BaseModel):
 class MindmapOut(BaseModel):
     id: int
     document_id: int
-    data: Dict[str, Any]
+    content: Dict[str, Any]
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

@@ -437,7 +437,7 @@ def admin_list_share_moderation(
     query = (
         db.query(DocumentShare, Document, recipient_user, uploader_user)
         .join(Document, DocumentShare.document_id == Document.id)
-        .outerjoin(recipient_user, recipient_user.id == DocumentShare.shared_with_user_id)
+        .outerjoin(recipient_user, recipient_user.id == DocumentShare.shared_to_id)
         .outerjoin(uploader_user, uploader_user.id == Document.uploader_id)
     )
 
@@ -474,7 +474,7 @@ def admin_list_share_moderation(
                 "id": share.id,
                 "document_id": document.id,
                 "document_title": document.title,
-                "shared_with_user_id": share.shared_with_user_id,
+                "shared_with_user_id": share.shared_to_id,
                 "shared_with_name": recipient.full_name if recipient else None,
                 "shared_with_email": recipient.email if recipient else None,
                 "shared_by_user_id": document.uploader_id,
@@ -515,7 +515,7 @@ def admin_update_share_moderation(
     db.refresh(share)
 
     document = db.query(Document).filter(Document.id == share.document_id).first()
-    recipient = db.query(User).filter(User.id == share.shared_with_user_id).first()
+    recipient = db.query(User).filter(User.id == share.shared_to_id).first()
     uploader = db.query(User).filter(User.id == document.uploader_id).first() if document else None
 
     if not document:
@@ -525,7 +525,7 @@ def admin_update_share_moderation(
         "id": share.id,
         "document_id": document.id,
         "document_title": document.title,
-        "shared_with_user_id": share.shared_with_user_id,
+        "shared_with_user_id": share.shared_to_id,
         "shared_with_name": recipient.full_name if recipient else None,
         "shared_with_email": recipient.email if recipient else None,
         "shared_by_user_id": document.uploader_id,
@@ -555,12 +555,12 @@ def get_document(
 
 @router.post("", response_model=DocumentOut)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     title: str = Form(...),
     description: Optional[str] = Form(None),
     subject: Optional[str] = Form(None),
     is_public: bool = Form(True),
     file: UploadFile = File(...),
-    background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -610,8 +610,7 @@ async def upload_document(
         db.add(ingestion)
         db.commit()
 
-    if background_tasks is not None:
-        background_tasks.add_task(process_document_ingestion, document.id)
+    background_tasks.add_task(process_document_ingestion, document.id)
 
     return _to_document_out(document)
 

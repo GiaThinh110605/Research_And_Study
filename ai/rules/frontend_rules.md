@@ -1,0 +1,9 @@
+- Sử dụng React functional components và Hooks.
+- Đặt tên component theo PascalCase (ví dụ: `UserProfile.tsx`).
+- Tổ chức thư mục theo module hoặc tính năng (feature-based architecture).
+- Ưu tiên TailwindCSS hoặc CSS Modules để quản lý style.
+- Luôn xử lý lỗi và trạng thái loading cho các API call.
+- Sử dụng TypeScript nghiêm ngặt, tránh dùng `any`.
+- Đảm bảo tính Accessibility (A11y) cho các thành phần UI.
+- Tối ưu hóa ảnh và tài nguyên để tăng tốc độ tải trang.
+- Đảm bảo giao diện responsive hoàn hảo trên mọi thiết bị.

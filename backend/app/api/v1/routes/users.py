@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_current_user, get_current_active_admin
 from app.models.base import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import UserOut, UserUpdate, UserUpdateByAdmin
 from app.core.security import get_password_hash
 
@@ -86,7 +86,7 @@ def read_user_by_id(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if user.id != current_user.id and current_user.role != "admin":
+    if user.id != current_user.id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return user
 

@@ -17,6 +17,11 @@ class FlashcardUpdate(BaseModel):
     last_reviewed: Optional[datetime] = None
 
 class Flashcard(FlashcardBase):
+    id: int
+    set_id: int
+    status: str
+    mastery_level: int
+    last_reviewed: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -46,8 +51,11 @@ class FlashcardSetOut(FlashcardSetBase):
 # Alias for compatibility
 FlashcardSet = FlashcardSetOut
 
+class FlashcardItem(BaseModel):
+    front: str
+    back: str
+
 class FlashcardBulkCreate(BaseModel):
     set_id: int
-    flashcards: List[dict] # [{front, back}, ...]
-
+    flashcards: List[FlashcardItem]
     clear_existing: Optional[bool] = False

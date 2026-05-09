@@ -83,7 +83,7 @@ class DocumentShareOut(BaseModel):
     shared_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class AdminDocumentOverview(BaseModel):

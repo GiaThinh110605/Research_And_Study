@@ -11,8 +11,6 @@ import app.models  # Import all models to ensure they are registered with Base
 from app.models.user import User, UserRole
 from app.core.security import get_password_hash
 
-# Create all tables on startup (Dev only convenience)
-Base.metadata.create_all(bind=engine)
 
 # Initialize default admin user if not exists
 def init_default_user():
@@ -38,14 +36,18 @@ def init_default_user():
     finally:
         db.close()
 
-# Initialize on startup
-init_default_user()
 
 app = FastAPI(
     title="AI Research Paper Navigator API",
     description="Backend API for AI-powered document interaction platform",
     version="1.0.0"
 )
+
+# Create all tables on startup
+@app.on_event("startup")
+def startup_event():
+    Base.metadata.create_all(bind=engine)
+    init_default_user()
 
 app.add_middleware(AuthMiddleware)
 

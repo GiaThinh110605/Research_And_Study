@@ -1,10 +1,14 @@
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional, List
 
+# Base directory of the backend project (where .env is located)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:123456789@postgres:5432/ai_research_db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./ai_research.db")
     
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
@@ -29,7 +33,7 @@ class Settings(BaseSettings):
     GROK_BASE_URL: str = os.getenv("GROK_BASE_URL", "https://api.x.ai/v1")
     
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(BASE_DIR / ".env"),
         case_sensitive=True,
         extra="allow"
     )

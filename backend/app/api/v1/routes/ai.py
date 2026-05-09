@@ -43,10 +43,27 @@ def _get_document_text(document: Document) -> str:
     return raw_text
 
 
+def generate_summary(text: str) -> str:
+    """Generate summary using fallback chain: Gemini → Grok → Local."""
+    summary_content = gemini_summary(text)
+    if summary_content:
+        logger.info("Summary generated via Gemini")
+        return summary_content
+    
+    summary_content = grok_summary(text)
+    if summary_content:
+        logger.info("Summary generated via Grok")
+        return summary_content
+        
+    summary_content = local_summary(text)
+    logger.info("Summary generated via local fallback")
+    return summary_content
+
+
 # ─── UC08: Summary ────────────────────────────────────────────────────
 
 @router.post("/summary/{document_id}", response_model=SummaryOut)
-def generate_summary(
+def create_document_summary(
     document_id: int,
     db: Session = Depends(get_db),
     current_user: Any = Depends(get_current_user)
@@ -56,20 +73,7 @@ def generate_summary(
         raise HTTPException(status_code=404, detail="Document not found")
 
     raw_text = _get_document_text(document)
-
-    # Fallback chain: Gemini → Grok → Local TF-based
-    summary_content = None
-
-    summary_content = gemini_summary(raw_text)
-    if summary_content:
-        logger.info("Summary generated via Gemini for doc %d", document_id)
-    else:
-        summary_content = grok_summary(raw_text)
-        if summary_content:
-            logger.info("Summary generated via Grok for doc %d", document_id)
-        else:
-            summary_content = local_summary(raw_text)
-            logger.info("Summary generated via local fallback for doc %d", document_id)
+    summary_content = generate_summary(raw_text)
 
     existing_summary = db.query(Summary).filter(Summary.document_id == document_id).first()
     if existing_summary:

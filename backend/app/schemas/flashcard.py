@@ -25,7 +25,8 @@ class Flashcard(FlashcardBase):
 class FlashcardSetBase(BaseModel):
     title: str
     description: Optional[str] = None
-    document_id: int
+    subject: Optional[str] = None
+    document_id: Optional[int] = None
 
 class FlashcardSetCreate(FlashcardSetBase):
     pass

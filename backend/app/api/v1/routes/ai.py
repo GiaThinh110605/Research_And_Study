@@ -46,7 +46,7 @@ def _get_document_text(document: Document) -> str:
 # ─── UC08: Summary ────────────────────────────────────────────────────
 
 @router.post("/summary/{document_id}", response_model=SummaryOut)
-def create_document_summary(
+def generate_summary(
     document_id: int,
     db: Session = Depends(get_db),
     current_user: Any = Depends(get_current_user)

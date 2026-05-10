@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -26,8 +26,7 @@ class DiscussionUserOut(BaseModel):
     username: str
     role: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ---------- Response schemas ----------
@@ -46,9 +45,8 @@ class DiscussionOut(BaseModel):
     user: Optional[DiscussionUserOut] = None
     replies: Optional[List["DiscussionOut"]] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Cho phép tự tham chiếu (Pydantic v2 style or v1)
-DiscussionOut.update_forward_refs()  # Pydantic v1
+DiscussionOut.model_rebuild()

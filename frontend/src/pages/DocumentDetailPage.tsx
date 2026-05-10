@@ -129,6 +129,8 @@ const DocumentDetailPage: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [aiResult, setAiResult] = useState('Chọn một công cụ AI để tạo kết quả học tập nhanh.');
+  const [aiChat, setAiChat] = useState<{q: string, a: string}[]>([]);
+  const [isAskingAi, setIsAskingAi] = useState(false);
   const [discussionInput, setDiscussionInput] = useState(''); // Used in right sidebar AI
 
   // States for discussions (Thảo luận)
@@ -166,6 +168,8 @@ const DocumentDetailPage: React.FC = () => {
   const [studyIndex, setStudyIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [studyStats, setStudyStats] = useState({ known: 0, review: 0, unknown: 0 });
+  const [mindmap, setMindmap] = useState<any>(null);
+  const [mindmapLoading, setMindmapLoading] = useState(false);
 
   const sampleFlashcards: FlashcardItem[] = [
     {
@@ -345,6 +349,24 @@ const DocumentDetailPage: React.FC = () => {
     }
   };
 
+  const fetchMindmap = async (docId: number) => {
+    setMindmapLoading(true);
+    try {
+      const res = await api.post(`/api/v1/ai/mindmap/${docId}`);
+      // res.data is MindmapOut, res.data.data is the actual mindmap JSON
+      if (res.data && res.data.data) {
+        setMindmap(res.data.data);
+      } else {
+        setMindmap(null);
+      }
+    } catch (err) {
+      console.error('Lỗi tải mindmap:', err);
+      setMindmap(null);
+    } finally {
+      setMindmapLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (parsedId) {
       if (activeTab === 'discussion') {
@@ -354,7 +376,7 @@ const DocumentDetailPage: React.FC = () => {
       } else if (activeTab === 'highlight') {
         fetchHighlights(parsedId);
       } else if (activeTab === 'flashcards') {
-        fetchFlashcards(parsedId);
+        fetchMindmap(parsedId);
       }
     }
   }, [parsedId, activeTab]);
@@ -515,6 +537,26 @@ const DocumentDetailPage: React.FC = () => {
       alert("Xóa thất bại");
     }
   };
+  const handleAskAi = async () => {
+    if (!discussionInput.trim() || !document) return;
+    if (!currentUserId) {
+      alert('Vui lòng đăng nhập để hỏi AI.'); return;
+    }
+    
+    const question = discussionInput.trim();
+    setIsAskingAi(true);
+    setDiscussionInput('');
+    
+    try {
+      const res = await api.post(`/api/v1/ai/ask/${document.id}`, { question });
+      setAiChat(prev => [...prev, { q: question, a: res.data.answer }]);
+    } catch (err: any) {
+      alert('AI không thể trả lời lúc này. Thử lại sau.');
+    } finally {
+      setIsAskingAi(false);
+    }
+  };
+
   const handleGenerateAi = async (toolId: string) => {
     if (!document) return;
     if (!currentUserId) {
@@ -529,11 +571,13 @@ const DocumentDetailPage: React.FC = () => {
         setAiResult(res.content);
       } else if (toolId === 'mindmap') {
         const res = await aiService.generateMindmap(document.id);
-        setAiResult(`Đã tạo sơ đồ tư duy thành công!\n\n${JSON.stringify(res.data.root.children.map((c: any) => c.text), null, 2)}`);
+        setAiResult(`Đã tạo sơ đồ tư duy thành công!`);
+        fetchMindmap(document.id);
       } else if (toolId === 'flashcard') {
-        const res = await aiService.generateFlashcards(document.id, 5);
-        setAiResult(`Đã tạo thành công ${res.length} flashcards cho tài liệu này.`);
-        await fetchFlashcards(document.id);
+        const res = await api.post(`/api/v1/ai/flashcards/generate/${document.id}`, { count: 5 });
+        setAiResult(`Đã tạo thành công ${res.data.flashcards?.length || 0} flashcards mới.`);
+        fetchFlashcards(document.id);
+        alert('Đã tạo Flashcards thành công! Bạn có thể xem trong tab Sơ đồ / Flashcards.');
       } else {
         setAiResult('Tính năng chưa được hỗ trợ.');
       }
@@ -622,6 +666,13 @@ const DocumentDetailPage: React.FC = () => {
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                 Sơ đồ
+              </button>
+              <button
+                onClick={() => setActiveTab('questions')}
+                className={`flex items-center gap-2 pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'questions' ? 'border-[#3B66F5] text-[#3B66F5]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Hỏi đáp
               </button>
               <button
                 onClick={() => setActiveTab('discussion')}
@@ -721,15 +772,14 @@ const DocumentDetailPage: React.FC = () => {
                           <li key={idx} className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span>{line}</li>
                         ))}
                       </ul>
-                    ) : ingestionLoading || ingestion?.status !== 'completed' ? (
+                    ) : (ingestionLoading || (ingestion && ingestion.status !== 'completed' && ingestion.status !== 'failed')) ? (
                       <div className="space-y-3 animate-pulse">
                         <div className="h-3 rounded-full bg-slate-200" />
                         <div className="h-3 rounded-full bg-slate-200 w-11/12" />
                         <div className="h-3 rounded-full bg-slate-200 w-10/12" />
-                        <div className="h-3 rounded-full bg-slate-200 w-9/12" />
                       </div>
                     ) : (
-                      <p className="text-[13px] text-slate-500">Tóm tắt đang được tạo từ nội dung tài liệu.</p>
+                      <p className="text-[13px] text-slate-500">Tóm tắt đang được tạo hoặc chưa có nội dung.</p>
                     )}
                   </div>
 
@@ -930,12 +980,172 @@ const DocumentDetailPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Flashcards View */}
-              {activeTab === 'flashcards' && (
+              {/* UC10: Questions View */}
+              {activeTab === 'questions' && (
                 <div className="flex flex-col h-full">
-                  <div className="text-center text-gray-500 text-sm mt-10">
-                    Tính năng Sơ đồ / Flashcards đang được phát triển...
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-bold text-gray-800">Hỏi đáp về tài liệu</h4>
+                    <span className="bg-indigo-50 text-indigo-600 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">UC10 - AI</span>
                   </div>
+
+                  {/* Question Input */}
+                  <div className="mb-5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={questionInput}
+                        onChange={(e) => setQuestionInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleQuestionSubmit()}
+                        placeholder="Đặt câu hỏi về tài liệu này..."
+                        className="flex-1 bg-[#F4F7FE] rounded-full border border-transparent px-4 py-3 pr-12 text-[13px] font-medium outline-none focus:border-[#3B66F5] focus:bg-white transition-all placeholder:text-slate-400"
+                      />
+                      <button
+                        onClick={handleQuestionSubmit}
+                        disabled={!questionInput.trim()}
+                        className="w-10 h-10 flex items-center justify-center bg-[#3B66F5] text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:bg-slate-300 shrink-0"
+                      >
+                        <svg className="w-4 h-4 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                      </button>
+                    </div>
+                    <p className="mt-2 text-[11px] text-slate-400 ml-1">AI sẽ tự động trả lời dựa trên nội dung tài liệu.</p>
+                  </div>
+
+                  {/* Questions List */}
+                  <div className="flex-1 overflow-y-auto space-y-4">
+                    {questionsLoading ? (
+                      <div className="flex justify-center items-center py-12">
+                        <div className="w-6 h-6 border-2 border-[#3B66F5] border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : questions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <svg className="w-14 h-14 text-slate-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p className="text-sm text-slate-500 font-medium">Chưa có câu hỏi nào.<br/>Hãy đặt câu hỏi đầu tiên!</p>
+                      </div>
+                    ) : (
+                      questions.map((q: QuestionItem) => (
+                        <div key={q.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm hover:border-indigo-100 transition-colors">
+                          {/* Question Header */}
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs shrink-0">
+                              {q.user ? getInitials(q.user.full_name) : '?'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className="font-bold text-[13px] text-slate-800 truncate">{q.user?.full_name || 'Ẩn danh'}</span>
+                                <span className="text-[10px] text-slate-400 shrink-0">{timeAgo(q.created_at)}</span>
+                              </div>
+                              <p className="mt-1 text-[13px] text-slate-700 leading-relaxed">{q.content}</p>
+                            </div>
+                          </div>
+
+                          {/* Answer Section */}
+                          {q.answer ? (
+                            <div className="mt-3 ml-11 bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span className="text-[11px] font-bold text-emerald-700">Câu trả lời AI</span>
+                              </div>
+                              <p className="text-[12px] text-emerald-800 leading-relaxed whitespace-pre-line">{q.answer}</p>
+                            </div>
+                          ) : (
+                            <div className="mt-3 ml-11 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-[11px] font-bold text-amber-600">AI đang phân tích tài liệu để trả lời...</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Manual Answer (for owner/lecturer) */}
+                          {isOwner && !q.answer && (
+                            <div className="mt-3 ml-11">
+                              {answeringTo === q.id ? (
+                                <div className="flex gap-2">
+                                  <input
+                                    autoFocus
+                                    placeholder="Nhập câu trả lời..."
+                                    className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-[13px] outline-none focus:border-[#3B66F5] focus:bg-white transition-all"
+                                    value={answerContent}
+                                    onChange={(e) => setAnswerContent(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAnswerSubmit(q.id)}
+                                  />
+                                  <button
+                                    onClick={() => handleAnswerSubmit(q.id)}
+                                    disabled={!answerContent.trim()}
+                                    className="bg-[#3B66F5] text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                                  >
+                                    <svg className="w-4 h-4 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setAnsweringTo(q.id)}
+                                  className="text-[11px] font-bold text-[#3B66F5] hover:underline"
+                                >
+                                  Trả lời thủ công
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Mindmap View */}
+              {activeTab === 'flashcards' && (
+                <div className="flex flex-col h-full space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-gray-800">Sơ đồ tư duy AI</h4>
+                    <button 
+                      onClick={() => fetchMindmap(parsedId)}
+                      className="text-[11px] font-bold text-[#3B66F5] hover:underline"
+                    >
+                      Làm mới
+                    </button>
+                  </div>
+
+                  {mindmapLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+                      <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                      <p className="text-sm text-slate-500 font-bold">Gemini đang phân tích cấu trúc...</p>
+                    </div>
+                  ) : mindmap?.root ? (
+                    <div className="bg-[#F8FAFF] rounded-2xl p-6 border border-blue-50 overflow-y-auto">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#3B66F5]"></div>
+                          <span className="font-black text-slate-900 text-sm">{mindmap.root.text}</span>
+                        </div>
+                        <div className="ml-4 pl-4 border-l-2 border-slate-100 space-y-4">
+                          {mindmap.root.children?.map((child: any, idx: number) => (
+                            <div key={idx} className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-indigo-400"></div>
+                                <span className="font-bold text-slate-800 text-[13px]">{child.text}</span>
+                              </div>
+                              {child.children && (
+                                <div className="ml-3 pl-4 border-l border-slate-100 space-y-2">
+                                  {child.children.map((sub: any, sIdx: number) => (
+                                    <div key={sIdx} className="flex items-center gap-2 text-[12px] text-slate-600">
+                                      <span className="text-indigo-300">•</span>
+                                      {sub.text}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      <p className="text-sm text-slate-400 font-medium">Chưa có dữ liệu sơ đồ.<br/>Nhấn 'Làm mới' để AI tạo sơ đồ.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -943,10 +1153,45 @@ const DocumentDetailPage: React.FC = () => {
             {/* Bottom action */}
             {activeTab === 'info' && (
               <div className="p-6 border-t border-gray-100 bg-white">
-                <button className="w-full flex items-center justify-center gap-2 border-2 border-gray-100 rounded-2xl py-3.5 text-sm font-bold text-[#3B66F5] hover:border-[#3B66F5] hover:bg-blue-50/50 transition-colors">
+                <button 
+                  onClick={() => handleGenerateAi('flashcard')}
+                  className="w-full flex items-center justify-center gap-2 border-2 border-gray-100 rounded-2xl py-3.5 text-sm font-bold text-[#3B66F5] hover:border-[#3B66F5] hover:bg-blue-50/50 transition-colors"
+                >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                   Tạo Flashcard từ nội dung này
                 </button>
+              </div>
+            )}
+
+            {/* Smart AI Chat for Discussion Tab */}
+            {activeTab === 'discussion' && (
+              <div className="p-4 border-t border-indigo-100 bg-indigo-50/30 shrink-0">
+                <div className="mb-3 space-y-2 overflow-y-auto max-h-[150px]">
+                  {aiChat.map((chat, i) => (
+                    <div key={i} className="text-[12px] space-y-1">
+                      <p className="font-bold text-indigo-700">Q: {chat.q}</p>
+                      <p className="text-slate-600 bg-white p-2 rounded-lg border border-indigo-50">{chat.a}</p>
+                    </div>
+                  ))}
+                  {isAskingAi && <p className="text-[10px] animate-pulse text-indigo-500 font-bold">AI đang suy nghĩ...</p>}
+                </div>
+                <div className="flex items-center gap-2 relative">
+                  <input
+                    type="text"
+                    value={discussionInput}
+                    onChange={(e) => setDiscussionInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAskAi()}
+                    placeholder="Hỏi AI về tài liệu này..."
+                    className="w-full bg-white rounded-full border border-indigo-100 px-4 py-2 pr-12 text-[12px] font-medium outline-none focus:border-[#3B66F5] transition-all"
+                  />
+                  <button
+                    onClick={handleAskAi}
+                    disabled={isAskingAi || !discussionInput.trim()}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                  </button>
+                </div>
               </div>
             )}
           </div>

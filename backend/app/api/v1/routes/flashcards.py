@@ -83,7 +83,7 @@ def update_flashcard_set(
     if not flashcard_set:
         raise HTTPException(status_code=404, detail="Flashcard set not found")
     
-    update_data = payload.dict(exclude_unset=True)
+    update_data = payload.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(flashcard_set, key, value)
     
@@ -248,7 +248,7 @@ def update_flashcard(
     if not flashcard_set:
         raise HTTPException(status_code=404, detail="Flashcard not found")
 
-    update_data = payload.dict(exclude_unset=True)
+    update_data = payload.model_dump(exclude_unset=True)
     if "status" in update_data or "mastery_level" in update_data:
         flashcard.last_reviewed = datetime.now()
         

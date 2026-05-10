@@ -103,7 +103,7 @@ def create_grade(
     """
     grade = StudentGrade(
         student_id=current_user.id,
-        **payload.dict()
+        **payload.model_dump()
     )
     db.add(grade)
     db.commit()

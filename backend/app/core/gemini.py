@@ -2,20 +2,16 @@ import json
 import logging
 from typing import List, Dict, Optional
 
-import google.generativeai as genai
-
+from google import genai
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-
-def _get_model() -> Optional[genai.GenerativeModel]:
+def _get_client() -> Optional[genai.Client]:
     api_key = settings.GEMINI_API_KEY or settings.GOOGLE_API_KEY
     if not api_key:
         return None
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel(settings.GEMINI_MODEL)
-
+    return genai.Client(api_key=api_key)
 
 def _strip_fenced_block(content: str) -> str:
     cleaned = content.strip()
@@ -26,12 +22,9 @@ def _strip_fenced_block(content: str) -> str:
     return cleaned
 
 def generate_flashcards_from_text(text: str, count: int = 5) -> List[Dict[str, str]]:
-    model = _get_model()
-    if not model:
-        return [
-            {"front": f"Sample Question {i+1}", "back": f"Sample Answer {i+1}"}
-            for i in range(count)
-        ]
+    client = _get_client()
+    if not client:
+        return [{"front": "Error", "back": "No API Key"}]
 
     prompt = f"""
     Create {count} flashcards from the following text.
@@ -48,175 +41,163 @@ def generate_flashcards_from_text(text: str, count: int = 5) -> List[Dict[str, s
     ]
     """
     
-    response = model.generate_content(prompt)
     try:
-        # Try to parse JSON from response text
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt
+        )
         content = _strip_fenced_block(response.text)
         return json.loads(content)
     except Exception as e:
-        logger.warning("Error parsing Gemini response: %s", e)
-        # Fallback
+        logger.warning("Error generating flashcards: %s", e)
         return [{"front": "Error generating flashcard", "back": "Please try again."}]
 
-
 def generate_summary_from_text(text: str, max_points: int = 5) -> Optional[str]:
-    model = _get_model()
-    if not model:
+    client = _get_client()
+    if not client:
         return None
 
-    trimmed_text = text.strip()
-    if not trimmed_text:
-        return None
-
-    context = trimmed_text[:12000]
+    context = text.strip()[:15000]
     prompt = f"""
-    Ban la tro ly hoc thuat. Hay tom tat noi dung tai lieu duoi dang bullet point.
-    Yeu cau:
-    - Viet bang tieng Viet, giong van hoc thuat.
-    - Toi da {max_points} y.
-    - Moi y la mot dong bat dau bang ky tu '•'.
-    - Tap trung vao muc tieu, phuong phap, ket qua, va ket luan neu co.
+    Bạn là trợ lý học thuật. Hãy tóm tắt nội dung tài liệu dưới dạng bullet point.
+    Yêu cầu:
+    - Viết bằng tiếng Việt, giọng văn học thuật.
+    - Tối đa {max_points} ý.
+    - Mỗi ý là một dòng bắt đầu bằng ký tự '•'.
 
-    Noi dung:
+    Nội dung:
     {context}
     """
 
     try:
-        response = model.generate_content(prompt)
-        content = _strip_fenced_block(response.text)
-        return content.strip() if content.strip() else None
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt
+        )
+        return response.text.strip()
     except Exception as exc:
         logger.warning("Gemini summary failed: %s", exc)
         return None
-
 
 def generate_quiz_from_text(
     text: str,
     max_questions: int = 6,
     concept_labels: Optional[List[str]] = None,
 ) -> Optional[List[Dict]]:
-    """Generate diverse MCQ quiz questions using Gemini AI.
-
-    Returns a list of question dicts compatible with the Test.questions JSON
-    column, or ``None`` when the model is unavailable.
-    """
-    model = _get_model()
-    if not model:
+    client = _get_client()
+    if not client:
         return None
 
-    trimmed = text.strip()
-    if not trimmed:
-        return None
-
-    context = trimmed[:12000]
+    context = text.strip()[:15000]
     concept_hint = ""
     if concept_labels:
-        concept_hint = (
-            "Cac khai niem trong tai lieu: "
-            + ", ".join(concept_labels[:15])
-            + ".\n"
-        )
+        concept_hint = f"Các khái niệm quan trọng: {', '.join(concept_labels[:15])}\n"
 
-    prompt = f"""Ban la giang vien dai hoc. Hay tao {max_questions} cau hoi trac nghiem (MCQ) tu noi dung tai lieu.
-Yeu cau:
-- Viet bang tieng Viet, giong van hoc thuat.
-- Moi cau hoi co dung 4 lua chon (A-D).
-- Da dang kieu cau hoi: dinh nghia, so sanh, ung dung, phan tich.
-- Chi co duy nhat 1 dap an dung.
-- Kem theo giai thich ngan gon cho dap an dung.
+    prompt = f"""Bạn là giảng viên đại học. Hãy tạo {max_questions} câu hỏi trắc nghiệm (MCQ) từ nội dung tài liệu.
+Yêu cầu:
+- Viết bằng tiếng Việt.
+- Mỗi câu hỏi có đúng 4 lựa chọn (A-D).
+- Chi duy nhất 1 đáp án đúng.
 {concept_hint}
-Tra ve ket qua la JSON array, moi phan tu co dang:
-{{
-  "id": <so thu tu bat dau tu 1>,
-  "text": "<noi dung cau hoi>",
-  "options": ["<lua chon A>", "<lua chon B>", "<lua chon C>", "<lua chon D>"],
-  "correct_answer": <chi so lua chon dung, 0-3>,
-  "explanation": "<giai thich ngan>"
-}}
-
-Noi dung tai lieu:
-{context}
-"""
-
-    try:
-        response = model.generate_content(prompt)
-        content = _strip_fenced_block(response.text)
-        questions = json.loads(content)
-        if isinstance(questions, list) and len(questions) > 0:
-            # Validate & normalise each question
-            validated: List[Dict] = []
-            for idx, q in enumerate(questions[:max_questions]):
-                validated.append({
-                    "id": idx + 1,
-                    "text": str(q.get("text", "")),
-                    "options": list(q.get("options", []))[:4],
-                    "correct_answer": int(q.get("correct_answer", 0)) % 4,
-                    "explanation": str(q.get("explanation", "")),
-                })
-            return validated
-        return None
-    except Exception as exc:
-        logger.warning("Gemini quiz generation failed: %s", exc)
-        return None
-
-
-def extract_concepts_from_text(
-    text: str, max_concepts: int = 12
-) -> Optional[List[Dict[str, object]]]:
-    """Extract key concepts from text using Gemini AI.
-
-    Returns a list of concept dicts with ``label``, ``category``
-    (basic / advanced / applied) and ``score`` (0-1), or ``None``
-    when the model is unavailable.
-    """
-    model = _get_model()
-    if not model:
-        return None
-
-    trimmed = text.strip()
-    if not trimmed:
-        return None
-
-    context = trimmed[:12000]
-    prompt = f"""Ban la tro ly hoc thuat. Hay trich xuat toi da {max_concepts} khai niem quan trong tu tai lieu.
-Yeu cau:
-- Viet bang tieng Viet.
-- Phan loai moi khai niem: "basic" (co ban), "advanced" (nang cao), "applied" (ung dung).
-- Cho diem muc do quan trong (score) tu 0.0 den 1.0.
-- Uu tien khai niem chuyen nganh, thuat ngu hoc thuat.
-
-Tra ve ket qua la JSON array:
+Trả về kết quả là JSON array:
 [
-  {{"label": "<ten khai niem>", "category": "<basic|advanced|applied>", "score": <0.0-1.0>}},
-  ...
+  {{
+    "id": 1,
+    "text": "...",
+    "options": ["...", "...", "...", "..."],
+    "correct_answer": 0,
+    "explanation": "..."
+  }}
 ]
 
-Noi dung tai lieu:
+Nội dung tài liệu:
 {context}
 """
 
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+            config={'response_mime_type': 'application/json'}
+        )
         content = _strip_fenced_block(response.text)
-        concepts = json.loads(content)
-        if isinstance(concepts, list) and len(concepts) > 0:
-            validated: List[Dict[str, object]] = []
-            for item in concepts[:max_concepts]:
-                label = str(item.get("label", "")).strip()
-                if not label:
-                    continue
-                category = str(item.get("category", "basic"))
-                if category not in ("basic", "advanced", "applied"):
-                    category = "basic"
-                score = float(item.get("score", 0.5))
-                score = max(0.0, min(1.0, score))
-                validated.append({
-                    "label": label,
-                    "category": category,
-                    "score": score,
-                })
-            return validated if validated else None
+        questions = json.loads(content)
+        if isinstance(questions, list):
+            return questions
+        if isinstance(questions, dict) and "questions" in questions:
+            return questions["questions"]
         return None
     except Exception as exc:
-        logger.warning("Gemini concept extraction failed: %s", exc)
+        logger.warning("Gemini quiz failed: %s", exc)
+        return None
+
+def extract_concepts_from_text(text: str, max_concepts: int = 12) -> Optional[List[Dict]]:
+    client = _get_client()
+    if not client:
+        return None
+
+    context = text.strip()[:15000]
+    prompt = f"""Bạn là trợ lý học thuật. Hãy trích xuất tối đa {max_concepts} khái niệm quan trọng bằng tiếng Việt.
+Trả về JSON array các object: label (tên), category (basic|advanced|applied), score (0.0-1.0).
+
+Nội dung:
+{context}
+"""
+
+    try:
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+            config={'response_mime_type': 'application/json'}
+        )
+        content = _strip_fenced_block(response.text)
+        return json.loads(content)
+    except Exception as exc:
+        logger.warning("Gemini concepts failed: %s", exc)
+        return None
+
+def generate_mindmap_from_text(text: str) -> Optional[Dict]:
+    client = _get_client()
+    if not client:
+        return None
+
+    context = text.strip()[:15000]
+    prompt = f"""Bạn là trợ lý học thuật. Hãy tạo sơ đồ tư duy (mindmap) bằng tiếng Việt dạng JSON.
+Cấu trúc: {{"root": {{"text": "...", "children": [...]}}}}
+
+Nội dung:
+{context}
+"""
+
+    try:
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+            config={'response_mime_type': 'application/json'}
+        )
+        content = _strip_fenced_block(response.text)
+        return json.loads(content)
+    except Exception as exc:
+        logger.warning("Gemini mindmap failed: %s", exc)
+        return None
+
+def ask_question_about_text(text: str, question: str) -> Optional[str]:
+    client = _get_client()
+    if not client:
+        return None
+
+    context = text.strip()[:20000]
+    prompt = f"""Dựa trên tài liệu sau, hãy trả lời câu hỏi bằng tiếng Việt.
+Tài liệu: {context}
+Câu hỏi: {question}
+"""
+
+    try:
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt
+        )
+        return response.text.strip()
+    except Exception as exc:
+        logger.warning("Gemini Q&A failed: %s", exc)
         return None

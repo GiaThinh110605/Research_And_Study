@@ -23,5 +23,13 @@ class Mindmap(Base):
     def content(self, value):
         self._content = json.dumps(value)
 
+    @property
+    def data(self):
+        return self.content
+
+    @data.setter
+    def data(self, value):
+        self.content = value
+
     # Relationships
     document = relationship("Document", back_populates="mindmap")

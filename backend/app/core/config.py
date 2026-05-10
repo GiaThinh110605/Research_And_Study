@@ -1,13 +1,14 @@
 import os
-try:
-    from pydantic import BaseSettings
-except ImportError:
-    from pydantic.v1 import BaseSettings
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional, List
+
+# Base directory of the backend project (where .env is located)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:123456789@postgres:5432/ai_research_db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./ai_research.db")
     
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
@@ -26,8 +27,15 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # xAI Grok
+    GROK_API_KEY: Optional[str] = os.getenv("GROK_API_KEY")
+    GROK_MODEL: str = os.getenv("GROK_MODEL", "grok-4.3")
+    GROK_BASE_URL: str = os.getenv("GROK_BASE_URL", "https://api.x.ai/v1")
+    
+    model_config = SettingsConfigDict(
+        env_file=str(BASE_DIR / ".env"),
+        case_sensitive=True,
+        extra="allow"
+    )
 
 settings = Settings()

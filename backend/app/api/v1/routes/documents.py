@@ -42,12 +42,7 @@ router = APIRouter()
 
 ALLOWED_FILE_TYPES = {
     ".pdf",
-    ".doc",
     ".docx",
-    ".ppt",
-    ".pptx",
-    ".xls",
-    ".xlsx",
     ".txt",
 }
 
@@ -171,6 +166,11 @@ def _delete_document_dependencies(db: Session, document_id: int) -> None:
 
     db.query(DocumentShare).filter(
         DocumentShare.document_id == document_id
+    ).delete(synchronize_session=False)
+
+    from app.models.question import Question
+    db.query(Question).filter(
+        Question.document_id == document_id
     ).delete(synchronize_session=False)
 
 
@@ -646,9 +646,7 @@ def get_document_ingestion(
     ]
 
     summary_content = None
-    if document.summary and ingestion and ingestion.status == "completed":
-        summary_content = document.summary.content
-    elif document.summary and ingestion is None:
+    if document.summary:
         summary_content = document.summary.content
     quiz_questions_count = 0
     if ingestion and ingestion.quiz_test_id:

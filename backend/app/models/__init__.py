@@ -13,6 +13,7 @@ from .test import Test, TestQuestion
 from .test_result import TestResult
 from .discussion import Discussion
 from .student_grade import StudentGrade
+from .question import Question
 
 __all__ = [
     "Base",
@@ -35,5 +36,6 @@ __all__ = [
     "TestQuestion",
     "TestResult",
     "Discussion",
-    "StudentGrade"
+    "StudentGrade",
+    "Question",
 ]

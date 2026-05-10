@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class FlashcardBase(BaseModel):
     front: str
@@ -25,8 +25,7 @@ class Flashcard(FlashcardBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FlashcardSetBase(BaseModel):
     title: str
@@ -40,20 +39,23 @@ class FlashcardSetCreate(FlashcardSetBase):
 class FlashcardSetUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    subject: Optional[str] = None
 
-class FlashcardSet(FlashcardSetBase):
+class FlashcardSetOut(FlashcardSetBase):
     id: int
     owner_id: int
-    is_ai_generated: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
     flashcards: List[Flashcard] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
+
+# Alias for compatibility
+FlashcardSet = FlashcardSetOut
+
+class FlashcardItem(BaseModel):
+    front: str
+    back: str
 
 class FlashcardBulkCreate(BaseModel):
     set_id: int
-    flashcards: List[FlashcardBase]
+    flashcards: List[FlashcardItem]
     clear_existing: Optional[bool] = False

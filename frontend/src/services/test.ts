@@ -79,6 +79,10 @@ export const testService = {
     const response = await api.post(`/api/v1/tests/`, data);
     return response.data;
   },
+  updateTest: async (id: number, data: any): Promise<TestOut> => {
+    const response = await api.put(`/api/v1/tests/${id}`, data);
+    return response.data;
+  },
   deleteTest: async (id: number): Promise<void> => {
     await api.delete(`/api/v1/tests/${id}`);
   },

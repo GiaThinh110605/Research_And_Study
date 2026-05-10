@@ -21,12 +21,14 @@ const TestListPage: React.FC = () => {
   const [tests, setTests] = useState<TestOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Tất cả');
+  const [creatorFilter, setCreatorFilter] = useState('ALL');
   const [sortAsc, setSortAsc] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const data = await testService.getTests();
+        console.log("Danh sách đề thi tải về từ API:", data);
         setTests(data);
       } catch (error) {
         console.error("Lỗi khi tải danh sách bài test", error);
@@ -40,7 +42,12 @@ const TestListPage: React.FC = () => {
   const tabs = ['Tất cả', 'Toán học', 'Ngữ văn', 'Tiếng Anh', 'Khoa học'];
 
   const filteredTests = tests.filter(test => {
-    // 1. Filter by Subject Tab
+    // 1. Filter by Creator Role
+    const role = test.creator_role?.toUpperCase();
+    if (creatorFilter === 'STUDENT' && role !== 'STUDENT') return false;
+    if (creatorFilter === 'LECTURER' && role !== 'LECTURER' && role !== 'ADMIN') return false;
+
+    // 2. Filter by Subject Tab
     if (activeTab === 'Tất cả') return true;
     
     const keywords: Record<string, string[]> = {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, LayoutDashboard, Users, FileText, MessageSquare,
   Settings, LogOut, Search, Bell, TrendingUp, TrendingDown,
@@ -6,10 +6,35 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
+import { dashboardService } from '../services/dashboard';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [stats, setStats] = useState<any>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [dashboardData, userData] = await Promise.all([
+          dashboardService.getAdminDashboard(),
+          authService.getCurrentUser()
+        ]);
+        setStats(dashboardData.stats);
+        setActivities(dashboardData.activities);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error("Failed to fetch admin dashboard data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleLogout = () => {
     authService.logout();
@@ -22,38 +47,7 @@ const AdminDashboard: React.FC = () => {
     { icon: MessageSquare, label: 'Kiểm duyệt bình luận', path: '/admin/moderation' },
   ];
 
-  const recentActivities = [
-    {
-      id: 1,
-      user: 'Nguyễn Minh A',
-      avatar: 'https://i.pravatar.cc/150?img=11',
-      action: 'vừa tải lên "Giáo trình Kinh tế Vĩ mô"',
-      time: '2 phút trước',
-      type: 'Tài liệu',
-      status: 'MỚI',
-      statusColor: 'text-emerald-600 bg-emerald-50'
-    },
-    {
-      id: 2,
-      user: 'Trần Thị B',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-      action: 'đã báo cáo một bình luận vi phạm',
-      time: '15 phút trước',
-      type: 'Kiểm duyệt',
-      status: 'CẦN XỬ LÝ',
-      statusColor: 'text-orange-600 bg-orange-50'
-    },
-    {
-      id: 3,
-      user: 'Phạm Hoàng D',
-      avatar: 'https://i.pravatar.cc/150?img=12',
-      action: 'vừa đăng ký tài khoản mới',
-      time: '1 giờ trước',
-      type: 'Người dùng',
-      status: 'ĐÃ DUYỆT',
-      statusColor: 'text-blue-600 bg-blue-50'
-    }
-  ];
+  const recentActivities = activities;
 
   return (
     <div className="flex min-h-screen bg-[#fafbfc] font-sans text-slate-800">
@@ -134,11 +128,11 @@ const AdminDashboard: React.FC = () => {
             
             <div className="flex items-center gap-3 pl-5 border-l border-slate-100">
               <div className="text-right">
-                <p className="text-[13px] font-bold text-slate-700 leading-tight">Lê Văn C</p>
+                <p className="text-[13px] font-bold text-slate-700 leading-tight">{currentUser?.full_name || 'Admin'}</p>
                 <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5 tracking-wide">QUẢN TRỊ VIÊN</p>
               </div>
-              <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                 <img src="https://i.pravatar.cc/150?img=68" alt="Admin" className="w-full h-full object-cover" />
+              <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 overflow-hidden shadow-sm text-white text-[10px] font-bold">
+                {currentUser?.full_name?.substring(0, 2).toUpperCase() || 'AD'}
               </div>
             </div>
           </div>
@@ -149,29 +143,21 @@ const AdminDashboard: React.FC = () => {
           <div className="max-w-5xl mx-auto">
             {/* Page Heading */}
             <div className="mb-8">
-              <h2 className="text-[26px] font-bold text-slate-800 tracking-tight">Chào buổi sáng, Lê Văn C</h2>
+              <h2 className="text-[26px] font-bold text-slate-800 tracking-tight">Chào buổi sáng, {currentUser?.full_name?.split(' ').pop() || 'Admin'}</h2>
               <p className="text-slate-500 text-[13px] mt-2 font-medium">Hệ thống đang hoạt động ổn định. Dưới đây là thống kê tổng quát ngày hôm nay.</p>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-4 gap-6 mb-8">
               <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 relative overflow-hidden">
                 <div className="flex justify-between items-start mb-6">
                   <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
                     <Users className="w-5 h-5" />
                   </div>
-                  <div className="flex items-center gap-1 text-emerald-500 text-[12px] font-bold">
-                    <ArrowUpRight className="w-3 h-3" />
-                    +12%
-                  </div>
                 </div>
                 <div>
                   <p className="text-[12px] font-semibold text-slate-500 mb-1">Tổng người dùng</p>
-                  <p className="text-3xl font-bold text-slate-800 tracking-tight">12,458</p>
-                </div>
-                {/* Progress bar line */}
-                <div className="absolute bottom-6 left-6 right-6 h-1 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-600 rounded-full w-[60%]"></div>
+                  <p className="text-3xl font-bold text-slate-800 tracking-tight">{stats?.total_users || 0}</p>
                 </div>
               </div>
 
@@ -180,17 +166,22 @@ const AdminDashboard: React.FC = () => {
                   <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5" />
                   </div>
-                  <div className="flex items-center gap-1 text-emerald-500 text-[12px] font-bold">
-                    <ArrowUpRight className="w-3 h-3" />
-                    +5.4%
-                  </div>
                 </div>
                 <div>
                   <p className="text-[12px] font-semibold text-slate-500 mb-1">Tổng tài liệu</p>
-                  <p className="text-3xl font-bold text-slate-800 tracking-tight">4,892</p>
+                  <p className="text-3xl font-bold text-slate-800 tracking-tight">{stats?.total_documents || 0}</p>
                 </div>
-                <div className="absolute bottom-6 left-6 right-6 h-1 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-600 rounded-full w-[45%]"></div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 relative overflow-hidden">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center shrink-0">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-slate-500 mb-1">Tổng đề thi</p>
+                  <p className="text-3xl font-bold text-slate-800 tracking-tight">{stats?.total_tests || 0}</p>
                 </div>
               </div>
 
@@ -199,17 +190,10 @@ const AdminDashboard: React.FC = () => {
                   <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
                     <MessageSquare className="w-5 h-5" />
                   </div>
-                  <div className="flex items-center gap-1 text-red-500 text-[12px] font-bold">
-                    <ArrowDownRight className="w-3 h-3" />
-                    -2.1%
-                  </div>
                 </div>
                 <div>
                   <p className="text-[12px] font-semibold text-slate-500 mb-1">Bình luận mới</p>
-                  <p className="text-3xl font-bold text-slate-800 tracking-tight">1,024</p>
-                </div>
-                <div className="absolute bottom-6 left-6 right-6 h-1 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#C2410C] rounded-full w-[35%]"></div>
+                  <p className="text-3xl font-bold text-slate-800 tracking-tight">{stats?.total_discussions || 0}</p>
                 </div>
               </div>
             </div>
@@ -228,13 +212,13 @@ const AdminDashboard: React.FC = () => {
                   {recentActivities.map((activity, index) => (
                     <div key={index} className="flex items-start justify-between group">
                       <div className="flex items-start gap-4">
-                        <img src={activity.avatar} alt={activity.user} className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-100" />
+                        <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(activity.user)}&background=random`} alt={activity.user} className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-100" />
                         <div>
                           <p className="text-[13px] text-slate-700 font-medium leading-relaxed">
                             <span className="font-bold text-slate-900">{activity.user}</span> {activity.action}
                           </p>
                           <p className="text-[11px] text-slate-400 font-medium mt-1">
-                            {activity.time} • {activity.type}
+                            {new Date(activity.time).toLocaleString('vi-VN')} • {activity.type}
                           </p>
                         </div>
                       </div>

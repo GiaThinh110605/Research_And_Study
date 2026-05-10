@@ -18,6 +18,19 @@ const LecturerLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [user, setUser] = useState<any>(null);
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await authService.getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleLogout = () => {
     authService.logout();
@@ -108,11 +121,18 @@ const LecturerLayout: React.FC = () => {
             
             <div className="flex items-center gap-4 group cursor-pointer">
               <div className="text-right">
-                <div className="text-[15px] font-black text-slate-900 leading-none mb-1 group-hover:text-indigo-600 transition-colors">Trần Thị B</div>
-                <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">GIẢNG VIÊN</div>
+                <div className="text-[15px] font-black text-slate-900 leading-none mb-1 group-hover:text-indigo-600 transition-colors">
+                  {user?.full_name || 'Đang tải...'}
+                </div>
+                <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                  {user?.role === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'GIẢNG VIÊN'}
+                </div>
               </div>
               <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center border-2 border-white shadow-xl shadow-slate-200/50 overflow-hidden group-hover:scale-105 transition-transform">
-                <img src="https://ui-avatars.com/api/?name=Tran+Thi+B&background=6366f1&color=fff&bold=true" alt="Avatar" />
+                <img 
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'User')}&background=6366f1&color=fff&bold=true`} 
+                  alt="Avatar" 
+                />
               </div>
             </div>
           </div>

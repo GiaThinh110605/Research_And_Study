@@ -32,7 +32,7 @@ def _ask_ai(document_text: str, question: str) -> Optional[str]:
         return answer
 
     logger.warning("AI Q&A: both Gemini and Grok failed")
-    return None
+    return "Tôi rất tiếc, hiện tại hệ thống AI đang quá tải hoặc gặp lỗi kết nối. Vui lòng thử lại sau giây lát."
 
 
 def _generate_ai_answer_background(question_id: int, document_id: int) -> None:
@@ -51,6 +51,8 @@ def _generate_ai_answer_background(question_id: int, document_id: int) -> None:
 
         raw_text = extract_text_from_file(document.file_path) or document.description or ""
         if not raw_text:
+            question.ai_answer = "Rất tiếc, hệ thống không thể trích xuất được nội dung văn bản từ tài liệu này để đưa ra câu trả lời."
+            db.commit()
             return
 
         ai_answer = _ask_ai(raw_text, question.content)

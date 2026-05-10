@@ -3,6 +3,7 @@ import logging
 from typing import List, Dict, Optional
 
 from google import genai
+from google.genai import types
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -118,14 +119,19 @@ Nội dung tài liệu:
         response = client.models.generate_content(
             model=settings.GEMINI_MODEL,
             contents=prompt,
-            config={'response_mime_type': 'application/json'}
+            config=types.GenerateContentConfig(
+                response_mime_type='application/json'
+            )
         )
         content = _strip_fenced_block(response.text)
         questions = json.loads(content)
         if isinstance(questions, list):
             return questions
-        if isinstance(questions, dict) and "questions" in questions:
-            return questions["questions"]
+        if isinstance(questions, dict):
+            if "questions" in questions:
+                return questions["questions"]
+            if "items" in questions:
+                return questions["items"]
         return None
     except Exception as exc:
         logger.warning("Gemini quiz failed: %s", exc)
@@ -148,7 +154,9 @@ Nội dung:
         response = client.models.generate_content(
             model=settings.GEMINI_MODEL,
             contents=prompt,
-            config={'response_mime_type': 'application/json'}
+            config=types.GenerateContentConfig(
+                response_mime_type='application/json'
+            )
         )
         content = _strip_fenced_block(response.text)
         return json.loads(content)
@@ -173,7 +181,9 @@ Nội dung:
         response = client.models.generate_content(
             model=settings.GEMINI_MODEL,
             contents=prompt,
-            config={'response_mime_type': 'application/json'}
+            config=types.GenerateContentConfig(
+                response_mime_type='application/json'
+            )
         )
         content = _strip_fenced_block(response.text)
         return json.loads(content)

@@ -1,5 +1,7 @@
 import os
 import sys
+
+import pytest
 from dotenv import load_dotenv
 from google import genai
 
@@ -9,13 +11,12 @@ load_dotenv()
 def test_api():
     api_key = os.getenv("GEMINI_API_KEY")
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-    
+
+    if not api_key:
+        pytest.skip("GEMINI_API_KEY not found in environment")
+
     print(f"--- Testing API Key: {api_key[:10]}...{api_key[-4:]} ---")
     print(f"--- Model: {model_name} ---")
-    
-    if not api_key:
-        print("ERROR: GEMINI_API_KEY not found in .env")
-        return
 
     try:
         client = genai.Client(api_key=api_key)

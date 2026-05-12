@@ -177,11 +177,13 @@ def list_tests(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	query = db.query(Test).options(joinedload(Test.creator))
+	query = db.query(Test).filter(Test.is_active == True).options(joinedload(Test.creator))
 	if subject:
 		query = query.filter(Test.subject == subject)
 	if document_id is not None:
 		query = query.filter(Test.document_id == document_id)
+	
+	# Chỉ lọc creator_id nếu có truyền vào (thường dùng cho Lecturer quản lý đề của họ)
 	if creator_id is not None:
 		query = query.filter(Test.creator_id == creator_id)
 
@@ -213,7 +215,7 @@ def list_tests(
 			"creator_role": creator_role,
 			"created_at": test.created_at,
 			"questions_count": len(test.questions) if test.questions else 0,
-			"participants_count": test.participants_count,
+			"participants_count": test.participants_count or 0,
 			"status": status
 		})
 	
@@ -244,6 +246,9 @@ def create_test(
 	db.add(test)
 	db.commit()
 	db.refresh(test)
+	
+	# Load creator relationship for the response
+	test = db.query(Test).options(joinedload(Test.creator)).filter(Test.id == test.id).first()
 	return test
 
 
@@ -424,7 +429,7 @@ def get_result(
 		"completed_at": result.completed_at,
 		"answers": result.submitted_answers,
 		"test_title": test.title if test else "Unknown Test",
-		"full_name": current_user.full_name,
+		"full_name": result.student.full_name if result.student else "Unknown",
 		"rank": rank,
 		"total_participants": total_participants,
 		"test_questions": test.questions if test else []
@@ -444,11 +449,26 @@ def list_test_results(
 		raise HTTPException(status_code=404, detail="Test not found")
 	_ensure_test_creator_or_admin(test, current_user)
 
-	return (
+	results = (
 		db.query(TestResult)
 		.filter(TestResult.test_id == test_id)
+		.options(joinedload(TestResult.student))
 		.order_by(TestResult.completed_at.desc())
 		.offset(skip)
 		.limit(limit)
 		.all()
 	)
+
+	output = []
+	for r in results:
+		output.append({
+			"id": r.id,
+			"test_id": r.test_id,
+			"user_id": r.student_id,
+			"score": r.score,
+			"time_taken_seconds": r.time_taken,
+			"completed_at": r.completed_at,
+			"answers": r.submitted_answers,
+			"full_name": r.student.full_name if r.student else f"Học viên {r.student_id}"
+		})
+	return output

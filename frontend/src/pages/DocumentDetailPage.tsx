@@ -384,6 +384,23 @@ const DocumentDetailPage: React.FC = () => {
     }
   }, [parsedId, activeTab]);
 
+  // Polling for questions if any question is still "analyzing"
+  useEffect(() => {
+    let qInterval: ReturnType<typeof setInterval> | null = null;
+    
+    const hasUnanswered = questions.some(q => !q.answer);
+    
+    if (activeTab === 'questions' && hasUnanswered && parsedId) {
+      qInterval = setInterval(() => {
+        fetchQuestions(parsedId);
+      }, 5000);
+    }
+    
+    return () => {
+      if (qInterval) clearInterval(qInterval);
+    };
+  }, [questions, activeTab, parsedId]);
+
   const openShare = async () => {
     setIsShareOpen(true);
   };

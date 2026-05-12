@@ -32,7 +32,7 @@ def _ask_ai(document_text: str, question: str) -> Optional[str]:
         return answer
 
     logger.warning("AI Q&A: both Gemini and Grok failed")
-    return None
+    return "Tôi rất tiếc, hiện tại hệ thống AI đang quá tải hoặc gặp lỗi kết nối. Vui lòng thử lại sau giây lát."
 
 
 def _generate_ai_answer_background(question_id: int, document_id: int) -> None:

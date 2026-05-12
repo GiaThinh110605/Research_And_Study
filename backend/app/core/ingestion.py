@@ -112,11 +112,39 @@ def _extract_concepts_tf(text: str, max_concepts: int = MAX_CONCEPTS) -> List[Di
 def extract_concepts(text: str, max_concepts: int = MAX_CONCEPTS) -> List[Dict[str, float]]:
     """Extract concepts using Gemini AI, with TF-based fallback."""
     gemini_concepts = extract_concepts_from_text(text, max_concepts=max_concepts)
+    fallback_concepts = _extract_concepts_tf(text, max_concepts=max_concepts)
+
     if gemini_concepts:
-        logger.info("Concept extraction via Gemini succeeded (%d concepts)", len(gemini_concepts))
-        return gemini_concepts
+        merged: List[Dict[str, float]] = []
+        seen = set()
+
+        for item in gemini_concepts:
+            label = str(item.get("label", "")).strip()
+            if not label:
+                continue
+            key = label.lower()
+            if key in seen:
+                continue
+            merged.append(item)
+            seen.add(key)
+
+        for item in fallback_concepts:
+            label = str(item.get("label", "")).strip()
+            if not label:
+                continue
+            key = label.lower()
+            if key in seen:
+                continue
+            merged.append(item)
+            seen.add(key)
+            if len(merged) >= max_concepts:
+                break
+
+        logger.info("Concept extraction via Gemini succeeded (%d concepts)", len(merged))
+        return merged[:max_concepts]
+
     logger.info("Gemini concept extraction unavailable, falling back to TF analysis")
-    return _extract_concepts_tf(text, max_concepts=max_concepts)
+    return fallback_concepts
 
 
 def _textrank_lite_summary(text: str, max_points: int = MAX_SUMMARY_POINTS) -> str:
@@ -244,6 +272,7 @@ def process_document_ingestion(document_id: int) -> None:
             ingestion.last_event = "chunking_completed"
             db.commit()
         except Exception as chunk_exc:
+            db.rollback()
             logger.warning("Chunking failed: %s", chunk_exc, extra={"document_id": document_id})
             ingestion.status = "failed"
             ingestion.error_message = f"Lỗi chia đoạn tài liệu: {chunk_exc}"
@@ -267,33 +296,41 @@ def process_document_ingestion(document_id: int) -> None:
             ingestion.last_event = "concepts_extracted"
             db.commit()
         except Exception as concept_exc:
+            db.rollback()
             logger.warning("Concept extraction failed: %s", concept_exc, extra={"document_id": document_id})
-            concepts = []
-            ingestion.progress = 0.55
-            ingestion.last_event = "concepts_extracted"
-            db.commit()
+            ingestion = db.query(DocumentIngestion).filter(DocumentIngestion.document_id == document_id).first()
+            if ingestion:
+                concepts = []
+                ingestion.progress = 0.55
+                ingestion.last_event = "concepts_extracted"
+                db.commit()
 
         # ── Stage 4: Summary generation ──────────────────────────
         try:
             summary_content = generate_summary(raw_text)
-            logger.info("Summary generated", extra={"document_id": document_id, "summary_length": len(summary_content)})
-            summary = db.query(Summary).filter(Summary.document_id == document_id).first()
-            if summary:
-                summary.content = summary_content
-            else:
+            if summary_content:
+                logger.info("Summary generated", extra={"document_id": document_id})
+                # Delete existing to avoid unique constraint issues
+                db.query(Summary).filter(Summary.document_id == document_id).delete()
+                db.commit()
+                
                 summary = Summary(document_id=document_id, content=summary_content)
                 db.add(summary)
-            db.commit()
-            db.refresh(summary)
-            ingestion.summary_id = summary.id
+                db.commit()
+                db.refresh(summary)
+                ingestion.summary_id = summary.id
+            
             ingestion.progress = 0.8
             ingestion.last_event = "summary_generated"
             db.commit()
         except Exception as summary_exc:
+            db.rollback()
             logger.warning("Summary generation failed: %s", summary_exc, extra={"document_id": document_id})
-            ingestion.progress = 0.8
-            ingestion.last_event = "summary_generated"
-            db.commit()
+            ingestion = db.query(DocumentIngestion).filter(DocumentIngestion.document_id == document_id).first()
+            if ingestion:
+                ingestion.progress = 0.8
+                ingestion.last_event = "summary_generated"
+                db.commit()
 
         # ── Stage 5: Quiz generation ─────────────────────────────
         try:
@@ -301,43 +338,63 @@ def process_document_ingestion(document_id: int) -> None:
             if quiz_questions:
                 logger.info("Quiz generated", extra={"document_id": document_id, "questions": len(quiz_questions)})
                 quiz_title = f"Quiz tự động: {document.title}"
-                quiz = (
-                    db.query(Test)
-                    .filter(Test.document_id == document_id, Test.title == quiz_title)
-                    .first()
+                
+                # Delete old quiz to avoid complex merge issues
+                old_quiz = db.query(Test).filter(Test.document_id == document_id, Test.title == quiz_title).first()
+                if old_quiz:
+                    db.delete(old_quiz)
+                    db.commit()
+                
+                quiz = Test(
+                    title=quiz_title,
+                    subject=document.subject or "",
+                    creator_id=document.uploader_id,
+                    document_id=document_id,
+                    questions=quiz_questions,
+                    duration_minutes=20,
                 )
-                if quiz:
-                    quiz.questions = quiz_questions
-                else:
-                    quiz = Test(
-                        title=quiz_title,
-                        subject=document.subject or "",
-                        creator_id=document.uploader_id,
-                        document_id=document_id,
-                        questions=quiz_questions,
-                        duration_minutes=20,
-                    )
-                    db.add(quiz)
+                db.add(quiz)
                 db.commit()
                 db.refresh(quiz)
                 ingestion.quiz_test_id = quiz.id
+                ingestion.quiz_questions_count = len(quiz_questions)
+            
+            ingestion.progress = 0.9
+            ingestion.last_event = "quiz_generated"
+            db.commit()
         except Exception as quiz_exc:
-            logger.warning("Quiz generation failed: %s", quiz_exc, extra={"document_id": document_id})
+            db.rollback()
+            logger.warning("Quiz generation failed: %s", quiz_exc)
+            ingestion = db.query(DocumentIngestion).filter(DocumentIngestion.document_id == document_id).first()
+            if ingestion:
+                ingestion.progress = 0.9
+                ingestion.last_event = "quiz_generated"
+                db.commit()
 
         # ── Stage 6: Mindmap generation ──────────────────────────
         try:
             mindmap_data = generate_mindmap_from_text(raw_text)
             if mindmap_data:
                 logger.info("Mindmap generated", extra={"document_id": document_id})
-                mindmap = db.query(Mindmap).filter(Mindmap.document_id == document_id).first()
-                if mindmap:
-                    mindmap.data = mindmap_data
-                else:
-                    mindmap = Mindmap(document_id=document_id, data=mindmap_data)
-                    db.add(mindmap)
+                # Delete existing to avoid unique constraint issues
+                db.query(Mindmap).filter(Mindmap.document_id == document_id).delete()
                 db.commit()
+                
+                mindmap = Mindmap(document_id=document_id, data=mindmap_data)
+                db.add(mindmap)
+                db.commit()
+            
+            ingestion.last_event = "mindmap_generated"
+            ingestion.progress = 1.0
+            db.commit()
         except Exception as mm_exc:
+            db.rollback()
             logger.warning("Mindmap generation failed: %s", mm_exc, extra={"document_id": document_id})
+            ingestion = db.query(DocumentIngestion).filter(DocumentIngestion.document_id == document_id).first()
+            if ingestion:
+                ingestion.progress = 1.0
+                ingestion.last_event = "mindmap_generated"
+                db.commit()
 
         # ── Stage 7: Flashcard generation ────────────────────────
         try:
@@ -373,6 +430,7 @@ def process_document_ingestion(document_id: int) -> None:
                     ))
                 db.commit()
         except Exception as fc_exc:
+            db.rollback()
             logger.warning("Flashcard generation failed: %s", fc_exc, extra={"document_id": document_id})
 
         # ── Finalize ─────────────────────────────────────────────
@@ -386,12 +444,14 @@ def process_document_ingestion(document_id: int) -> None:
     except Exception as exc:
         logger.exception("Ingestion failed", extra={"document_id": document_id})
         try:
+            db.rollback()
+            # Re-fetch ingestion object after rollback because the previous one is expired/invalid
             ingestion = db.query(DocumentIngestion).filter(DocumentIngestion.document_id == document_id).first()
             if ingestion:
                 ingestion.status = "failed"
                 ingestion.error_message = f"Pipeline thất bại: {exc}"
                 db.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Critical failure updating ingestion status: {e}")
     finally:
         db.close()

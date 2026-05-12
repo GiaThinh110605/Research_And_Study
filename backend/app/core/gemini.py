@@ -7,6 +7,43 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+
+def _fallback_quiz() -> List[Dict]:
+    return [
+        {
+            "id": 1,
+            "text": "Câu hỏi dự phòng: Nội dung chính của tài liệu này là gì?",
+            "options": [
+                "Kiến thức tổng quát",
+                "Thông tin chi tiết",
+                "Ứng dụng thực tế",
+                "Tất cả các ý trên",
+            ],
+            "correct_answer": 3,
+            "explanation": "Đây là câu hỏi dự phòng khi AI không thể phân tích nội dung. Vui lòng kiểm tra lại kết nối API.",
+        },
+        {
+            "id": 2,
+            "text": "Câu hỏi dự phòng: Bạn đánh giá thế nào về mức độ hữu ích của tài liệu này?",
+            "options": ["Rất hữu ích", "Bình thường", "Cần cải thiện", "Không rõ"],
+            "correct_answer": 0,
+            "explanation": "Câu hỏi khảo sát tự động.",
+        },
+    ]
+
+
+def _fallback_mindmap() -> Dict:
+    return {
+        "root": {
+            "text": "Sơ đồ tài liệu (Dự phòng)",
+            "children": [
+                {"text": "Nội dung chính", "children": []},
+                {"text": "Khái niệm quan trọng", "children": []},
+                {"text": "Ứng dụng", "children": []},
+            ],
+        }
+    }
+
 def _get_client() -> Optional[genai.Client]:
     api_key = settings.GEMINI_API_KEY or settings.GOOGLE_API_KEY
     if not api_key:
@@ -86,7 +123,7 @@ def generate_quiz_from_text(
 ) -> Optional[List[Dict]]:
     client = _get_client()
     if not client:
-        return None
+        return _fallback_quiz()
 
     context = text.strip()[:15000]
     concept_hint = ""
@@ -128,8 +165,9 @@ Nội dung tài liệu:
             return questions["questions"]
         return None
     except Exception as exc:
+        print(f"DEBUG: Gemini quiz failed: {exc}")
         logger.warning("Gemini quiz failed: %s", exc)
-        return None
+        return _fallback_quiz()
 
 def extract_concepts_from_text(text: str, max_concepts: int = 12) -> Optional[List[Dict]]:
     client = _get_client()
@@ -154,12 +192,12 @@ Nội dung:
         return json.loads(content)
     except Exception as exc:
         logger.warning("Gemini concepts failed: %s", exc)
-        return None
+        return []
 
 def generate_mindmap_from_text(text: str) -> Optional[Dict]:
     client = _get_client()
     if not client:
-        return None
+        return _fallback_mindmap()
 
     context = text.strip()[:15000]
     prompt = f"""Bạn là trợ lý học thuật. Hãy tạo sơ đồ tư duy (mindmap) bằng tiếng Việt dạng JSON.
@@ -178,8 +216,9 @@ Nội dung:
         content = _strip_fenced_block(response.text)
         return json.loads(content)
     except Exception as exc:
+        print(f"DEBUG: Gemini mindmap failed: {exc}")
         logger.warning("Gemini mindmap failed: %s", exc)
-        return None
+        return _fallback_mindmap()
 
 def ask_question_about_text(text: str, question: str) -> Optional[str]:
     client = _get_client()

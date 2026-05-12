@@ -104,6 +104,11 @@ def generate_mindmap(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    # Check if exists first to avoid unnecessary AI call
+    existing_mindmap = db.query(Mindmap).filter(Mindmap.document_id == document_id).first()
+    if existing_mindmap:
+        return existing_mindmap
+
     raw_text = _get_document_text(document)
 
     # Fallback chain: Gemini → Grok → simple fallback
@@ -123,13 +128,6 @@ def generate_mindmap(
                 }
             }
 
-    existing_mindmap = db.query(Mindmap).filter(Mindmap.document_id == document_id).first()
-    if existing_mindmap:
-        existing_mindmap.content = mindmap_data
-        db.commit()
-        db.refresh(existing_mindmap)
-        return existing_mindmap
-
     mindmap = Mindmap(
         document_id=document_id,
         content=mindmap_data
@@ -137,6 +135,18 @@ def generate_mindmap(
     db.add(mindmap)
     db.commit()
     db.refresh(mindmap)
+    return mindmap
+
+
+@router.get("/mindmap/{document_id}", response_model=MindmapOut)
+def get_mindmap(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: Any = Depends(get_current_user)
+) -> Any:
+    mindmap = db.query(Mindmap).filter(Mindmap.document_id == document_id).first()
+    if not mindmap:
+        raise HTTPException(status_code=404, detail="Mindmap not found")
     return mindmap
 
 

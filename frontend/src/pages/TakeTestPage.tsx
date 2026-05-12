@@ -20,6 +20,7 @@ const TakeTestPage: React.FC = () => {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
 
@@ -29,13 +30,14 @@ const TakeTestPage: React.FC = () => {
       try {
         const data = await testService.getTest(parseInt(id));
         if (!data || !data.questions || data.questions.length === 0) {
-           throw new Error("No questions available");
+           throw new Error("Bài kiểm tra chưa có câu hỏi.");
         }
         setTest(data);
         setTimeLeft((data.duration_minutes || 60) * 60);
       } catch (error) {
         console.error("Lỗi khi tải đề thi", error);
         setTest(null);
+        setErrorMessage("Không thể bắt đầu bài kiểm tra. Vui lòng thử lại sau hoặc liên hệ quản trị để tạo câu hỏi.");
       } finally {
         setLoading(false);
       }
@@ -84,10 +86,26 @@ const TakeTestPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [timeLeft, loading, test, handleSubmit]);
 
-  if (loading || !test) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!test) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
+          <p className="text-slate-700 font-bold">{errorMessage || 'Không thể tải bài kiểm tra.'}</p>
+          <button
+            onClick={() => navigate('/test-list')}
+            className="mt-4 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700"
+          >
+            Quay lại danh sách bài kiểm tra
+          </button>
+        </div>
       </div>
     );
   }

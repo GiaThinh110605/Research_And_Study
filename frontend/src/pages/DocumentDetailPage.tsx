@@ -6,6 +6,7 @@ import { documentService, DocumentIngestionStatus, DocumentItem, ShareItem } fro
 import { Flashcard as FlashcardItem } from '../services/flashcards';
 import api from '../services/api';
 import { aiService } from '../services/ai';
+import MindmapView from '../components/documents/MindmapView';
 
 interface DiscussionUser {
   id: number;
@@ -73,6 +74,7 @@ const ingestionSteps = [
   { id: 'concepts_extracted', label: 'Khái niệm' },
   { id: 'summary_generated', label: 'Tóm tắt' },
   { id: 'quiz_generated', label: 'Quiz' },
+  { id: 'mindmap_generated', label: 'Sơ đồ' },
 ];
 type DetailTab = 'info' | 'questions' | 'discussion' | 'highlight' | 'flashcards';
 
@@ -230,6 +232,7 @@ const DocumentDetailPage: React.FC = () => {
     concepts_extracted: 2,
     summary_generated: 3,
     quiz_generated: 4,
+    mindmap_generated: 5,
   };
   const currentStepIndex = ingestion?.status === 'failed'
     ? -1
@@ -353,9 +356,9 @@ const DocumentDetailPage: React.FC = () => {
     setMindmapLoading(true);
     try {
       const res = await api.post(`/api/v1/ai/mindmap/${docId}`);
-      // res.data is MindmapOut, res.data.data is the actual mindmap JSON
-      if (res.data && res.data.data) {
-        setMindmap(res.data.data);
+      // res.data is MindmapOut, res.data.content is the actual mindmap JSON
+      if (res.data && res.data.content) {
+        setMindmap(res.data.content);
       } else {
         setMindmap(null);
       }
@@ -714,8 +717,16 @@ const DocumentDetailPage: React.FC = () => {
                           const isDone = currentStepIndex > idx || ingestion?.status === 'completed';
                           const isActive = currentStepIndex === idx && ingestion?.status !== 'failed' && ingestion?.status !== 'completed';
                           const isFailed = ingestion?.status === 'failed' && currentStepIndex <= idx;
+                          
+                          // Allow clicking on Quiz step if it's already generated but pipeline is "stuck"
+                          const isClickable = (idx === 4 && ingestion?.quiz_test_id);
+
                           return (
-                            <div key={step.id} className="flex flex-col items-center gap-2">
+                            <div 
+                              key={step.id} 
+                              className={`flex flex-col items-center gap-2 ${isClickable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+                              onClick={() => isClickable && handleOpenQuiz()}
+                            >
                               <div className={`h-8 w-8 rounded-full border text-[11px] font-black flex items-center justify-center transition-all duration-300 ${isFailed ? 'border-red-200 text-red-500 bg-red-50' : isDone ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : isActive ? 'border-blue-500 text-blue-600 bg-blue-50' : 'border-slate-200 text-slate-400 bg-slate-50'} ${isActive ? 'animate-pulse ring-4 ring-blue-50' : ''}`}>
                                 {isDone ? '✓' : idx + 1}
                               </div>
@@ -739,21 +750,21 @@ const DocumentDetailPage: React.FC = () => {
                       {retryError && (
                         <p className="mt-2 text-[11px] text-red-500">{retryError}</p>
                       )}
-                      {ingestion?.status === 'failed' && isOwner && (
+                       {ingestion && (
                         <button
                           onClick={handleRetryIngestion}
-                          className="mt-3 inline-flex items-center justify-center w-full gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-[12px] font-bold text-red-600 hover:bg-red-50 transition-colors shadow-sm"
+                          className="mt-3 inline-flex items-center justify-center w-full gap-2 rounded-xl border-2 border-[#3B66F5] bg-blue-50/50 px-4 py-3 text-[13px] font-black text-[#3B66F5] hover:bg-[#3B66F5] hover:text-white transition-all shadow-md"
                           disabled={isRetrying}
                         >
                           {isRetrying ? (
                             <>
-                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
-                              Đang khởi động lại...
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#3B66F5] border-t-transparent" />
+                              Đang khởi động lại hệ thống...
                             </>
                           ) : (
                             <>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                              Khởi động lại Pipeline
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                              KHỞI ĐỘNG LẠI PIPELINE AI
                             </>
                           )}
                         </button>
@@ -767,11 +778,22 @@ const DocumentDetailPage: React.FC = () => {
                       <span className="bg-[#5E6AD2] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Auto</span>
                     </div>
                     {summaryLines.length > 0 ? (
-                      <ul className="space-y-4 text-[13px] text-gray-600 font-medium leading-relaxed">
-                        {summaryLines.map((line, idx) => (
-                          <li key={idx} className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span>{line}</li>
-                        ))}
-                      </ul>
+                      <div className="space-y-4">
+                        <ul className="space-y-4 text-[13px] text-gray-600 font-medium leading-relaxed">
+                          {summaryLines.map((line, idx) => (
+                            <li key={idx} className="flex gap-2.5"><span className="text-[#3B66F5] mt-0.5">•</span>{line}</li>
+                          ))}
+                        </ul>
+                        {quizAvailable && (
+                          <button 
+                            onClick={handleOpenQuiz}
+                            className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-3 text-sm font-bold shadow-sm transition-all"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Làm bài Quiz ôn tập ngay
+                          </button>
+                        )}
+                      </div>
                     ) : (ingestionLoading || (ingestion && ingestion.status !== 'completed' && ingestion.status !== 'failed')) ? (
                       <div className="space-y-3 animate-pulse">
                         <div className="h-3 rounded-full bg-slate-200" />
@@ -1107,45 +1129,9 @@ const DocumentDetailPage: React.FC = () => {
                     </button>
                   </div>
 
-                  {mindmapLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-                      <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-                      <p className="text-sm text-slate-500 font-bold">Gemini đang phân tích cấu trúc...</p>
-                    </div>
-                  ) : mindmap?.root ? (
-                    <div className="bg-[#F8FAFF] rounded-2xl p-6 border border-blue-50 overflow-y-auto">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-[#3B66F5]"></div>
-                          <span className="font-black text-slate-900 text-sm">{mindmap.root.text}</span>
-                        </div>
-                        <div className="ml-4 pl-4 border-l-2 border-slate-100 space-y-4">
-                          {mindmap.root.children?.map((child: any, idx: number) => (
-                            <div key={idx} className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-indigo-400"></div>
-                                <span className="font-bold text-slate-800 text-[13px]">{child.text}</span>
-                              </div>
-                              {child.children && (
-                                <div className="ml-3 pl-4 border-l border-slate-100 space-y-2">
-                                  {child.children.map((sub: any, sIdx: number) => (
-                                    <div key={sIdx} className="flex items-center gap-2 text-[12px] text-slate-600">
-                                      <span className="text-indigo-300">•</span>
-                                      {sub.text}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-20 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                      <p className="text-sm text-slate-400 font-medium">Chưa có dữ liệu sơ đồ.<br/>Nhấn 'Làm mới' để AI tạo sơ đồ.</p>
-                    </div>
-                  )}
+                  <div className="flex-1 overflow-y-auto">
+                    <MindmapView data={mindmap} isLoading={mindmapLoading} />
+                  </div>
                 </div>
               )}
             </div>

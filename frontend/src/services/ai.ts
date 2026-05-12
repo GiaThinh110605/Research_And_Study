@@ -10,7 +10,7 @@ export interface SummaryOut {
 export interface MindmapOut {
   id: number;
   document_id: number;
-  data: any;
+  content: any;
   created_at: string;
 }
 

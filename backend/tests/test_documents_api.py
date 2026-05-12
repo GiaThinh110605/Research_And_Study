@@ -226,4 +226,48 @@ def test_upload_document_success_creates_file_and_record(client: TestClient, db_
 
     file_name = Path(payload["file_url"]).name
     saved_path = Path(settings.UPLOAD_DIR) / file_name
-    assert saved_path.exists()
+    try:
+        assert saved_path.exists()
+    finally:
+        if saved_path.exists():
+            saved_path.unlink()
+
+
+def test_upload_document_rejects_unsupported_file_type(client: TestClient, db_session):
+    owner = create_user(db_session, "owner7@example.com")
+    token = login(client, owner.email)
+
+    response = client.post(
+        "/api/v1/documents",
+        headers=auth_headers(token),
+        data={
+            "title": "Bad Type",
+            "description": "Unsupported file",
+            "subject": "CNTT",
+            "is_public": "true",
+        },
+        files={"file": ("bad.exe", io.BytesIO(b"data"), "application/octet-stream")},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Unsupported file type"
+
+
+def test_upload_document_requires_title(client: TestClient, db_session):
+    owner = create_user(db_session, "owner8@example.com")
+    token = login(client, owner.email)
+
+    response = client.post(
+        "/api/v1/documents",
+        headers=auth_headers(token),
+        data={
+            "title": "  ",
+            "description": "Missing title",
+            "subject": "CNTT",
+            "is_public": "true",
+        },
+        files={"file": ("ok.pdf", io.BytesIO(b"small-data"), "application/pdf")},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Title cannot be empty"

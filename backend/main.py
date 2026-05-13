@@ -28,11 +28,9 @@ def init_default_user():
             )
             db.add(admin)
             db.commit()
-            print("✓ Default admin user created (username: admin, password: admin123)")
-        else:
-            print("✓ Admin user already exists")
+            print("[OK] Admin user already exists")
     except Exception as e:
-        print(f"✗ Error initializing default user: {e}")
+        print(f"[ERROR] Error initializing default user: {e}")
     finally:
         db.close()
 
@@ -54,8 +52,7 @@ app.add_middleware(AuthMiddleware)
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.ALLOWED_ORIGINS] if "*" not in settings.ALLOWED_ORIGINS else [],
-    allow_origin_regex="https?://.*" if "*" in settings.ALLOWED_ORIGINS else None,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -38,6 +38,9 @@ def _ask_ai(document_text: str, question: str) -> Optional[str]:
 def _generate_ai_answer_background(question_id: int, document_id: int) -> None:
     """Background task to generate AI answer for a question."""
     from app.models.base import SessionLocal
+    from app.models.question import Question
+    from app.models.document import Document
+    from app.core.file_utils import extract_text_from_file
 
     db = SessionLocal()
     try:
@@ -51,17 +54,27 @@ def _generate_ai_answer_background(question_id: int, document_id: int) -> None:
 
         raw_text = extract_text_from_file(document.file_path) or document.description or ""
         if not raw_text:
-            question.ai_answer = "Rất tiếc, hệ thống không thể trích xuất được nội dung văn bản từ tài liệu này để đưa ra câu trả lời."
+            question.ai_answer = "Không thể trích xuất nội dung từ tài liệu để trả lời."
             db.commit()
             return
 
-        ai_answer = _ask_ai(raw_text, question.content)
-        if ai_answer:
-            question.ai_answer = ai_answer
-            db.commit()
-            logger.info("AI answer saved for question %d", question_id)
-    except Exception as exc:
-        logger.warning("Background AI answer failed for question %d: %s", question_id, exc)
+        answer = _ask_ai(raw_text, question.content)
+        if answer:
+            question.ai_answer = answer
+        else:
+            question.ai_answer = "AI hiện không thể trả lời câu hỏi này. Vui lòng thử lại với câu hỏi khác hoặc kiểm tra lại nội dung tài liệu."
+        db.commit()
+    except Exception as e:
+        logger.error(f"Error in AI answer background task: {e}")
+        try:
+            db.rollback()
+            # If we have a question, at least stop the loading state
+            question = db.query(Question).filter(Question.id == question_id).first()
+            if question and not question.ai_answer:
+                question.ai_answer = f"Lỗi hệ thống khi xử lý câu hỏi: {str(e)}"
+                db.commit()
+        except:
+            pass
     finally:
         db.close()
 

@@ -45,3 +45,7 @@ class TokenPayload(BaseModel):
 class SocialLogin(BaseModel):
     token: str
     client_id: Optional[str] = None
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str

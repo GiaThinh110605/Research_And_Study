@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { validateName, validateStudentId, validateEmail, validatePhone } from '../utils/validation';
+import { validateName, validateEmail, validatePhone } from '../utils/validation';
+import api from '../services/api';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'info' | 'activity' | 'security'>('info');
@@ -12,7 +13,6 @@ const ProfilePage: React.FC = () => {
   
   const [profileData, setProfileData] = useState({
     name: 'Đang tải...',
-    studentId: '',
     email: 'Đang tải...',
     phone: '',
     major: ''
@@ -28,7 +28,6 @@ const ProfilePage: React.FC = () => {
     const loadProfile = async () => {
       try {
         const { authService } = await import('../services/auth');
-        const api = (await import('../services/api')).default;
         
         const me = await authService.getCurrentUser();
         const name = me.full_name || me.username || 'Người dùng';
@@ -39,7 +38,6 @@ const ProfilePage: React.FC = () => {
         setProfileData(prev => ({
           ...prev,
           name: name,
-          studentId: me.username || '', // Use username as studentId initially
           email: me.email || ''
         }));
 
@@ -70,6 +68,8 @@ const ProfilePage: React.FC = () => {
           const result = event.target.result;
           setAvatarUrl(result);
           localStorage.setItem('user_avatar', result);
+          // Dispatch custom event for real-time update in layout
+          window.dispatchEvent(new CustomEvent('user-avatar-updated', { detail: result }));
         }
       };
       reader.readAsDataURL(file);
@@ -81,9 +81,6 @@ const ProfilePage: React.FC = () => {
     
     const nameErr = validateName(profileData.name);
     if (nameErr) newErrors.name = nameErr;
-    
-    const idErr = validateStudentId(profileData.studentId);
-    if (idErr) newErrors.studentId = idErr;
     
     const emailErr = validateEmail(profileData.email);
     if (emailErr) newErrors.email = emailErr;
@@ -101,6 +98,7 @@ const ProfilePage: React.FC = () => {
     setIsEditing(false);
     setUserName(profileData.name);
     localStorage.setItem('user_name', profileData.name);
+    window.dispatchEvent(new CustomEvent('user-name-updated', { detail: profileData.name }));
     alert('Đã cập nhật thông tin hồ sơ thành công!');
   };
 
@@ -108,29 +106,49 @@ const ProfilePage: React.FC = () => {
   const [passwords, setPasswords] = useState({ old: '', new: '', confirm: '' });
   const [passStatus, setPassStatus] = useState<{type: 'success'|'error'|'loading'|null, message: string}>({type: null, message: ''});
   
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
+    if (!passwords.old || !passwords.new || !passwords.confirm) {
+      setPassStatus({ type: 'error', message: 'Vui lòng điền đầy đủ tất cả các trường mật khẩu!' });
+      return;
+    }
+    if (passwords.new !== passwords.confirm) {
+      setPassStatus({ type: 'error', message: 'Mật khẩu xác nhận không khớp!' });
+      return;
+    }
+    if (passwords.new.length < 6) {
+      setPassStatus({ type: 'error', message: 'Mật khẩu mới phải có ít nhất 6 ký tự!' });
+      return;
+    }
+
     setPassStatus({ type: 'loading', message: 'Đang xử lý...' });
-    setTimeout(() => {
-      if (!passwords.old || !passwords.new || !passwords.confirm) {
-        setPassStatus({ type: 'error', message: 'Vui lòng điền đầy đủ tất cả các trường mật khẩu!' });
-        return;
-      }
-      if (passwords.new !== passwords.confirm) {
-        setPassStatus({ type: 'error', message: 'Mật khẩu xác nhận không khớp!' });
-        return;
-      }
-      if (passwords.new.length < 6) {
-        setPassStatus({ type: 'error', message: 'Mật khẩu mới phải có ít nhất 6 ký tự!' });
-        return;
-      }
-      if (passwords.old === passwords.new) {
-        setPassStatus({ type: 'error', message: 'Mật khẩu mới không được trùng mật khẩu cũ!' });
-        return;
-      }
-      // Success
+    try {
+      await api.post('/api/v1/users/change-password', {
+        current_password: passwords.old,
+        new_password: passwords.new
+      });
+      
       setPassStatus({ type: 'success', message: 'Đổi mật khẩu thành công!' });
       setPasswords({ old: '', new: '', confirm: '' });
-    }, 1000);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || 'Có lỗi xảy ra khi đổi mật khẩu';
+      setPassStatus({ type: 'error', message: errorMsg });
+    }
+  };
+
+  const getRelativeTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      
+      if (diffInSeconds < 60) return 'Vừa xong';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+      if (diffInSeconds < 172800) return 'Hôm qua';
+      return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+    } catch (e) {
+      return 'Vừa xong';
+    }
   };
 
   return (
@@ -243,30 +261,6 @@ const ProfilePage: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Mã sinh viên</label>
-                  {isEditing ? (
-                    <>
-                      <input 
-                        type="text" 
-                        value={profileData.studentId} 
-                        onChange={e => {
-                          setProfileData({...profileData, studentId: e.target.value});
-                          if (errors.studentId) setErrors({...errors, studentId: ''});
-                        }} 
-                        className={`w-full px-4 py-3 bg-white border-2 ${errors.studentId ? 'border-red-500 focus:border-red-500' : 'border-blue-100 focus:border-blue-500'} rounded-xl font-medium text-gray-900 outline-none transition-all`} 
-                        disabled 
-                      />
-                      {errors.studentId ? (
-                        <p className="text-rose-500 text-[10px] font-bold mt-1 px-1">{errors.studentId}</p>
-                      ) : (
-                        <p className="text-[10px] text-gray-400 mt-1">Mã sinh viên không thể thay đổi</p>
-                      )}
-                    </>
-                  ) : (
-                    <div className="px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-900 border border-gray-100">{profileData.studentId}</div>
-                  )}
-                </div>
-                <div>
                   <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Email liên hệ</label>
                   {isEditing ? (
                     <>
@@ -297,25 +291,27 @@ const ProfilePage: React.FC = () => {
                 </span>
                 Hoạt động gần đây
               </h2>
-              <div className="relative border-l-2 border-gray-100 ml-3 pl-6 space-y-8">
-                 <div className="relative">
-                    <div className="absolute w-4 h-4 bg-emerald-500 rounded-full border-4 border-white -left-[31px] top-1"></div>
-                    <p className="text-sm text-gray-500 font-medium mb-1">Vừa xong</p>
-                    <p className="font-bold text-gray-900">Hoàn thành bài thi thử môn Cấu trúc rời rạc</p>
-                    <p className="text-sm text-emerald-600 font-bold mt-1">Điểm: 9.0/10</p>
-                 </div>
-                 <div className="relative">
-                    <div className="absolute w-4 h-4 bg-blue-500 rounded-full border-4 border-white -left-[31px] top-1"></div>
-                    <p className="text-sm text-gray-500 font-medium mb-1">Hôm qua</p>
-                    <p className="font-bold text-gray-900">Tải lên tài liệu "Tổng hợp Đề thi OOP K16"</p>
-                    <p className="text-sm text-gray-500 mt-1">Đã có 25+ lượt tải về</p>
-                 </div>
-                 <div className="relative opacity-60">
-                    <div className="absolute w-4 h-4 bg-gray-300 rounded-full border-4 border-white -left-[31px] top-1"></div>
-                    <p className="text-sm text-gray-500 font-medium mb-1">3 ngày trước</p>
-                    <p className="font-bold text-gray-900">Bình luận trong bài viết Giải tích 1</p>
-                 </div>
-              </div>
+              
+              {activities.length > 0 ? (
+                <div className="relative border-l-2 border-gray-100 ml-3 pl-6 space-y-8">
+                  {activities.map((act, idx) => (
+                    <div key={idx} className="relative">
+                       <div className={`absolute w-4 h-4 rounded-full border-4 border-white -left-[31px] top-1 ${
+                         act.type === 'test' ? 'bg-emerald-500' : act.type === 'document' ? 'bg-blue-500' : 'bg-purple-500'
+                       }`}></div>
+                       <p className="text-sm text-gray-500 font-medium mb-1">{getRelativeTime(act.created_at)}</p>
+                       <p className="font-bold text-gray-900">{act.title}</p>
+                       <p className={`text-sm mt-1 ${act.type === 'test' ? 'text-emerald-600 font-bold' : 'text-gray-500'}`}>
+                         {act.description}
+                       </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <p className="text-gray-500 font-medium">Chưa có hoạt động nào được ghi lại.</p>
+                </div>
+              )}
             </div>
           )}
 

@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from app.api.v1.deps import get_current_user, get_current_active_admin
 from app.models.base import get_db
 from app.models.user import User, UserRole
-from app.schemas.user import UserOut, UserUpdate, UserUpdateByAdmin, UserCreate
-from app.core.security import get_password_hash
+from app.schemas.user import UserOut, UserUpdate, UserUpdateByAdmin, UserCreate, PasswordChange
+from app.core.security import get_password_hash, verify_password
 
 router = APIRouter()
 
@@ -112,6 +112,27 @@ def update_user_me(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+@router.post("/change-password")
+def change_password(
+    *,
+    db: Session = Depends(get_db),
+    password_data: PasswordChange,
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """
+    Change own password.
+    """
+    if not verify_password(password_data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mật khẩu hiện tại không chính xác",
+        )
+    
+    current_user.password_hash = get_password_hash(password_data.new_password)
+    db.add(current_user)
+    db.commit()
+    return {"message": "Mật khẩu đã được thay đổi thành công"}
 
 @router.get("/{user_id}", response_model=UserOut)
 def read_user_by_id(

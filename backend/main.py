@@ -7,6 +7,7 @@ from app.api.v1.api import api_router
 from app.core.config import settings
 from app.middleware.auth import AuthMiddleware
 from app.models.base import engine, Base, SessionLocal
+from app.core.db_compat import ensure_test_schema
 import app.models  # Import all models to ensure they are registered with Base
 from app.models.user import User, UserRole
 from app.core.security import get_password_hash
@@ -45,6 +46,7 @@ app = FastAPI(
 @app.on_event("startup")
 def startup_event():
     Base.metadata.create_all(bind=engine)
+    ensure_test_schema(engine)
     init_default_user()
 
 app.add_middleware(AuthMiddleware)

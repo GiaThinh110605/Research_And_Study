@@ -103,6 +103,18 @@ def _extract_correct_answer(question: Dict[str, Any]) -> Any:
 	return None
 
 
+def _strip_correct_answers(questions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+	if not questions:
+		return []
+	stripped = []
+	for q in questions:
+		q_copy = q.copy()
+		for key in ["correct_answer", "correct_option", "answer", "correct", "explanation"]:
+			q_copy.pop(key, None)
+		stripped.append(q_copy)
+	return stripped
+
+
 def _calculate_score(questions: List[Dict[str, Any]], answers: Dict[str, Any]) -> float:
 	if not questions:
 		return 0.0
@@ -292,9 +304,36 @@ def get_test(
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
-	test = db.query(Test).filter(Test.id == test_id).first()
+	test = db.query(Test).options(joinedload(Test.creator)).filter(Test.id == test_id).first()
 	if not test:
 		raise HTTPException(status_code=404, detail="Test not found")
+	
+	# Determine if we should strip correct answers
+	# Rule: Students NEVER see correct answers in this endpoint
+	# Lecturers/Admins only see if they are the creator or admin
+	should_strip = False
+	if current_user.role == UserRole.STUDENT:
+		should_strip = True
+	elif current_user.role != UserRole.ADMIN and test.creator_id != current_user.id:
+		should_strip = True
+
+	if should_strip and test.questions:
+		# Return a copy with stripped questions
+		test_data = {
+			"id": test.id,
+			"title": test.title,
+			"subject": test.subject,
+			"document_id": test.document_id,
+			"duration_minutes": test.duration_minutes,
+			"creator_id": test.creator_id,
+			"creator_role": test.creator.role.value if test.creator else None,
+			"created_at": test.created_at,
+			"questions_count": len(test.questions),
+			"participants_count": test.participants_count,
+			"questions": _strip_correct_answers(test.questions)
+		}
+		return test_data
+
 	return test
 
 
@@ -420,6 +459,13 @@ def get_result(
 	total_participants = db.query(TestResult).filter(TestResult.test_id == result.test_id).count()
 	rank = db.query(TestResult).filter(TestResult.test_id == result.test_id, TestResult.score > result.score).count() + 1
 	
+	# For results, students can see correct answers only if the test is completed
+	# But following the strict request: "không được trả về correct_answer cho người dùng"
+	# We strip it here too if they are not the creator/admin
+	questions = test.questions if test else []
+	if current_user.role != UserRole.ADMIN and test and test.creator_id != current_user.id:
+		questions = _strip_correct_answers(questions)
+
 	return {
 		"id": result.id,
 		"test_id": result.test_id,
@@ -432,7 +478,7 @@ def get_result(
 		"full_name": result.student.full_name if result.student else "Unknown",
 		"rank": rank,
 		"total_participants": total_participants,
-		"test_questions": test.questions if test else []
+		"test_questions": questions
 	}
 
 

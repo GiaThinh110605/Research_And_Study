@@ -43,6 +43,20 @@ const DashboardLayout: React.FC = () => {
       }
     };
     fetchUser();
+
+    const handleAvatarUpdate = (e: any) => {
+      setUser(prev => ({ ...prev, avatar: e.detail }));
+    };
+    const handleNameUpdate = (e: any) => {
+      setUser(prev => ({ ...prev, name: e.detail }));
+    };
+
+    window.addEventListener('user-avatar-updated', handleAvatarUpdate);
+    window.addEventListener('user-name-updated', handleNameUpdate);
+    return () => {
+      window.removeEventListener('user-avatar-updated', handleAvatarUpdate);
+      window.removeEventListener('user-name-updated', handleNameUpdate);
+    };
   }, []);
 
   const handleLogout = () => {

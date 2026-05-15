@@ -21,15 +21,41 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
+import { adminLogs } from '../data/mockAdminLogs';
 
 const AdminLogs: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [moduleFilter, setModuleFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const modules = ['All', ...new Set(adminLogs.map(log => log.module))];
+  const statuses = ['All', 'Thành công', 'Cảnh báo', 'Thất bại'];
 
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
   };
+
+  const filteredLogs = adminLogs.filter(log => {
+    const matchesSearch = 
+      log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.action.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'All' || log.status === statusFilter;
+    const matchesModule = moduleFilter === 'All' || log.module === moduleFilter;
+    
+    return matchesSearch && matchesStatus && matchesModule;
+  });
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const currentLogs = filteredLogs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Tổng quan', path: '/admin' },
@@ -38,74 +64,6 @@ const AdminLogs: React.FC = () => {
     { icon: CheckSquare, label: 'Kiểm duyệt chia sẻ', path: '/admin/moderation' },
     { icon: History, label: 'Nhật ký hoạt động', path: '/admin/logs' },
     { icon: Settings, label: 'Cài đặt hệ thống', path: '/admin/settings' },
-  ];
-
-  const logs = [
-    {
-      id: "LOG-001",
-      user: "Nguyễn Văn An",
-      email: "an.nguyen@student.edu.vn",
-      action: "Đăng nhập hệ thống",
-      module: "Authentication",
-      time: "10:24:32 - 24/10/2023",
-      ip: "192.168.1.45",
-      status: "Thành công",
-      icon: LogIn,
-      iconColor: "text-blue-500",
-      iconBg: "bg-blue-50"
-    },
-    {
-      id: "LOG-002",
-      user: "Trần Thị Bé",
-      email: "be.tran@student.edu.vn",
-      action: "Tải lên tài liệu mới",
-      module: "Documents",
-      time: "09:15:10 - 24/10/2023",
-      ip: "113.160.20.1",
-      status: "Thành công",
-      icon: FilePlus,
-      iconColor: "text-emerald-500",
-      iconBg: "bg-emerald-50"
-    },
-    {
-      id: "LOG-003",
-      user: "Hệ thống",
-      email: "system@unistudy.vn",
-      action: "Phát hiện địa chỉ IP truy cập bất thường",
-      module: "Security",
-      time: "03:45:00 - 24/10/2023",
-      ip: "45.22.11.99",
-      status: "Cảnh báo",
-      icon: ShieldAlert,
-      iconColor: "text-amber-500",
-      iconBg: "bg-amber-50"
-    },
-    {
-      id: "LOG-004",
-      user: "Lê Văn Hùng",
-      email: "hung.le@lecturer.edu.vn",
-      action: "Cập nhật điểm thi học kỳ",
-      module: "Grades",
-      time: "16:20:15 - 23/10/2023",
-      ip: "10.0.5.122",
-      status: "Thành công",
-      icon: Activity,
-      iconColor: "text-indigo-500",
-      iconBg: "bg-indigo-50"
-    },
-    {
-      id: "LOG-005",
-      user: "Unknown",
-      email: "N/A",
-      action: "Sai mật khẩu quá 5 lần",
-      module: "Authentication",
-      time: "22:10:05 - 22/10/2023",
-      ip: "171.240.50.2",
-      status: "Thất bại",
-      icon: ShieldAlert,
-      iconColor: "text-red-500",
-      iconBg: "bg-red-50"
-    }
   ];
 
   return (
@@ -134,18 +92,37 @@ const AdminLogs: React.FC = () => {
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-8">
               {/* Filter Row */}
               <div className="p-4 border-b border-slate-50 flex items-center gap-4 bg-slate-50/50">
-                <select className="bg-white border border-slate-200 text-slate-700 rounded-xl py-2 px-4 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-100 shadow-sm">
-                  <option>Tất cả Module</option>
-                  <option>Authentication</option>
-                  <option>Documents</option>
-                  <option>Security</option>
-                </select>
-                <select className="bg-white border border-slate-200 text-slate-700 rounded-xl py-2 px-4 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-100 shadow-sm">
-                  <option>Mọi trạng thái</option>
-                  <option>Thành công</option>
-                  <option>Cảnh báo</option>
-                  <option>Thất bại</option>
-                </select>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Module:</span>
+                  <select 
+                    value={moduleFilter}
+                    onChange={(e) => {
+                      setModuleFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-white border border-slate-200 text-slate-700 rounded-xl py-2 px-4 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-100 shadow-sm"
+                  >
+                    {modules.map(m => (
+                      <option key={m} value={m}>{m === 'All' ? 'Tất cả Module' : m}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Trạng thái:</span>
+                  <select 
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-white border border-slate-200 text-slate-700 rounded-xl py-2 px-4 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-100 shadow-sm"
+                  >
+                    {statuses.map(s => (
+                      <option key={s} value={s}>{s === 'All' ? 'Mọi trạng thái' : s}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Table wrapper */}
@@ -161,7 +138,7 @@ const AdminLogs: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {logs.map((log) => (
+                    {currentLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-50/70 transition-colors group">
                         <td className="px-6 py-5 align-top">
                           <span className="text-[10px] font-black text-slate-400 tracking-wider font-mono">{log.id}</span>
@@ -208,17 +185,35 @@ const AdminLogs: React.FC = () => {
 
               {/* Pagination */}
               <div className="p-6 border-t border-slate-50 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400">Hiển thị 5 trên hơn 12,000 logs</span>
+                <span className="text-xs font-bold text-slate-400">
+                  Hiển thị {currentLogs.length} trên tổng số {filteredLogs.length} logs
+                </span>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors">
+                  <button 
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+                  >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <div className="flex gap-1">
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-black shadow-sm">1</button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-100 transition-colors">2</button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-100 transition-colors">3</button>
+                    <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-black shadow-sm">
+                      {currentPage}
+                    </button>
+                    {currentPage < totalPages && (
+                      <button 
+                        onClick={() => setCurrentPage(p => p + 1)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-100 transition-colors"
+                      >
+                        {currentPage + 1}
+                      </button>
+                    )}
                   </div>
-                  <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors">
+                  <button 
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+                  >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>

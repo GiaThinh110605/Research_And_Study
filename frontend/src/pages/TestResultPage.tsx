@@ -96,7 +96,7 @@ const TestResultPage: React.FC = () => {
       {/* Header */}
       <div className="space-y-1">
         <button 
-          onClick={() => navigate('/test-list')}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 text-[12px] font-bold text-indigo-500 hover:text-indigo-700 transition-colors mb-2"
         >
           <ArrowLeft size={12} />

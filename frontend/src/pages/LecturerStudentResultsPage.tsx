@@ -177,7 +177,7 @@ const LecturerStudentResultsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-4 px-6">
-                      <button onClick={() => alert(`Xem chi tiết bài làm của ID: ${result.user_id}`)} className="w-8 h-8 rounded-full bg-blue-50 text-[#3B66F5] flex items-center justify-center hover:bg-[#3B66F5] hover:text-white transition">
+                      <button onClick={() => navigate(`/lecturer/ket-qua-chi-tiet/${result.id}`)} className="w-8 h-8 rounded-full bg-blue-50 text-[#3B66F5] flex items-center justify-center hover:bg-[#3B66F5] hover:text-white transition">
                         <Eye className="w-4 h-4" />
                       </button>
                     </td>

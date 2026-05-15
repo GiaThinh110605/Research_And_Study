@@ -36,6 +36,7 @@ import StudentCreateTestPage from './pages/StudentCreateTestPage';
 
 import DashboardLayout from './components/layout/DashboardLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
+import AdminLayout from './components/layout/AdminLayout';
 
 function App() {
   return (
@@ -74,14 +75,18 @@ function App() {
           <Route path="/lecturer/bai-kiem-tra" element={<LecturerTestsPage />} />
           <Route path="/lecturer/bai-kiem-tra/tao" element={<LecturerCreateTestPage />} />
           <Route path="/lecturer/ket-qua-sinh-vien" element={<LecturerStudentResultsPage />} />
+          <Route path="/lecturer/ket-qua-chi-tiet/:id" element={<TestResultPage />} />
           <Route path="/lecturer/thao-luan" element={<DiscussionPage />} />
         </Route>
         
-        <Route path="/admin/users" element={<AdminUserManagement />} />
-        <Route path="/admin/moderation" element={<AdminModeration />} />
-        <Route path="/admin/logs" element={<AdminLogs />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        {/* Admin Routes */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUserManagement />} />
+          <Route path="/admin/moderation" element={<AdminModeration />} />
+          <Route path="/admin/logs" element={<AdminLogs />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+        </Route>
       </Routes>
     </Router>
   );

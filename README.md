@@ -51,3 +51,7 @@ docker compose -f docker-compose.dev.yml down
 
 - An example: docker compose -f docker-compose.dev.yml exec backend pytest tests/test_middleware_auth.py
 
+# When the project don't run, you can try: 
+- docker-compose up --build
+
+

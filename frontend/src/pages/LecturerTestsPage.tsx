@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, CheckCircle2, Clock, Edit2, Trash2, Plus, Zap } from 'lucide-react';
+import { FileText, CheckCircle2, Clock, Edit2, Trash2, Plus, Zap, Search } from 'lucide-react';
 import { testService, TestOut } from '../services/test';
 import { authService } from '../services/auth';
 
@@ -8,6 +8,16 @@ const LecturerTestsPage: React.FC = () => {
   const navigate = useNavigate();
   const [tests, setTests] = useState<TestOut[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredTests = tests.filter(test => {
+    if (!searchQuery) return true;
+    const lowerQuery = searchQuery.toLowerCase();
+    return (
+      (test.title && test.title.toLowerCase().includes(lowerQuery)) ||
+      (test.subject && test.subject.toLowerCase().includes(lowerQuery))
+    );
+  });
 
   useEffect(() => {
     fetchTests();
@@ -45,10 +55,20 @@ const LecturerTestsPage: React.FC = () => {
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8 pb-24 relative min-h-full">
       {/* Header Info */}
-      <div className="flex justify-between items-end mb-8">
-        <div>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-8">
+        <div className="flex-1">
           <h1 className="text-3xl font-black text-gray-900 mb-2">Quản lý đề thi</h1>
-          <p className="text-gray-500 max-w-2xl">Xem và quản lý tất cả các bài kiểm tra hiện có. Bạn có thể cập nhật nội dung hoặc xóa các đề thi không còn sử dụng.</p>
+          <p className="text-gray-500 max-w-2xl mb-6">Xem và quản lý tất cả các bài kiểm tra hiện có. Bạn có thể cập nhật nội dung hoặc xóa các đề thi không còn sử dụng.</p>
+          <div className="relative max-w-md">
+            <Search className="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm kiếm theo tên đề thi, môn học..." 
+              className="bg-white shadow-sm pl-14 pr-6 py-3.5 rounded-2xl text-sm outline-none w-full border border-gray-100 focus:border-indigo-500 transition-all font-bold text-slate-700 placeholder:text-slate-300" 
+            />
+          </div>
         </div>
         <Link to="/lecturer/bai-kiem-tra/tao" className="bg-[#3B66F5] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-200/50 hover:bg-blue-700 transition flex items-center gap-2 shrink-0">
           <Plus className="w-5 h-5" /> Tạo đề thi mới
@@ -89,18 +109,18 @@ const LecturerTestsPage: React.FC = () => {
       </div>
 
       {/* Test Grid */}
-      {tests.length === 0 ? (
+      {filteredTests.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
           <FileText className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Chưa có bài kiểm tra nào</h3>
-          <p className="text-gray-500 mb-6">Bạn chưa tạo bài kiểm tra nào. Hãy nhấn nút tạo đề thi mới để bắt đầu.</p>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Chưa có bài kiểm tra nào phù hợp</h3>
+          <p className="text-gray-500 mb-6">Không tìm thấy bài kiểm tra nào. Hãy thử lại với từ khóa khác hoặc tạo đề thi mới.</p>
           <Link to="/lecturer/bai-kiem-tra/tao" className="inline-flex bg-[#3B66F5] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition items-center gap-2">
             <Plus className="w-5 h-5" /> Tạo đề thi ngay
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {tests.map((test, index) => (
+          {filteredTests.map((test, index) => (
             <div key={test.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between group hover:shadow-md transition relative overflow-hidden">
               {/* Optional background image effect for some cards to mimic design */}
               {index % 3 === 0 && (

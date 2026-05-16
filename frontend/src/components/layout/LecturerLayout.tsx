@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../../services/auth';
 import { 
-  Search, 
   Bell, 
   Settings, 
   LogOut, 
@@ -17,7 +16,6 @@ import {
 const LecturerLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<any>(null);
 
   React.useEffect(() => {
@@ -94,19 +92,7 @@ const LecturerLayout: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Top Navbar */}
-        <div className="h-24 bg-white/80 backdrop-blur-md border-b border-slate-100 flex justify-between items-center px-10 shrink-0 relative z-20">
-          <div className="flex-1">
-            <div className="relative w-[480px]">
-              <Search className="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm tài liệu, đề thi..." 
-                className="bg-slate-50 pl-14 pr-6 py-3.5 rounded-2xl text-sm outline-none w-full border border-transparent focus:border-indigo-500 focus:bg-white transition-all font-bold text-slate-700 placeholder:text-slate-300" 
-              />
-            </div>
-          </div>
+        <div className="h-24 bg-white/80 backdrop-blur-md border-b border-slate-100 flex justify-end items-center px-10 shrink-0 relative z-20">
           
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-4 border-r border-slate-100 pr-8">
@@ -138,7 +124,6 @@ const LecturerLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* Dynamic Content Scrollable */}
         <div className="flex-1 overflow-y-auto bg-[#F8FAFC]">
           <div className="p-10">
             <Outlet />

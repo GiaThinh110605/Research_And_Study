@@ -33,7 +33,8 @@ const ProfilePage: React.FC = () => {
         const name = me.full_name || me.username || 'Người dùng';
         
         setUserName(name);
-        setUserRole(me.role === 'admin' ? 'Quản trị viên' : (me.role === 'lecturer' ? 'Giảng viên' : 'Sinh viên'));
+        const role = me.role?.toUpperCase();
+        setUserRole(role === 'ADMIN' ? 'Quản trị viên' : (role === 'LECTURER' ? 'Giảng viên' : 'Sinh viên'));
         
         setProfileData(prev => ({
           ...prev,
@@ -166,21 +167,33 @@ const ProfilePage: React.FC = () => {
           <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">{userName}</h1>
           <p className="text-blue-600 font-semibold mb-4 text-sm flex items-center justify-center md:justify-start gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
-            {userRole} Đại học Công nghiệp TP.HCM (IUH)
+            {userRole} • Đại học Công nghiệp TP.HCM (IUH)
           </p>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-sm font-medium text-gray-500">
             <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">12</span>
-              Bài viết
+              <span className={`w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold`}>
+                {userRole === 'Giảng viên' ? '24' : '12'}
+              </span>
+              {userRole === 'Giảng viên' ? 'Đề thi đã tạo' : 'Bài viết'}
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold">45</span>
-              Tài liệu
+              <span className={`w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold`}>
+                {userRole === 'Giảng viên' ? '156' : '45'}
+              </span>
+              {userRole === 'Giảng viên' ? 'Sinh viên tham gia' : 'Tài liệu'}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold">8.5</span>
-              GPA
-            </div>
+            {userRole !== 'Giảng viên' && (
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold">8.5</span>
+                GPA
+              </div>
+            )}
+            {userRole === 'Giảng viên' && (
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold">92%</span>
+                Tỷ lệ đạt
+              </div>
+            )}
           </div>
         </div>
         
@@ -297,7 +310,9 @@ const ProfilePage: React.FC = () => {
                   {activities.map((act, idx) => (
                     <div key={idx} className="relative">
                        <div className={`absolute w-4 h-4 rounded-full border-4 border-white -left-[31px] top-1 ${
-                         act.type === 'test' ? 'bg-emerald-500' : act.type === 'document' ? 'bg-blue-500' : 'bg-purple-500'
+                         act.type === 'test' ? 'bg-emerald-500' : 
+                         act.type === 'test_created' ? 'bg-indigo-500' :
+                         act.type === 'document' ? 'bg-blue-500' : 'bg-purple-500'
                        }`}></div>
                        <p className="text-sm text-gray-500 font-medium mb-1">{getRelativeTime(act.created_at)}</p>
                        <p className="font-bold text-gray-900">{act.title}</p>

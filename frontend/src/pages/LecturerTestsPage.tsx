@@ -145,6 +145,11 @@ const LecturerTestsPage: React.FC = () => {
                   <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded text-xs font-bold">
                     Hoạt động
                   </span>
+                  {test.access_code && (
+                    <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-xs font-bold flex items-center gap-1">
+                      Mã: <span className="font-mono tracking-wider">{test.access_code}</span>
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-50">

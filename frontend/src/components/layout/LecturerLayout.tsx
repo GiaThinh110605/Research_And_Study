@@ -17,17 +17,32 @@ const LecturerLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
+  const [avatar, setAvatar] = useState<string | null>(localStorage.getItem('user_avatar'));
 
   React.useEffect(() => {
     const fetchUser = async () => {
       try {
         const userData = await authService.getCurrentUser();
         setUser(userData);
+        if (userData.avatar_url && !localStorage.getItem('user_avatar')) {
+          setAvatar(userData.avatar_url);
+        }
       } catch (error) {
         console.error("Lỗi khi lấy thông tin user:", error);
       }
     };
     fetchUser();
+
+    const handleAvatarUpdate = (e: any) => setAvatar(e.detail);
+    const handleNameUpdate = (e: any) => setUser((prev: any) => prev ? { ...prev, full_name: e.detail } : null);
+
+    window.addEventListener('user-avatar-updated' as any, handleAvatarUpdate);
+    window.addEventListener('user-name-updated' as any, handleNameUpdate);
+
+    return () => {
+      window.removeEventListener('user-avatar-updated' as any, handleAvatarUpdate);
+      window.removeEventListener('user-name-updated' as any, handleNameUpdate);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -116,8 +131,9 @@ const LecturerLayout: React.FC = () => {
               </div>
               <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center border-2 border-white shadow-xl shadow-slate-200/50 overflow-hidden group-hover:scale-105 transition-transform">
                 <img 
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'User')}&background=6366f1&color=fff&bold=true`} 
+                  src={avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'User')}&background=6366f1&color=fff&bold=true`} 
                   alt="Avatar" 
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>

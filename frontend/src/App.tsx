@@ -33,6 +33,7 @@ import FlashcardCreatePage from './pages/FlashcardCreatePage';
 import FlashcardEditPage from './pages/FlashcardEditPage';
 import FlashcardStudyPage from './pages/FlashcardStudyPage';
 import StudentCreateTestPage from './pages/StudentCreateTestPage';
+import LecturerResultDetailPage from './pages/LecturerResultDetailPage';
 
 import DashboardLayout from './components/layout/DashboardLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
@@ -74,6 +75,8 @@ function App() {
           <Route path="/lecturer/bai-kiem-tra" element={<LecturerTestsPage />} />
           <Route path="/lecturer/bai-kiem-tra/tao" element={<LecturerCreateTestPage />} />
           <Route path="/lecturer/ket-qua-sinh-vien" element={<LecturerStudentResultsPage />} />
+          <Route path="/lecturer/ket-qua-chi-tiet/:id" element={<LecturerResultDetailPage />} />
+          <Route path="/lecturer/settings" element={<ProfilePage />} />
           <Route path="/lecturer/thao-luan" element={<DiscussionPage />} />
         </Route>
         

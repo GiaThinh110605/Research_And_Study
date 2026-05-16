@@ -25,6 +25,7 @@ const LecturerCreateTestPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(!!testId);
   const [error, setError] = useState<string | null>(null);
+  const [accessCode, setAccessCode] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (testId) {
@@ -33,6 +34,7 @@ const LecturerCreateTestPage: React.FC = () => {
           const test = await testService.getTest(parseInt(testId));
           setTitle(test.title);
           setDuration(test.duration_minutes || 60);
+          setAccessCode(test.access_code || null);
           
           if (test.questions && test.questions.length > 0) {
             const formattedQuestions = test.questions.map((q: any) => ({
@@ -165,6 +167,7 @@ const LecturerCreateTestPage: React.FC = () => {
         title: title,
         subject: "TRẮC NGHIỆM",
         duration_minutes: duration,
+        access_code: accessCode,
         questions: questions.map((q, idx) => {
           const optionsText = q.options.map(o => o.text);
           const correctIndex = q.options.findIndex(o => o.isCorrect);
@@ -257,6 +260,34 @@ const LecturerCreateTestPage: React.FC = () => {
             placeholder="Ghi chú cho sinh viên về phạm vi kiến thức..." 
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#3B66F5] focus:ring-1 focus:ring-[#3B66F5] outline-none transition resize-none"
           ></textarea>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-50">
+          <label className="block text-sm font-bold text-gray-700 mb-2">Mã truy cập (Để trống để hệ thống tự tạo)</label>
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Shield className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                value={accessCode || ''}
+                onChange={e => setAccessCode(e.target.value.toUpperCase())}
+                placeholder="Ví dụ: MYCODE123" 
+                className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-[#3B66F5] focus:ring-1 focus:ring-[#3B66F5] outline-none transition font-mono tracking-wider" 
+              />
+            </div>
+            {accessCode && (
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(accessCode);
+                  alert("Đã sao chép mã truy cập!");
+                }}
+                className="px-4 py-3 bg-gray-50 text-gray-500 rounded-xl hover:bg-gray-100 transition flex items-center gap-2 font-bold text-sm"
+              >
+                <Copy className="w-4 h-4" /> Sao chép
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2 italic">* Nếu không nhập, hệ thống sẽ tự động tạo một mã ngẫu nhiên khi bạn lưu đề thi.</p>
         </div>
       </div>
 

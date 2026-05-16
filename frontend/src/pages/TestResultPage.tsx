@@ -33,12 +33,14 @@ const TestResultPage: React.FC = () => {
         let resData: TestResultOut | null = null;
         
         if (location.state && location.state.questions && location.state.answers) {
-          const { questions, answers, timeTaken, testTitle, test_id } = location.state;
+          const { questions, answers, timeTaken, testTitle, test_id, score: stateScore } = location.state;
           const correctCount = questions.reduce((acc: number, q: any) => {
             const userAns = answers[q.id.toString()];
-            return acc + (userAns !== undefined && userAns === q.answer ? 1 : 0);
+            return acc + (userAns !== undefined && String(userAns) === String(q.answer) ? 1 : 0);
           }, 0);
-          const score = (correctCount / (questions.length || 1)) * 10;
+          
+          // Use score from backend if available, otherwise calculate
+          const score = stateScore !== undefined ? stateScore : (correctCount / (questions.length || 1)) * 10;
 
           resData = {
             id: id ? parseInt(id) : 999,
@@ -79,7 +81,7 @@ const TestResultPage: React.FC = () => {
   const totalQuestions = result.test_questions?.length ?? 20;
   const correctCount = result.test_questions?.reduce((acc, q) => {
     const userAns = result.answers[q.id.toString()];
-    return acc + (userAns !== undefined && userAns === q.answer ? 1 : 0);
+    return acc + (userAns !== undefined && String(userAns) === String(q.answer) ? 1 : 0);
   }, 0) ?? 17;
   const incorrectCount = totalQuestions - correctCount;
 
@@ -217,11 +219,11 @@ const TestResultPage: React.FC = () => {
       <div className="space-y-4">
         
         {result.test_questions?.filter((q) => {
-          if (filter === 'wrong') return result.answers[q.id.toString()] !== q.answer;
+          if (filter === 'wrong') return String(result.answers[q.id.toString()]) !== String(q.answer);
           return true;
         }).map((q, idx) => {
           const userAns = result.answers[q.id.toString()];
-          const isCorrect = userAns === q.answer;
+          const isCorrect = String(userAns) === String(q.answer);
           
           return (
             <div key={q.id} className={`bg-white rounded-xl border ${isCorrect ? 'border-slate-200' : 'border-rose-100'} shadow-sm flex overflow-hidden`}>
@@ -239,7 +241,7 @@ const TestResultPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   {q.options.map((opt, oIdx) => {
                     const isUserChoice = userAns === oIdx;
-                    const isCorrectOpt = q.answer === oIdx;
+                    const isCorrectOpt = String(q.answer) === String(oIdx);
                     
                     let bgClass = "bg-white opacity-70";
                     let borderClass = "border-slate-200";

@@ -36,8 +36,18 @@ def get_my_activities(
         activities.append({
             "type": "document",
             "title": f"Tải lên tài liệu \"{d.title}\"",
-            "description": f"{d.file_type.upper()}",
+            "description": f"{d.file_type.upper() if d.file_type else 'FILE'}",
             "created_at": d.created_at
+        })
+
+    # 3. Tests Created (for Lecturers)
+    tests = db.query(Test).filter(Test.creator_id == current_user.id).order_by(Test.created_at.desc()).limit(5).all()
+    for t in tests:
+        activities.append({
+            "type": "test_created",
+            "title": f"Tạo bài kiểm tra \"{t.title}\"",
+            "description": f"{len(t.questions) if t.questions else 0} câu hỏi",
+            "created_at": t.created_at
         })
         
     # 3. Discussions

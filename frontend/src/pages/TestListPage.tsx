@@ -12,7 +12,8 @@ import {
   Microscope,
   Search,
   Star,
-  TrendingUp
+  TrendingUp,
+  Lock
 } from 'lucide-react';
 import { testService, TestOut } from '../services/test';
 
@@ -274,8 +275,9 @@ const TestListPage: React.FC = () => {
                           </span>
                           <span className="text-[10px] font-bold text-slate-300">• {test.creator_role === 'LECTURER' || test.creator_role === 'ADMIN' ? 'GIẢNG VIÊN' : 'CÁ NHÂN'}</span>
                         </div>
-                        <h3 className="text-[17px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors truncate pr-8 leading-tight">
+                        <h3 className="text-[17px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors truncate pr-8 leading-tight flex items-center gap-2">
                           {test.title}
+                          {test.is_locked && <Lock size={14} className="text-amber-500 shrink-0" />}
                         </h3>
                         <div className="flex items-center gap-x-6 mt-3">
                           <div className="flex items-center gap-2 text-[12px] font-bold text-slate-400">

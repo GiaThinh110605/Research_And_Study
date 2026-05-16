@@ -1,4 +1,6 @@
 from datetime import datetime
+import secrets
+import string
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -24,7 +26,7 @@ class TestBase(BaseModel):
 
 
 class TestCreate(TestBase):
-	pass
+	access_code: Optional[str] = None
 
 
 class TestUpdate(BaseModel):
@@ -33,6 +35,7 @@ class TestUpdate(BaseModel):
 	document_id: Optional[int] = None
 	questions: Optional[List[Dict[str, Any]]] = None
 	duration_minutes: Optional[int] = Field(default=None, gt=0)
+	access_code: Optional[str] = None
 
 
 class TestOut(BaseModel):
@@ -47,10 +50,11 @@ class TestOut(BaseModel):
 	questions_count: int = 0
 	participants_count: int = 0
 	status: str = "MỚI"
+	is_locked: bool = False
 	questions: Optional[List[Dict[str, Any]]] = None
+	access_code: Optional[str] = None
 
-	class Config:
-		orm_mode = True
+	model_config = {"from_attributes": True}
 
 
 class TestStatsOut(BaseModel):
@@ -80,8 +84,7 @@ class TestResultOut(BaseModel):
 	total_participants: Optional[int] = None
 	test_questions: Optional[List[Dict[str, Any]]] = None
 
-	class Config:
-		orm_mode = True
+	model_config = {"from_attributes": True}
 
 
 def _ensure_test_creator_or_admin(test: Test, current_user: User) -> None:
@@ -131,7 +134,7 @@ def _calculate_score(questions: List[Dict[str, Any]], answers: Dict[str, Any]) -
 		if submitted is None:
 			submitted = answers.get(str(index))
 
-		if submitted == expected:
+		if str(submitted) == str(expected):
 			correct_count += 1
 
 	return round((correct_count / total) * 10, 2)
@@ -228,7 +231,8 @@ def list_tests(
 			"created_at": test.created_at,
 			"questions_count": len(test.questions) if test.questions else 0,
 			"participants_count": test.participants_count or 0,
-			"status": status
+			"status": status,
+			"is_locked": bool(test.access_code)
 		})
 	
 	return results
@@ -254,6 +258,7 @@ def create_test(
 		document_id=payload.document_id,
 		questions=payload.questions,
 		duration_minutes=payload.duration_minutes,
+		access_code=payload.access_code or ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
 	)
 	db.add(test)
 	db.commit()
@@ -301,6 +306,7 @@ def list_my_results(
 @router.get("/{test_id}", response_model=TestOut)
 def get_test(
 	test_id: int,
+	access_code: Optional[str] = Query(default=None),
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -317,6 +323,14 @@ def get_test(
 	elif current_user.role != UserRole.ADMIN and test.creator_id != current_user.id:
 		should_strip = True
 
+	# Validate access code for students if one exists
+	if current_user.role == UserRole.STUDENT and test.access_code:
+		if access_code != test.access_code:
+			raise HTTPException(
+				status_code=403, 
+				detail="Mã truy cập không chính xác. Vui lòng liên hệ giảng viên để nhận mã."
+			)
+
 	if should_strip and test.questions:
 		# Return a copy with stripped questions
 		test_data = {
@@ -330,11 +344,18 @@ def get_test(
 			"created_at": test.created_at,
 			"questions_count": len(test.questions),
 			"participants_count": test.participants_count,
-			"questions": _strip_correct_answers(test.questions)
+			"is_locked": bool(test.access_code),
+			"questions": _strip_correct_answers(test.questions),
+			"access_code": None  # Hide code from students
 		}
 		return test_data
 
-	return test
+	# For lecturers/admins who are not the creator, also hide code if desired
+	# but for now let's just ensure students don't see it
+	res = TestOut.model_validate(test)
+	if current_user.role == UserRole.STUDENT:
+		res.access_code = None
+	return res
 
 
 @router.put("/{test_id}", response_model=TestOut)
@@ -440,7 +461,8 @@ def submit_test(
 		"test_title": test.title,
 		"full_name": current_user.full_name,
 		"rank": rank,
-		"total_participants": total_participants
+		"total_participants": total_participants,
+		"test_questions": test.questions
 	}
 
 
@@ -463,7 +485,7 @@ def get_result(
 	# But following the strict request: "không được trả về correct_answer cho người dùng"
 	# We strip it here too if they are not the creator/admin
 	questions = test.questions if test else []
-	if current_user.role != UserRole.ADMIN and test and test.creator_id != current_user.id:
+	if current_user.role != UserRole.ADMIN and test and test.creator_id != current_user.id and current_user.id != result.student_id:
 		questions = _strip_correct_answers(questions)
 
 	return {

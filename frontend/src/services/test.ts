@@ -18,7 +18,9 @@ export interface TestOut {
   participants_count?: number;
   duration_minutes?: number;
   status: 'HOÀN THÀNH' | 'ĐANG LÀM' | 'MỚI';
+  is_locked?: boolean;
   questions?: ITestQuestion[];
+  access_code?: string;
 }
 
 export interface TestResultOut {
@@ -56,8 +58,10 @@ export const testService = {
     const response = await api.get(`/api/v1/tests/`, { params });
     return response.data;
   },
-  getTest: async (id: number): Promise<TestOut> => {
-    const response = await api.get(`/api/v1/tests/${id}`);
+  getTest: async (id: number, accessCode?: string): Promise<TestOut> => {
+    const response = await api.get(`/api/v1/tests/${id}`, {
+      params: accessCode ? { access_code: accessCode } : {}
+    });
     return response.data;
   },
   getResultDetail: async (id: number): Promise<TestResultOut> => {

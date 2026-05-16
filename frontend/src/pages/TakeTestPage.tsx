@@ -23,21 +23,32 @@ const TakeTestPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [isAccessCodeRequired, setIsAccessCodeRequired] = useState(false);
+  const [isAccessCodeError, setIsAccessCodeError] = useState(false);
 
   useEffect(() => {
-    const fetchTest = async () => {
+    const fetchTest = async (code?: string) => {
       if (!id) return;
       try {
-        const data = await testService.getTest(parseInt(id));
+        setLoading(true);
+        const data = await testService.getTest(parseInt(id), code);
         if (!data || !data.questions || data.questions.length === 0) {
            throw new Error("Bài kiểm tra chưa có câu hỏi.");
         }
         setTest(data);
         setTimeLeft((data.duration_minutes || 60) * 60);
-      } catch (error) {
+        setIsAccessCodeRequired(false);
+        setIsAccessCodeError(false);
+      } catch (error: any) {
         console.error("Lỗi khi tải đề thi", error);
-        setTest(null);
-        setErrorMessage("Không thể bắt đầu bài kiểm tra. Vui lòng thử lại sau hoặc liên hệ quản trị để tạo câu hỏi.");
+        if (error.response && error.response.status === 403) {
+          setIsAccessCodeRequired(true);
+          if (code) setIsAccessCodeError(true);
+        } else {
+          setTest(null);
+          setErrorMessage(error.message || "Không thể bắt đầu bài kiểm tra. Vui lòng thử lại sau.");
+        }
       } finally {
         setLoading(false);
       }
@@ -61,13 +72,31 @@ const TakeTestPage: React.FC = () => {
       const duration = (test.duration_minutes || 60) * 60;
       const timeTaken = duration - timeLeft;
       const res = await testService.submitTest(test.id, answersMap, timeTaken);
-      navigate(`/test-result/${res.id}`, { state: { questions: test.questions, answers: answersMap, timeTaken, testTitle: test.title, test_id: test.id } });
+      navigate(`/test-result/${res.id}`, { 
+        state: { 
+          questions: res.test_questions || test.questions, 
+          answers: answersMap, 
+          timeTaken, 
+          testTitle: test.title, 
+          test_id: test.id,
+          score: res.score
+        } 
+      });
     } catch (error) {
       console.error("Lỗi khi nộp bài", error);
       // Fallback for simulation if API fails in dev
       const duration = (test.duration_minutes || 60) * 60;
       const timeTaken = duration - timeLeft;
-      navigate(`/test-result/999`, { state: { questions: test.questions, answers: answersMap, timeTaken, testTitle: test.title, test_id: test.id } });
+      navigate(`/test-result/999`, { 
+        state: { 
+          questions: test.questions, 
+          answers: answersMap, 
+          timeTaken, 
+          testTitle: test.title, 
+          test_id: test.id,
+          score: 0 
+        } 
+      });
     }
   }, [test, answers, timeLeft, navigate]);
 
@@ -90,6 +119,71 @@ const TakeTestPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isAccessCodeRequired) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-[40px] shadow-2xl border border-slate-100 p-12 text-center space-y-8 animate-in fade-in zoom-in duration-300">
+          <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600 mx-auto mb-2">
+            <Send size={40} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Mã truy cập đề thi</h2>
+            <p className="text-slate-500 font-medium">Vui lòng nhập mã truy cập được cấp bởi giảng viên để bắt đầu làm bài.</p>
+          </div>
+          
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={accessCodeInput}
+              onChange={(e) => {
+                setAccessCodeInput(e.target.value.toUpperCase());
+                setIsAccessCodeError(false);
+              }}
+              placeholder="NHẬP MÃ (VD: AB1234)"
+              className={`w-full bg-slate-50 border-2 rounded-2xl px-6 py-4 text-center text-xl font-black tracking-[0.2em] outline-none transition-all ${
+                isAccessCodeError ? 'border-red-500 bg-red-50 text-red-600' : 'border-slate-100 focus:border-indigo-500 focus:bg-white text-slate-700'
+              }`}
+            />
+            {isAccessCodeError && (
+              <p className="text-red-500 text-sm font-bold animate-pulse">Mã truy cập không hợp lệ. Vui lòng kiểm tra lại!</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => navigate('/test-list')}
+              className="py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 transition-all"
+            >
+              QUAY LẠI
+            </button>
+            <button
+              onClick={() => {
+                const fetchTest = async (code: string) => {
+                  try {
+                    setLoading(true);
+                    const data = await testService.getTest(parseInt(id || '0'), code);
+                    setTest(data);
+                    setTimeLeft((data.duration_minutes || 60) * 60);
+                    setIsAccessCodeRequired(false);
+                  } catch (error: any) {
+                    setIsAccessCodeError(true);
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                fetchTest(accessCodeInput);
+              }}
+              disabled={!accessCodeInput}
+              className="py-4 rounded-2xl bg-indigo-600 text-white font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50"
+            >
+              XÁC NHẬN
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

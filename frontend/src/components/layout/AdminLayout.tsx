@@ -53,8 +53,7 @@ const AdminLayout: React.FC = () => {
   const menuItems = [
     { name: "Tổng quan", icon: Home, path: "/admin", isHome: true },
     { name: "Quản lý người dùng", icon: Users, path: "/admin/users" },
-    { name: "Kiểm duyệt", icon: MessageSquare, path: "/admin/moderation" },
-    { name: "Nhật ký hoạt động", icon: History, path: "/admin/logs" }
+    { name: "Kiểm duyệt", icon: MessageSquare, path: "/admin/moderation" }
   ];
 
   return (

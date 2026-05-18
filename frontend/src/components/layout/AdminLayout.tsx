@@ -61,7 +61,7 @@ const AdminLayout: React.FC = () => {
       {/* Sidebar */}
       <div className="w-[280px] bg-white border-r border-slate-100 flex flex-col h-full shrink-0 shadow-sm">
         <div className="p-8 flex items-center gap-3">
-          <div className="w-11 h-11 bg-indigo-600 rounded-2xl text-white flex items-center justify-center shadow-lg shadow-indigo-100">
+          <div className="w-11 h-11 bg-indigo-600 rounded-2xl text-white flex items-center justify-center shadow-lg shadow-indigo-100 logo-container cursor-pointer">
             <BookOpen size={24} />
           </div>
           <div className="space-y-0.5">
@@ -79,8 +79,8 @@ const AdminLayout: React.FC = () => {
               <Link
                 key={idx}
                 to={item.path}
-                className={`flex items-center gap-4 px-6 py-4 rounded-2xl font-bold transition-all active:scale-95 ${isActive
-                    ? "bg-indigo-50 text-indigo-600 shadow-sm"
+                className={`flex items-center gap-4 px-6 py-4 rounded-2xl font-bold transition-all active:scale-95 animate-hover-wiggle ${isActive
+                    ? "bg-indigo-50 text-indigo-600 shadow-sm active-glow"
                     : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
                   }`}
               >
@@ -112,7 +112,7 @@ const AdminLayout: React.FC = () => {
             <div className="flex items-center gap-4 border-r border-slate-100 pr-8">
               <button className="text-slate-400 hover:text-indigo-600 transition-colors relative">
                 <Bell size={24} />
-                <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm"></div>
+                <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm animate-badge-pulse"></div>
               </button>
               <button className="text-slate-400 hover:text-indigo-600 transition-colors">
                 <HelpCircle size={24} />
@@ -128,7 +128,7 @@ const AdminLayout: React.FC = () => {
                   QUẢN TRỊ VIÊN
                 </div>
               </div>
-              <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center border-2 border-white shadow-xl shadow-slate-200/50 overflow-hidden group-hover:scale-105 transition-transform">
+              <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center border-2 border-white shadow-xl shadow-slate-200/50 overflow-hidden premium-avatar transition-transform">
                 <img 
                   src={avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'User')}&background=6366f1&color=fff&bold=true`} 
                   alt="Avatar" 
@@ -140,7 +140,7 @@ const AdminLayout: React.FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-[#F8FAFC]">
-          <div className="p-10">
+          <div className="p-10 animate-page-entry">
             <Outlet />
           </div>
         </div>

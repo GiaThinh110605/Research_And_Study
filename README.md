@@ -1,4 +1,4 @@
-# Research and Study to help student with their homework and don't comsuming time 
+# Research and Study
 - web: https://research-and-study.onrender.com
 
 # Contributors:
@@ -8,18 +8,13 @@
 - Fronted: ReactJS
 - Backend: FastAPI
 - Database: PostgreSQL
-- Design UI: Stitch (https://stitch.withgoogle.com/projects/6010126405400371290)
+- Design UI: Stitch (https://stitch.withgoogle.com/projects/871614783666700392)
 - Design Database: Use Case Diagram
 
 # CI/CD: 
 - Github Action
 - Docker
 - Deploy: render
-
-# Guild run the project:
-- 1. Clone the project: 
-
-    git clone https://github.com/GiaThinh110605/AI_Research.git
 
 ## 📊 Statistic contribute in this project: 
 ![Contributors](https://contrib.rocks/image?repo=GiaThinh110605/AI_Research)
@@ -28,17 +23,52 @@
 ## Documentation: 
 - https://docs.google.com/document/d/1VK-sPX6wGNsVy-2yWqqd7CMiBh_2E9FE/edit?usp=sharing&ouid=116261595522292024849&rtpof=true&sd=true
 
+## Cho lần đầu tiên chạy dự án 
+
+- 1. Clone project: 
+
+    git clone https://github.com/GiaThinh110605/AI_Research.git
+
 ## Setup environment variables
-Copy the example env files to real `.env` files before starting the project.
+Copy .env-example đến `.env` để chạy dự án.
 
 ```bash
 cp backend/.env-example backend/.env
 cp frontend/.env-example frontend/.env
 ```
 
-Edit `backend/.env` and `frontend/.env` if you need to change database, API, or secret values.
+chỉnh sửa `backend/.env` and `frontend/.env` nếu bạn cần thay đổi những giá trị database, API, or secret .
 
-## Start all services (Database, Backend, Frontend)
+- chạy script để chạy  Docker, create tables, and tạo seed the default admin student lecturer.
+
+```bash
+chmod +x setup_and_run.sh
+./setup_and_run.sh
+```
+
+import test data sau khi khởi tạo:
+
+```bash
+chmod +x seed_full_data.sh
+./seed_full_data.sh
+```
+
+## Test accounts
+- admin / admin123
+- student1 / student123
+- lecturer1 / lecturer123
+
+## Test results (backend)
+- `59 passed`
+
+Chạy test:
+```bash
+docker compose -f docker-compose.dev.yml exec backend pytest -q
+```
+
+
+
+## Chạy tất cả services cho lần thứ 2 trở đi khi vào dự án (Database, Backend, Frontend)
 ```bash
 cd backend
 python create_tables.py
@@ -55,34 +85,4 @@ docker compose -f docker-compose.dev.yml up -d --build
 ```bash
 docker compose -f docker-compose.dev.yml down
 ```
-
-## Automated setup script (for the first time or if you want to reset the environment)
-Run the root script to start Docker, create tables, and seed the default admin user.
-
-```bash
-chmod +x setup_and_run.sh
-./setup_and_run.sh
-```
-
-To import example test data after setup:
-
-```bash
-chmod +x seed_full_data.sh
-./seed_full_data.sh
-```
-
-## Test accounts
-- admin / admin123
-- student1 / student123
-- lecturer1 / lecturer123
-
-## Test results (backend)
-- `59 passed`
-
-Reproduce with:
-```bash
-docker compose -f docker-compose.dev.yml exec backend pytest -q
-```
-
-
 

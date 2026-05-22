@@ -141,10 +141,11 @@ def _calculate_score(questions: List[Dict[str, Any]], answers: Dict[str, Any]) -
 
 
 def _to_4_scale(score_10: float) -> float:
-	if score_10 >= 8.5: return 4.0
+	if score_10 >= 9.0: return 4.0
+	if score_10 >= 8.5: return 3.8
 	if score_10 >= 8.0: return 3.5
 	if score_10 >= 7.0: return 3.0
-	if score_10 >= 6.5: return 2.5
+	if score_10 >= 6.0: return 2.5
 	if score_10 >= 5.5: return 2.0
 	if score_10 >= 5.0: return 1.5
 	if score_10 >= 4.0: return 1.0

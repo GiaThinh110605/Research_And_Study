@@ -46,13 +46,6 @@ docker compose -f docker-compose.dev.yml up -d --build
 docker compose -f docker-compose.dev.yml down
 ```
 
-# Run unit test for specific file
-
-- An example: docker compose -f docker-compose.dev.yml exec backend pytest tests/test_middleware_auth.py
-
-# When the project don't run, you can try: 
-- docker-compose up --build
-
 ## Automated setup script (for the first time or if you want to reset the environment)
 Run the root script to start Docker, create tables, and seed the default admin user.
 

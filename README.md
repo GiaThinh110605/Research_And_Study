@@ -30,7 +30,6 @@
 
 ## Start all services (Database, Backend, Frontend)
 ```bash
-- If you are the first time to visit
 cd backend 
 python create_tables.py
 - run docker compose 
@@ -53,5 +52,34 @@ docker compose -f docker-compose.dev.yml down
 
 # When the project don't run, you can try: 
 - docker-compose up --build
+
+## Automated setup script (for the first time or if you want to reset the environment)
+Run the root script to start Docker, create tables, and seed the default admin user.
+
+```bash
+chmod +x setup_and_run.sh
+./setup_and_run.sh
+```
+
+To import example test data after setup:
+
+```bash
+chmod +x seed_full_data.sh
+./seed_full_data.sh
+```
+
+## Test accounts
+- admin / admin123
+- student1 / student123
+- lecturer1 / lecturer123
+
+## Test results (backend)
+- `59 passed`
+
+Reproduce with:
+```bash
+docker compose -f docker-compose.dev.yml exec backend pytest -q
+```
+
 
 

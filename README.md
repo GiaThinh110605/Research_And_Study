@@ -28,11 +28,21 @@
 ## Documentation: 
 - https://docs.google.com/document/d/1VK-sPX6wGNsVy-2yWqqd7CMiBh_2E9FE/edit?usp=sharing&ouid=116261595522292024849&rtpof=true&sd=true
 
+## Setup environment variables
+Copy the example env files to real `.env` files before starting the project.
+
+```bash
+cp backend/.env-example backend/.env
+cp frontend/.env-example frontend/.env
+```
+
+Edit `backend/.env` and `frontend/.env` if you need to change database, API, or secret values.
+
 ## Start all services (Database, Backend, Frontend)
 ```bash
-cd backend 
+cd backend
 python create_tables.py
-- run docker compose 
+# run docker compose
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 

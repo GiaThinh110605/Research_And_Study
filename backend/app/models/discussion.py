@@ -20,3 +20,4 @@ class Discussion(Base):
     user = relationship("User", back_populates="discussions")
     parent = relationship("Discussion", remote_side=[id], back_populates="replies")
     replies = relationship("Discussion", back_populates="parent", cascade="all, delete-orphan")
+    reactions = relationship("DiscussionReaction", back_populates="discussion", cascade="all, delete-orphan")

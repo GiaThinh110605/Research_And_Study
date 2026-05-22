@@ -18,6 +18,11 @@ class DiscussionUpdate(BaseModel):
     content: str
 
 
+class DiscussionReactionCreate(BaseModel):
+    """Tạo hoặc cập nhật reaction cho discussion."""
+    emoji: str
+
+
 # ---------- Nested helpers ----------
 
 class DiscussionUserOut(BaseModel):
@@ -25,6 +30,10 @@ class DiscussionUserOut(BaseModel):
     full_name: str
     username: str
     role: str
+class DiscussionReactionSummary(BaseModel):
+    emoji: str
+    count: int
+
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -44,9 +53,17 @@ class DiscussionOut(BaseModel):
     # Nested
     user: Optional[DiscussionUserOut] = None
     replies: Optional[List["DiscussionOut"]] = []
+    reaction_summary: List[DiscussionReactionSummary] = []
+    my_reaction: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 # Cho phép tự tham chiếu (Pydantic v2 style or v1)
 DiscussionOut.model_rebuild()
+
+
+class DiscussionReactionStatus(BaseModel):
+    discussion_id: int
+    reaction_summary: List[DiscussionReactionSummary] = []
+    my_reaction: Optional[str] = None

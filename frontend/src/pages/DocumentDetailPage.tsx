@@ -800,6 +800,15 @@ const DocumentDetailPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            {isOwner && (
+              <button
+                onClick={() => setIsEditOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-700 border border-slate-200 rounded-xl hover:border-[#3B66F5] hover:text-[#3B66F5] transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1-1v2m-6 4h12M5 18h14" /></svg>
+                Chỉnh sửa
+              </button>
+            )}
             <button onClick={openShare} className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-[#3B66F5] hover:bg-blue-50 rounded-xl transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
               Chia sẻ
@@ -1360,6 +1369,95 @@ const DocumentDetailPage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Chỉnh sửa tài liệu</h3>
+                <p className="text-xs text-slate-500">Cập nhật tiêu đề, mô tả, môn học và quyền riêng tư.</p>
+              </div>
+              <button
+                onClick={() => setIsEditOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateDocument} className="px-6 py-5 space-y-4">
+              {editError && (
+                <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {editError}
+                </div>
+              )}
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Tiêu đề</label>
+                <input
+                  value={editTitle}
+                  onChange={(event) => setEditTitle(event.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
+                  placeholder="Nhập tiêu đề tài liệu"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Môn học</label>
+                  <input
+                    value={editSubject}
+                    onChange={(event) => setEditSubject(event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
+                    placeholder="Ví dụ: Kinh tế vi mô"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Quyền riêng tư</label>
+                  <select
+                    value={editIsPublic ? 'public' : 'private'}
+                    onChange={(event) => setEditIsPublic(event.target.value === 'public')}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
+                  >
+                    <option value="public">Công khai</option>
+                    <option value="private">Riêng tư</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Mô tả</label>
+                <textarea
+                  value={editDescription}
+                  onChange={(event) => setEditDescription(event.target.value)}
+                  rows={4}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#3B66F5] focus:bg-white"
+                  placeholder="Thêm mô tả cho tài liệu"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-slate-300"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="rounded-xl bg-[#3B66F5] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {isUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <ShareModal
         isOpen={isShareOpen}

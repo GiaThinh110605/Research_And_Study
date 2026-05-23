@@ -15,20 +15,29 @@ def create_users():
         for acc in accounts:
             existing = db.query(User).filter(User.username == acc["username"]).first()
             if existing:
-                print(f"User {acc['username']} already exists, skipping")
-                continue
-
-            user = User(
-                username=acc["username"],
-                email=acc["email"],
-                password_hash=get_password_hash(acc["password"]),
-                full_name=acc["full_name"],
-                role=acc["role"],
-                student_code=acc.get("student_code"),
-                lecturer_code=acc.get("lecturer_code"),
-                is_active=True,
-            )
-            db.add(user)
+                print(f"User {acc['username']} already exists, updating password and details...")
+                existing.password_hash = get_password_hash(acc["password"])
+                existing.email = acc["email"]
+                existing.full_name = acc["full_name"]
+                existing.role = acc["role"]
+                if "student_code" in acc:
+                    existing.student_code = acc["student_code"]
+                if "lecturer_code" in acc:
+                    existing.lecturer_code = acc["lecturer_code"]
+                existing.is_active = True
+                db.add(existing)
+            else:
+                user = User(
+                    username=acc["username"],
+                    email=acc["email"],
+                    password_hash=get_password_hash(acc["password"]),
+                    full_name=acc["full_name"],
+                    role=acc["role"],
+                    student_code=acc.get("student_code"),
+                    lecturer_code=acc.get("lecturer_code"),
+                    is_active=True,
+                )
+                db.add(user)
 
         db.commit()
         print("Test accounts created/ensured.")

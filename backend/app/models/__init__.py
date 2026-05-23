@@ -12,6 +12,7 @@ from .flashcard import Flashcard, FlashcardSet
 from .test import Test, TestQuestion
 from .test_result import TestResult
 from .discussion import Discussion
+from .discussion_reaction import DiscussionReaction
 from .student_grade import StudentGrade
 from .question import Question
 
@@ -36,6 +37,7 @@ __all__ = [
     "TestQuestion",
     "TestResult",
     "Discussion",
+    "DiscussionReaction",
     "StudentGrade",
     "Question",
 ]

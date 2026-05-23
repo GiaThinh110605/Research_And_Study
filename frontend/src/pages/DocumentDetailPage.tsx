@@ -15,12 +15,21 @@ interface DiscussionUser {
   role: string;
 }
 
+interface DiscussionReactionSummary {
+  emoji: string;
+  count: number;
+}
+
 interface DiscussionItem {
   id: number;
+  user_id?: number;
   content: string;
   created_at: string;
   user: DiscussionUser | null;
+  parent_id?: number | null;
   replies?: DiscussionItem[];
+  reaction_summary?: DiscussionReactionSummary[];
+  my_reaction?: string | null;
 }
 
 interface QuestionItem {
@@ -141,14 +150,7 @@ const DocumentDetailPage: React.FC = () => {
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [discLoading, setDiscLoading] = useState(false);
-  const [reactions, setReactions] = useState<Record<number, string>>({});
-
-  const handleReaction = (discId: number, emoji: string) => {
-    setReactions(prev => ({
-      ...prev,
-      [discId]: prev[discId] === emoji ? '' : emoji
-    }));
-  };
+  const reactionOptions = ['👍', '❤️', '😂', '😮', '😢'];
 
   const [isQuestionInput, setIsQuestionInput] = useState(false);
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
@@ -494,6 +496,165 @@ const DocumentDetailPage: React.FC = () => {
     } catch {
       alert('Phản hồi thất bại.');
     }
+  };
+
+  const handleReplyToggle = (discussionId: number) => {
+    setReplyingTo((prev) => (prev === discussionId ? null : discussionId));
+    setReplyContent('');
+  };
+
+  const updateDiscussionReaction = (
+    discussionId: number,
+    reactionSummary: DiscussionReactionSummary[],
+    myReaction: string | null,
+  ) => {
+    const applyToItem = (item: DiscussionItem): DiscussionItem => {
+      const updatedReplies = item.replies ? item.replies.map(applyToItem) : item.replies;
+      if (item.id !== discussionId) {
+        return { ...item, replies: updatedReplies };
+      }
+      return {
+        ...item,
+        replies: updatedReplies,
+        reaction_summary: reactionSummary,
+        my_reaction: myReaction,
+      };
+    };
+
+    setDiscussions((prev) => prev.map(applyToItem));
+  };
+
+  const handleReaction = async (discussionId: number, emoji: string) => {
+    if (!currentUserId) {
+      alert('Vui lòng đăng nhập để thả cảm xúc.');
+      return;
+    }
+
+    try {
+      const res = await api.post(`/api/v1/discussions/${discussionId}/reactions`, { emoji });
+      updateDiscussionReaction(
+        discussionId,
+        res.data.reaction_summary || [],
+        res.data.my_reaction || null,
+      );
+    } catch {
+      alert('Thả cảm xúc thất bại.');
+    }
+  };
+
+  const handleDeleteDiscussion = async (discussionId: number) => {
+    if (!currentUserId) {
+      alert('Vui lòng đăng nhập để xóa bình luận.');
+      return;
+    }
+    if (!window.confirm('Bạn có chắc chắn muốn xóa bình luận này?')) return;
+
+    try {
+      await api.delete(`/api/v1/discussions/${discussionId}`);
+      await fetchDiscussions(parsedId);
+      if (replyingTo === discussionId) {
+        setReplyingTo(null);
+        setReplyContent('');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Xóa bình luận thất bại.');
+    }
+  };
+
+  const renderReplies = (items: DiscussionItem[] | undefined, depth: number) => {
+    if (!items || items.length === 0) return null;
+
+    const containerClass = depth === 1 ? 'mt-3 space-y-3' : 'mt-3 space-y-2 pl-4 border-l border-slate-100';
+
+    return (
+      <div className={containerClass}>
+        {items.map((item) => {
+          const avatarClass = depth > 1
+            ? 'w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[9px] shrink-0'
+            : 'w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[10px] shrink-0';
+          const bubbleClass = depth > 1
+            ? 'bg-white rounded-xl border border-slate-100 px-3 py-2 inline-block'
+            : 'bg-slate-50 rounded-2xl rounded-tl-sm px-3 py-2 inline-block';
+
+          return (
+            <div key={item.id} className="flex gap-2.5">
+              <div className={avatarClass}>
+                {item.user ? getInitials(item.user.full_name) : 'A'}
+              </div>
+              <div className="flex-1">
+                <div className={bubbleClass}>
+                  <span className="font-bold text-xs text-slate-800 mr-2">{item.user?.full_name || 'Ẩn danh'}</span>
+                  <span className="text-[13px] text-slate-700">{item.content}</span>
+                </div>
+
+                <div className="flex items-center gap-3 mt-1 ml-2 text-[10px] font-bold text-slate-500">
+                  <span className="font-normal opacity-70">{timeAgo(item.created_at)}</span>
+                  <div className="relative group/reaction">
+                    <button
+                      onClick={() => handleReaction(item.id, '👍')}
+                      className={`hover:text-[#3B66F5] transition-colors py-0.5 ${item.my_reaction ? 'text-[#3B66F5]' : ''}`}
+                    >
+                      {item.my_reaction ? `${item.my_reaction} Thích` : 'Thích'}
+                    </button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-1 hidden group-hover/reaction:block z-10">
+                      <div className="flex bg-white shadow-[0_5px_15px_rgba(0,0,0,0.12)] rounded-full px-2 py-1 gap-1 border border-slate-100 animate-slide-up">
+                        {reactionOptions.map((emoji) => (
+                          <button
+                            key={`${item.id}-${emoji}`}
+                            onClick={() => handleReaction(item.id, emoji)}
+                            className="w-7 h-7 hover:scale-125 transition-transform origin-bottom text-lg leading-none"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {item.reaction_summary && item.reaction_summary.length > 0 && (
+                    <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-400">
+                      {item.reaction_summary.map((reaction) => (
+                        <span key={`${item.id}-${reaction.emoji}`} className="flex items-center gap-0.5">
+                          <span>{reaction.emoji}</span>
+                          <span>{reaction.count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <button onClick={() => handleReplyToggle(item.id)} className="hover:text-[#3B66F5]">Phản hồi</button>
+                  {currentUserId && item.user_id === currentUserId && (
+                    <button onClick={() => handleDeleteDiscussion(item.id)} className="hover:text-rose-600">Xóa</button>
+                  )}
+                </div>
+
+                {replyingTo === item.id && (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      autoFocus
+                      placeholder="Viết phản hồi..."
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 text-[12px] outline-none focus:border-[#3B66F5] focus:bg-white transition-all"
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(item.id)}
+                    />
+                    <button
+                      onClick={() => handleReplySubmit(item.id)}
+                      disabled={!replyContent.trim()}
+                      className="bg-[#3B66F5] text-white p-2 rounded-full hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5 -rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                    </button>
+                  </div>
+                )}
+
+                {renderReplies(item.replies, depth + 1)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const handleQuestionSubmit = async () => {
@@ -927,46 +1088,45 @@ const DocumentDetailPage: React.FC = () => {
                                   <span className="font-normal opacity-70">{timeAgo(disc.created_at)}</span>
 
                                   <div className="relative group/reaction">
-                                    <button onClick={() => handleReaction(disc.id, '👍')} className={`hover:text-[#3B66F5] transition-colors py-1 ${reactions[disc.id] ? 'text-[#3B66F5]' : ''}`}>
-                                      {reactions[disc.id] ? `${reactions[disc.id]} Thích` : 'Thích'}
+                                    <button
+                                      onClick={() => handleReaction(disc.id, '👍')}
+                                      className={`hover:text-[#3B66F5] transition-colors py-1 ${disc.my_reaction ? 'text-[#3B66F5]' : ''}`}
+                                    >
+                                      {disc.my_reaction ? `${disc.my_reaction} Thích` : 'Thích'}
                                     </button>
-                                    {/* Facebook style reactions */}
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-1 hidden group-hover/reaction:block z-10">
                                       <div className="flex bg-white shadow-[0_5px_15px_rgba(0,0,0,0.15)] rounded-full px-2 py-1 gap-1 border border-slate-100 animate-slide-up">
-                                        <button onClick={() => handleReaction(disc.id, '👍')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">👍</button>
-                                        <button onClick={() => handleReaction(disc.id, '❤️')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">❤️</button>
-                                        <button onClick={() => handleReaction(disc.id, '😂')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😂</button>
-                                        <button onClick={() => handleReaction(disc.id, '😮')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😮</button>
-                                        <button onClick={() => handleReaction(disc.id, '😢')} className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none">😢</button>
+                                        {reactionOptions.map((emoji) => (
+                                          <button
+                                            key={emoji}
+                                            onClick={() => handleReaction(disc.id, emoji)}
+                                            className="w-8 h-8 hover:scale-125 transition-transform origin-bottom text-xl leading-none"
+                                          >
+                                            {emoji}
+                                          </button>
+                                        ))}
                                       </div>
                                     </div>
                                   </div>
 
-                                  <button onClick={() => setReplyingTo(replyingTo === disc.id ? null : disc.id)} className="hover:text-[#3B66F5] transition-colors">Phản hồi</button>
+                                  {disc.reaction_summary && disc.reaction_summary.length > 0 && (
+                                    <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400">
+                                      {disc.reaction_summary.map((reaction) => (
+                                        <span key={`${disc.id}-${reaction.emoji}`} className="flex items-center gap-0.5">
+                                          <span>{reaction.emoji}</span>
+                                          <span>{reaction.count}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  <button onClick={() => handleReplyToggle(disc.id)} className="hover:text-[#3B66F5] transition-colors">Phản hồi</button>
+                                  {currentUserId && disc.user_id === currentUserId && (
+                                    <button onClick={() => handleDeleteDiscussion(disc.id)} className="hover:text-rose-600 transition-colors">Xóa</button>
+                                  )}
                                 </div>
 
-                                {/* Replies */}
-                                {disc.replies && disc.replies.length > 0 && (
-                                  <div className="mt-3 space-y-3">
-                                    {disc.replies.map(reply => (
-                                      <div key={reply.id} className="flex gap-2.5">
-                                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[10px] shrink-0">
-                                          {reply.user ? getInitials(reply.user.full_name) : 'A'}
-                                        </div>
-                                        <div className="flex-1">
-                                          <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-3 py-2 inline-block">
-                                            <span className="font-bold text-xs text-slate-800 mr-2">{reply.user?.full_name || 'Ẩn danh'}</span>
-                                            <span className="text-[13px] text-slate-700">{reply.content}</span>
-                                          </div>
-                                          <div className="flex items-center gap-3 mt-1 ml-2 text-[10px] font-bold text-slate-500">
-                                            <span className="font-normal opacity-70">{timeAgo(reply.created_at)}</span>
-                                            <button className="hover:text-[#3B66F5]">Thích</button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
+                                {renderReplies(disc.replies, 1)}
 
                                 {/* Reply Input */}
                                 {replyingTo === disc.id && (

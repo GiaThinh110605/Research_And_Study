@@ -32,5 +32,6 @@ class User(Base):
     received_shares = relationship("DocumentShare", foreign_keys="[DocumentShare.shared_to_id]", back_populates="shared_to")
     flashcard_sets = relationship("FlashcardSet", back_populates="owner")
     discussions = relationship("Discussion", back_populates="user")
+    discussion_reactions = relationship("DiscussionReaction", back_populates="user")
     grades = relationship("StudentGrade", back_populates="student")
     questions = relationship("Question", back_populates="user")

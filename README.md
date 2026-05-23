@@ -60,7 +60,7 @@ chmod +x setup_and_run.sh
 
 Windows (PowerShell):
 ```powershell
-./setup_and_run.sh
+powershell -ExecutionPolicy Bypass -File .\setup_and_run.ps1
 ```
 
 import test data sau khi khởi tạo:
@@ -73,7 +73,7 @@ chmod +x seed_full_data.sh
 
 Windows (PowerShell):
 ```powershell
-./seed_full_data.sh
+powershell -ExecutionPolicy Bypass -File .\seed_full_data.ps1
 ```
 
 - Sau khi xong những bước trên:

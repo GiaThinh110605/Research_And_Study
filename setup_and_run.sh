@@ -22,15 +22,19 @@ while true; do
   sleep 2
 done
 
-echo "Creating database tables and seeding default user inside backend container..."
+echo "Creating database tables and seeding default users inside backend container..."
 docker compose -f "$COMPOSE_FILE" exec backend python create_tables.py || true
+# ensure admin + test accounts (student1, lecturer1) exist
 docker compose -f "$COMPOSE_FILE" exec backend python seed_user.py || true
+docker compose -f "$COMPOSE_FILE" exec backend python create_test_accounts.py || true
 
 echo "Setup complete. Access the app at: http://localhost:3000"
 echo "API docs: http://localhost:8000/docs"
 
 echo "Test accounts for quick testing:"
 echo "- Admin: username=admin  password=admin123"
+echo "- Student: username=student1  password=student123"
+echo "- Lecturer: username=lecturer1  password=lecturer123"
 
 echo "To run backend tests inside the running container:" 
 echo "  docker compose -f $COMPOSE_FILE exec backend pytest -q"

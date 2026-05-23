@@ -13,7 +13,6 @@ import DiscussionPage from './pages/DiscussionPage';
 import AdminUserManagement from './pages/AdminUserManagement';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminModeration from './pages/AdminModeration';
-import AdminLogs from './pages/AdminLogs';
 import AdminSettings from './pages/AdminSettings';
 
 import StudentDashboard from './pages/StudentDashboard';
@@ -37,6 +36,7 @@ import LecturerResultDetailPage from './pages/LecturerResultDetailPage';
 
 import DashboardLayout from './components/layout/DashboardLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
+import AdminLayout from './components/layout/AdminLayout';
 
 function App() {
   return (
@@ -80,11 +80,13 @@ function App() {
           <Route path="/lecturer/thao-luan" element={<DiscussionPage />} />
         </Route>
         
-        <Route path="/admin/users" element={<AdminUserManagement />} />
-        <Route path="/admin/moderation" element={<AdminModeration />} />
-        <Route path="/admin/logs" element={<AdminLogs />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        {/* Admin Routes */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin/users" element={<AdminUserManagement />} />
+          <Route path="/admin/moderation" element={<AdminModeration />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Route>
       </Routes>
     </Router>
   );

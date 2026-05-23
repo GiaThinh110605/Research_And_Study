@@ -6,14 +6,14 @@ import {
   Settings, 
   LogOut, 
   Home, 
-  PlusCircle, 
-  FileCheck, 
   Users,
+  MessageSquare,
+  History,
   HelpCircle,
   BookOpen
 } from 'lucide-react';
 
-const LecturerLayout: React.FC = () => {
+const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
@@ -51,10 +51,9 @@ const LecturerLayout: React.FC = () => {
   };
 
   const menuItems = [
-    { name: "Trang chủ", icon: Home, path: "/lecturer-dashboard", isHome: true },
-    { name: "Tạo đề thi", icon: PlusCircle, path: "/lecturer/bai-kiem-tra/tao" },
-    { name: "Quản lý đề thi", icon: FileCheck, path: "/lecturer/bai-kiem-tra" },
-    { name: "Kết quả sinh viên", icon: Users, path: "/lecturer/ket-qua-sinh-vien" }
+    { name: "Tổng quan", icon: Home, path: "/admin", isHome: true },
+    { name: "Quản lý người dùng", icon: Users, path: "/admin/users" },
+    { name: "Kiểm duyệt", icon: MessageSquare, path: "/admin/moderation" }
   ];
 
   return (
@@ -73,7 +72,7 @@ const LecturerLayout: React.FC = () => {
 
         <nav className="flex-1 px-4 py-8 space-y-2">
           {menuItems.map((item, idx) => {
-            const isActive = location.pathname === item.path || (item.isHome && location.pathname === '/lecturer-dashboard');
+            const isActive = location.pathname === item.path || (item.isHome && location.pathname === '/admin');
             const Icon = item.icon;
 
             return (
@@ -93,7 +92,7 @@ const LecturerLayout: React.FC = () => {
         </nav>
 
         <div className="p-6 border-t border-slate-50 space-y-1">
-          <Link to="/lecturer/settings" className="flex items-center gap-4 px-6 py-3.5 rounded-2xl font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all">
+          <Link to="/admin/settings" className="flex items-center gap-4 px-6 py-3.5 rounded-2xl font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all">
             <Settings size={20} className="text-slate-300" />
             <span className="text-sm">Cài đặt</span>
           </Link>
@@ -126,7 +125,7 @@ const LecturerLayout: React.FC = () => {
                   {user?.full_name || 'Đang tải...'}
                 </div>
                 <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                  {user?.role === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : 'GIẢNG VIÊN'}
+                  QUẢN TRỊ VIÊN
                 </div>
               </div>
               <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center border-2 border-white shadow-xl shadow-slate-200/50 overflow-hidden premium-avatar transition-transform">
@@ -150,4 +149,4 @@ const LecturerLayout: React.FC = () => {
   );
 };
 
-export default LecturerLayout;
+export default AdminLayout;

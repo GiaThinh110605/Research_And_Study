@@ -331,7 +331,7 @@ const GPAPage: React.FC = () => {
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-[11px] text-slate-400 font-medium italic">* Nhập 3 điểm thực hành, nếu để trống thì sẽ tự động tính là 0</p>
+            <p className="mt-6 text-[11px] text-slate-400 font-medium italic">* Nhập 3 điểm thực hành. Nếu bỏ trống cả 3 ô thì môn này không tính thực hành.</p>
           </div>
 
           {/* Subject Result */}

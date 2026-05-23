@@ -75,8 +75,8 @@ def convert_10_to_4(score_10: float):
     if score_10 >= 4.0: return 1.0, "D", "Trung bình yếu", True
     return 0.0, "F", "Yếu", False
 
-def evaluate_subject_result(score_10: float, avg_practical: float, midterm_score: float, final_score: float):
-    fail_practical = avg_practical < 3
+def evaluate_subject_result(score_10: float, avg_practical: float, has_practical: bool, midterm_score: float, final_score: float):
+    fail_practical = has_practical and avg_practical < 3
     fail_midterm = midterm_score == 0
     fail_final = final_score < 3
 
@@ -98,10 +98,11 @@ async def calculate_subject(req: SubjectCalculateRequest):
     valid_regular = [s for s in req.regular_scores if s is not None and 0 <= s <= 10]
     avg_regular = sum(valid_regular) / len(valid_regular) if valid_regular else 0
 
-    # Avg Practical: missing practical scores count as zero, with a fixed 3-component average.
+    # Avg Practical: if the user entered any practical score, missing ones count as zero and average across 3 values.
     practical_scores = [s if s is not None and 0 <= s <= 10 else 0 for s in req.practical_scores]
+    has_practical = len(practical_scores) > 0
     practical_scores = practical_scores[:3] + [0] * max(0, 3 - len(practical_scores))
-    avg_practical = round(sum(practical_scores) / 3, 2)
+    avg_practical = round(sum(practical_scores) / 3, 2) if has_practical else 0
     
     # Formula: 0.2*Regular + 0.3*Midterm + 0.5*Final
     score_10 = (avg_regular * 0.2) + (req.midterm_score * 0.3) + (req.final_score * 0.5)
@@ -110,6 +111,7 @@ async def calculate_subject(req: SubjectCalculateRequest):
     score_4, grade_letter, classification, is_passed = evaluate_subject_result(
         score_10,
         avg_practical,
+        has_practical,
         req.midterm_score,
         req.final_score
     )

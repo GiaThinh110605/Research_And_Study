@@ -37,15 +37,22 @@ const LecturerCreateTestPage: React.FC = () => {
           setAccessCode(test.access_code || null);
           
           if (test.questions && test.questions.length > 0) {
-            const formattedQuestions = test.questions.map((q: any) => ({
-              id: q.id || Date.now() + Math.random(),
-              content: q.text,
-              options: q.options.map((optText: string, optIdx: number) => ({
-                id: (q.id || '') + '-' + optIdx,
-                text: optText,
-                isCorrect: q.answer === optIdx
-              }))
-            }));
+            const formattedQuestions = test.questions.map((q: any) => {
+              const qAnswer = q.answer !== undefined ? q.answer : (q.correct_answer !== undefined ? q.correct_answer : q.correct_option);
+              const qOptions = Array.isArray(q.options) ? q.options : [];
+              return {
+                id: q.id || Date.now() + Math.random(),
+                content: q.text || q.content || "",
+                options: qOptions.map((opt: any, optIdx: number) => {
+                  const optText = typeof opt === 'string' ? opt : (opt?.text || '');
+                  return {
+                    id: (q.id || '') + '-' + optIdx,
+                    text: optText,
+                    isCorrect: qAnswer === optIdx
+                  };
+                })
+              };
+            });
             setQuestions(formattedQuestions);
           }
         } catch (err) {

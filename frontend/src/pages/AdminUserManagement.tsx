@@ -20,6 +20,7 @@ const AdminUserManagement: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({
+    username: '',
     email: '',
     full_name: '',
     password: '',
@@ -112,10 +113,25 @@ const AdminUserManagement: React.FC = () => {
       setIsLoading(true);
       await userService.createUser(newUser);
       setShowAddModal(false);
-      setNewUser({ email: '', full_name: '', password: '', role: 'STUDENT' });
+      setNewUser({ username: '', email: '', full_name: '', password: '', role: 'STUDENT' });
       fetchUsers();
     } catch (error: any) {
-      alert(error.response?.data?.detail || "Không thể tạo người dùng");
+      console.error("Create user error:", error);
+      let errorMsg = "Không thể tạo người dùng";
+      const detail = error.response?.data?.detail;
+      if (detail) {
+        if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else if (Array.isArray(detail)) {
+          errorMsg = detail.map((d: any) => {
+            const locStr = d.loc ? d.loc.filter((l: any) => l !== 'body').join('.') : '';
+            return `${locStr ? locStr + ': ' : ''}${d.msg || JSON.stringify(d)}`;
+          }).join('\n');
+        } else if (typeof detail === 'object') {
+          errorMsg = detail.message || JSON.stringify(detail);
+        }
+      }
+      alert(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -417,6 +433,17 @@ const AdminUserManagement: React.FC = () => {
                   placeholder="Ví dụ: Nguyễn Văn A"
                   value={newUser.full_name}
                   onChange={e => setNewUser({...newUser, full_name: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-slate-700 mb-1.5">Tên đăng nhập</label>
+                <input 
+                  type="text" 
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-[13px] outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                  placeholder="Ví dụ: nguyenvana"
+                  value={newUser.username}
+                  onChange={e => setNewUser({...newUser, username: e.target.value})}
                 />
               </div>
               <div>

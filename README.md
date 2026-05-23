@@ -23,7 +23,10 @@
 ## Documentation: 
 - https://docs.google.com/document/d/1VK-sPX6wGNsVy-2yWqqd7CMiBh_2E9FE/edit?usp=sharing&ouid=116261595522292024849&rtpof=true&sd=true
 
+
 ## Cho lần đầu tiên chạy dự án 
+## Vào google drive để lấy .env của hệ thống để chạy dự án
+
 
 - 1. Clone project: 
 

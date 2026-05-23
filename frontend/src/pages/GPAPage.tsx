@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Calculator, 
-  Trash2, 
-  Plus, 
-  Target, 
-  BookOpen, 
+import {
+  Calculator,
+  Trash2,
+  Plus,
+  Target,
+  BookOpen,
   Award,
   CheckCircle2,
   AlertCircle,
@@ -24,8 +24,8 @@ const GPAPage: React.FC = () => {
     credits: '3',
     midterm: '0',
     final: '0',
-    regular: Array(9).fill(''),
-    practical: Array(5).fill('')
+    regular: Array(3).fill(''),
+    practical: Array(3).fill('')
   });
   const [subjectResult, setSubjectResult] = useState<SubjectCalculateResponse | null>(null);
 
@@ -56,7 +56,7 @@ const GPAPage: React.FC = () => {
     try {
       const regScores = subjectData.regular.filter(s => s !== '').map(Number);
       const pracScores = subjectData.practical.filter(s => s !== '').map(Number);
-      
+
       const res = await gpaService.calculateSubject({
         credits: parseInt(subjectData.credits) || 0,
         regular_scores: regScores,
@@ -76,8 +76,8 @@ const GPAPage: React.FC = () => {
       credits: '3',
       midterm: '0',
       final: '0',
-      regular: Array(9).fill(''),
-      practical: Array(5).fill('')
+      regular: Array(3).fill(''),
+      practical: Array(3).fill('')
     });
     setSubjectResult(null);
   };
@@ -148,21 +148,21 @@ const GPAPage: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
       {/* Tab Navigation */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-1 flex items-center gap-1 mb-6">
-        <button 
+        <button
           onClick={() => setActiveTab('subject')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${activeTab === 'subject' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}
         >
           <FileText size={18} />
           Điểm môn học
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('semester')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${activeTab === 'semester' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}
         >
           <History size={18} />
           Điểm học kỳ
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('cumulative')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all ${activeTab === 'cumulative' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}
         >
@@ -205,12 +205,12 @@ const GPAPage: React.FC = () => {
                 </div>
                 <h3 className="font-black text-slate-400 uppercase tracking-widest text-[11px]">Số tín chỉ *</h3>
               </div>
-              <input 
+              <input
                 type="number"
                 min="1"
                 value={subjectData.credits}
-                onChange={(e) => setSubjectData({...subjectData, credits: e.target.value})}
-                onBlur={(e) => setSubjectData({...subjectData, credits: clampValue(e.target.value, 1, 50)})}
+                onChange={(e) => setSubjectData({ ...subjectData, credits: e.target.value })}
+                onBlur={(e) => setSubjectData({ ...subjectData, credits: clampValue(e.target.value, 1, 50) })}
                 placeholder="3"
                 className="w-full text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-200"
               />
@@ -224,14 +224,14 @@ const GPAPage: React.FC = () => {
                 </div>
                 <h3 className="font-black text-slate-400 uppercase tracking-widest text-[11px]">Điểm giữa kỳ *</h3>
               </div>
-              <input 
+              <input
                 type="number"
                 step="0.1"
                 min="0"
                 max="10"
                 value={subjectData.midterm}
-                onChange={(e) => setSubjectData({...subjectData, midterm: e.target.value})}
-                onBlur={(e) => setSubjectData({...subjectData, midterm: clampValue(e.target.value, 0, 10)})}
+                onChange={(e) => setSubjectData({ ...subjectData, midterm: e.target.value })}
+                onBlur={(e) => setSubjectData({ ...subjectData, midterm: clampValue(e.target.value, 0, 10) })}
                 placeholder="8.5"
                 className="w-full text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-200"
               />
@@ -245,14 +245,14 @@ const GPAPage: React.FC = () => {
                 </div>
                 <h3 className="font-black text-slate-400 uppercase tracking-widest text-[11px]">Điểm cuối kỳ *</h3>
               </div>
-              <input 
+              <input
                 type="number"
                 step="0.1"
                 min="0"
                 max="10"
                 value={subjectData.final}
-                onChange={(e) => setSubjectData({...subjectData, final: e.target.value})}
-                onBlur={(e) => setSubjectData({...subjectData, final: clampValue(e.target.value, 0, 10)})}
+                onChange={(e) => setSubjectData({ ...subjectData, final: e.target.value })}
+                onBlur={(e) => setSubjectData({ ...subjectData, final: clampValue(e.target.value, 0, 10) })}
                 placeholder="9.0"
                 className="w-full text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-200"
               />
@@ -267,13 +267,13 @@ const GPAPage: React.FC = () => {
                 <div className="w-2 h-8 bg-orange-400 rounded-full"></div>
                 Điểm thường xuyên*
               </h3>
-              <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest bg-orange-50 px-3 py-1.5 rounded-full">(Tối đa 9 cột)</span>
+              <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest bg-orange-50 px-3 py-1.5 rounded-full">(2-3 cột)</span>
             </div>
-            <div className="grid grid-cols-3 md:grid-cols-9 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               {subjectData.regular.map((score, idx) => (
                 <div key={idx} className="space-y-2">
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter text-center">ĐIỂM {idx + 1}</p>
-                  <input 
+                  <input
                     type="number"
                     step="0.1"
                     min="0"
@@ -282,19 +282,19 @@ const GPAPage: React.FC = () => {
                     onChange={(e) => {
                       const newReg = [...subjectData.regular];
                       newReg[idx] = e.target.value;
-                      setSubjectData({...subjectData, regular: newReg});
+                      setSubjectData({ ...subjectData, regular: newReg });
                     }}
                     onBlur={(e) => {
-                        const newReg = [...subjectData.regular];
-                        newReg[idx] = clampValue(e.target.value, 0, 10);
-                        setSubjectData({...subjectData, regular: newReg});
+                      const newReg = [...subjectData.regular];
+                      newReg[idx] = clampValue(e.target.value, 0, 10);
+                      setSubjectData({ ...subjectData, regular: newReg });
                     }}
                     className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl text-center font-black text-slate-900 focus:ring-2 focus:ring-orange-400/20 focus:border-orange-400 focus:bg-white outline-none transition-all"
                   />
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-[11px] text-slate-400 font-medium italic">* Nhập các điểm kiểm tra thường xuyên (để trống nếu không có)</p>
+            <p className="mt-6 text-[11px] text-slate-400 font-medium italic">* Nhập 2-3 điểm thường xuyên, để trống nếu không có</p>
           </div>
 
           {/* Practical Scores Grid */}
@@ -306,11 +306,11 @@ const GPAPage: React.FC = () => {
               </h3>
               <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest bg-cyan-50 px-3 py-1.5 rounded-full">(Tối đa 5 cột)</span>
             </div>
-            <div className="grid grid-cols-5 gap-6 max-w-4xl">
+            <div className="grid grid-cols-3 gap-6 max-w-4xl">
               {subjectData.practical.map((score, idx) => (
                 <div key={idx} className="space-y-2">
-                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter text-center">BÀI TH {idx + 1}</p>
-                  <input 
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter text-center">THỰC HÀNH {idx + 1}</p>
+                  <input
                     type="number"
                     step="0.1"
                     min="0"
@@ -319,19 +319,19 @@ const GPAPage: React.FC = () => {
                     onChange={(e) => {
                       const newPrac = [...subjectData.practical];
                       newPrac[idx] = e.target.value;
-                      setSubjectData({...subjectData, practical: newPrac});
+                      setSubjectData({ ...subjectData, practical: newPrac });
                     }}
                     onBlur={(e) => {
-                        const newPrac = [...subjectData.practical];
-                        newPrac[idx] = clampValue(e.target.value, 0, 10);
-                        setSubjectData({...subjectData, practical: newPrac});
+                      const newPrac = [...subjectData.practical];
+                      newPrac[idx] = clampValue(e.target.value, 0, 10);
+                      setSubjectData({ ...subjectData, practical: newPrac });
                     }}
                     className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl text-center font-black text-slate-900 focus:ring-2 focus:ring-cyan-400/20 focus:border-cyan-400 focus:bg-white outline-none transition-all"
                   />
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-[11px] text-slate-400 font-medium italic">* Nhập các điểm thực hành (để trống nếu không có)</p>
+            <p className="mt-6 text-[11px] text-slate-400 font-medium italic">* Nhập 3 điểm thực hành, nếu để trống thì sẽ tự động tính là 0</p>
           </div>
 
           {/* Subject Result */}
@@ -365,14 +365,14 @@ const GPAPage: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center justify-center gap-4 pt-8">
-            <button 
+            <button
               onClick={handleCalculateSubject}
               className="flex items-center gap-3 bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all"
             >
               <Calculator size={20} />
               Tính điểm
             </button>
-            <button 
+            <button
               onClick={handleClearSubject}
               className="flex items-center gap-3 bg-slate-800 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-slate-200 hover:bg-slate-900 active:scale-95 transition-all"
             >
@@ -395,7 +395,7 @@ const GPAPage: React.FC = () => {
                 Danh sách môn học
               </h3>
             </div>
-            
+
             <div className="p-8 space-y-4">
               {semesterSubjects.map((sub, idx) => (
                 <div key={sub.id} className="flex flex-wrap md:flex-nowrap items-end gap-6 p-6 rounded-3xl border border-slate-50 hover:border-indigo-100 hover:bg-indigo-50/20 transition-all group">
@@ -404,7 +404,7 @@ const GPAPage: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-[200px] space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên môn học *</p>
-                    <input 
+                    <input
                       type="text"
                       value={sub.name}
                       onChange={(e) => {
@@ -418,7 +418,7 @@ const GPAPage: React.FC = () => {
                   </div>
                   <div className="w-32 space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Số tín chỉ *</p>
-                    <input 
+                    <input
                       type="number"
                       min="1"
                       value={sub.credits}
@@ -437,7 +437,7 @@ const GPAPage: React.FC = () => {
                   </div>
                   <div className="w-40 space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Điểm (Hệ 10) *</p>
-                    <input 
+                    <input
                       type="number"
                       step="0.1"
                       min="0"
@@ -459,7 +459,7 @@ const GPAPage: React.FC = () => {
                   </div>
                   <div className="w-40 space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ 4</p>
-                    <input 
+                    <input
                       type="number"
                       step="0.01"
                       min="0"
@@ -479,7 +479,7 @@ const GPAPage: React.FC = () => {
                       placeholder={sub.score10 ? convert10to4(Number(sub.score10)).toString() : 'Tự động'}
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={() => removeSemesterSubject(sub.id)}
                     className="p-3 text-slate-300 hover:text-rose-500 transition-colors"
                   >
@@ -487,8 +487,8 @@ const GPAPage: React.FC = () => {
                   </button>
                 </div>
               ))}
-              
-              <button 
+
+              <button
                 onClick={addSemesterSubject}
                 className="w-full py-5 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center gap-3 text-slate-400 font-black hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50/50 transition-all group"
               >
@@ -515,7 +515,7 @@ const GPAPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 min-w-[140px] text-center">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">GPA HỆ 10</p>
@@ -534,14 +534,14 @@ const GPAPage: React.FC = () => {
           )}
 
           <div className="flex items-center justify-center gap-4 pt-8">
-            <button 
+            <button
               onClick={handleCalculateSemester}
               className="flex items-center gap-3 bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all"
             >
               <Calculator size={20} />
               Tính GPA học kỳ
             </button>
-            <button 
+            <button
               onClick={() => {
                 setSemesterSubjects([{ id: '1', name: 'Môn học 1', credits: '3', score10: '', score4: '' }]);
                 setSemesterResult(null);
@@ -558,7 +558,7 @@ const GPAPage: React.FC = () => {
       {/* --- TAB 3: CUMULATIVE --- */}
       {activeTab === 'cumulative' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-           <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
             <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
                 <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-violet-600">
@@ -567,7 +567,7 @@ const GPAPage: React.FC = () => {
                 Kết quả học kỳ đã học
               </h3>
             </div>
-            
+
             <div className="p-8 space-y-4">
               {cumulativeSemesters.map((sem, idx) => (
                 <div key={sem.id} className="flex flex-wrap md:flex-nowrap items-end gap-6 p-6 rounded-3xl border border-slate-50 hover:border-violet-100 hover:bg-violet-50/20 transition-all group">
@@ -576,7 +576,7 @@ const GPAPage: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-[200px] space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên học kỳ *</p>
-                    <input 
+                    <input
                       type="text"
                       value={sem.name}
                       onChange={(e) => {
@@ -590,7 +590,7 @@ const GPAPage: React.FC = () => {
                   </div>
                   <div className="w-40 space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng tín chỉ *</p>
-                    <input 
+                    <input
                       type="number"
                       min="1"
                       value={sem.credits}
@@ -609,7 +609,7 @@ const GPAPage: React.FC = () => {
                   </div>
                   <div className="w-40 space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GPA Hệ 10 *</p>
-                    <input 
+                    <input
                       type="number"
                       step="0.1"
                       min="0"
@@ -631,7 +631,7 @@ const GPAPage: React.FC = () => {
                   </div>
                   <div className="w-40 space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GPA Hệ 4</p>
-                    <input 
+                    <input
                       type="number"
                       step="0.01"
                       min="0"
@@ -651,7 +651,7 @@ const GPAPage: React.FC = () => {
                       placeholder={sem.gpa10 ? convert10to4(Number(sem.gpa10)).toString() : 'Tự động'}
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={() => removeCumulativeSemester(sem.id)}
                     className="p-3 text-slate-300 hover:text-rose-500 transition-colors"
                   >
@@ -659,8 +659,8 @@ const GPAPage: React.FC = () => {
                   </button>
                 </div>
               ))}
-              
-              <button 
+
+              <button
                 onClick={addCumulativeSemester}
                 className="w-full py-5 border-2 border-dashed border-slate-200 rounded-3xl flex items-center justify-center gap-3 text-slate-400 font-black hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50/50 transition-all group"
               >
@@ -687,7 +687,7 @@ const GPAPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap justify-center gap-4">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 min-w-[140px] text-center">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">CGPA HỆ 10</p>
@@ -706,14 +706,14 @@ const GPAPage: React.FC = () => {
           )}
 
           <div className="flex items-center justify-center gap-4 pt-8">
-            <button 
+            <button
               onClick={handleCalculateCumulative}
               className="flex items-center gap-3 bg-violet-600 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-violet-200 hover:scale-[1.02] active:scale-95 transition-all"
             >
               <Calculator size={20} />
               Tính GPA tích lũy
             </button>
-            <button 
+            <button
               onClick={() => {
                 setCumulativeSemesters([{ id: '1', name: 'Học kỳ 1', credits: '20', gpa10: '', gpa4: '' }]);
                 setCumulativeResult(null);

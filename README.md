@@ -73,6 +73,14 @@ Windows (PowerShell):
 ./seed_full_data.sh
 ```
 
+- Sau khi xong những bước trên:
+- chạy: docker compose -f docker-compose.dev.yml up -d --build
+
+### Access links:
+- **Frontend App**: [http://localhost:3000](http://localhost:3000)
+- **Backend API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Backend Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
+
 ## Test accounts
 - admin / admin123
 - student1 / student123
@@ -96,13 +104,13 @@ python create_tables.py
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-### Access links:
-- **Frontend App**: [http://localhost:3000](http://localhost:3000)
-- **Backend API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Backend Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
 ## Stop all services
 ```bash
 docker compose -f docker-compose.dev.yml down
 ```
 
+### Access links:
+- **Frontend App**: [http://localhost:3000](http://localhost:3000)
+- **Backend API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Backend Health Check**: [http://localhost:8000/health](http://localhost:8000/health)

@@ -121,7 +121,7 @@ VALUES (
     75,
     1,
     true,
-    '[...large JSON content representing 40 questions omitted for brevity...]'::jsonb,
+    '[]'::jsonb,
     NOW(),
     NOW()
 );

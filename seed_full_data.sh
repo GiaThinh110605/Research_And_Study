@@ -11,7 +11,7 @@ docker compose -f "$COMPOSE_FILE" exec -T backend python create_test_accounts.py
 
 echo "Importing test data into Postgres (this may take a few seconds)..."
 
-docker exec -i ai_research-postgres-1 psql -U postgres -d ai_research_db <<'EOF'
+docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U postgres -d ai_research_db <<'EOF'
 INSERT INTO tests (title, subject, duration_minutes, creator_id, is_active, questions, created_at, updated_at)
 VALUES (
     'Final Exam - English 1: 10 Questions Version',
@@ -38,7 +38,7 @@ EOF
 
 echo "Additional test inserts..."
 
-docker exec -i ai_research-postgres-1 psql -U postgres -d ai_research_db <<'EOF'
+docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U postgres -d ai_research_db <<'EOF'
 INSERT INTO tests (title, subject, duration_minutes, creator_id, is_active, questions, created_at, updated_at)
 VALUES (
     'Final Exam - English 1 - Đề 2',
@@ -63,7 +63,7 @@ VALUES (
 );
 EOF
 
-docker exec -i ai_research-postgres-1 psql -U postgres -d ai_research_db <<'EOF'
+docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U postgres -d ai_research_db <<'EOF'
 INSERT INTO tests (title, subject, duration_minutes, creator_id, is_active, questions, created_at, updated_at)
 VALUES (
     'Final Exam - English 1 - Đề 3',
@@ -88,7 +88,7 @@ VALUES (
 );
 EOF
 
-docker exec -i ai_research-postgres-1 psql -U postgres -d ai_research_db <<'EOF'
+docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U postgres -d ai_research_db <<'EOF'
 INSERT INTO tests (title, subject, duration_minutes, creator_id, is_active, questions, created_at, updated_at)
 VALUES (
     'Final Exam - English 1 - Đề 4',
@@ -113,7 +113,7 @@ VALUES (
 );
 EOF
 
-docker exec -i ai_research-postgres-1 psql -U postgres -d ai_research_db <<'EOF'
+docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U postgres -d ai_research_db <<'EOF'
 INSERT INTO tests (title, subject, duration_minutes, creator_id, is_active, questions, created_at, updated_at)
 VALUES (
     'Đề Thi Thử Giữa Kỳ - Toán Cao Cấp C1 - Mã đề 134',

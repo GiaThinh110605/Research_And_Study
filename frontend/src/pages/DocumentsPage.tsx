@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import DocumentCard from '../components/documents/DocumentCard';
 import ShareModal from '../components/documents/ShareModal';
+import UploadModal from '../components/documents/UploadModal';
 import { authService } from '../services/auth';
 import {
   documentService,
@@ -52,6 +53,7 @@ const DocumentsPage: React.FC = () => {
 
   const [selectedDocument, setSelectedDocument] = useState<DocumentItem | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('token')));
 
@@ -154,7 +156,7 @@ const DocumentsPage: React.FC = () => {
       navigate('/login');
       return;
     }
-    navigate('/tai-lieu/tai-len');
+    setIsUploadOpen(true);
   };
 
   return (
@@ -380,6 +382,23 @@ const DocumentsPage: React.FC = () => {
         onClose={() => setIsShareOpen(false)}
         onShareSuccess={() => { }}
       />
+
+      {/* Upload Modal */}
+      <UploadModal
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onUploadSuccess={() => {
+          loadDocuments(searchQuery, subjectFilter, currentPage, fileTypeFilter, sortOption);
+        }}
+      />
+
+      {/* Floating Action Button */}
+      <button 
+        onClick={openUpload}
+        className="fixed bottom-10 right-10 w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all z-20"
+      >
+        <Plus size={32} />
+      </button>
     </div>
   );
 };

@@ -24,12 +24,14 @@ import {
 } from 'lucide-react';
 
 import { dashboardService, StudentDashboardData } from '../services/dashboard';
+import UploadModal from '../components/documents/UploadModal';
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [data, setData] = useState<StudentDashboardData | null>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -222,10 +224,23 @@ const StudentDashboard: React.FC = () => {
 
       {/* Floating Action Button */}
       <button 
+        onClick={() => setIsUploadOpen(true)}
         className="fixed bottom-10 right-10 w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all z-20"
       >
         <Plus size={32} />
       </button>
+
+      {/* Upload Modal Component */}
+      <UploadModal 
+        isOpen={isUploadOpen} 
+        onClose={() => setIsUploadOpen(false)}
+        onUploadSuccess={() => {
+          // Optionally refresh dashboard data after a successful upload
+          dashboardService.getStudentDashboard()
+            .then(dashboardData => setData(dashboardData))
+            .catch(err => console.error("Error refreshing dashboard data:", err));
+        }}
+      />
     </div>
   );
 };

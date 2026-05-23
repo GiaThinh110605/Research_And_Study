@@ -34,6 +34,9 @@ def ensure_test_schema(engine: Engine) -> None:
                 conn.execute(text("ALTER TABLE tests ADD COLUMN is_active BOOLEAN DEFAULT 1"))
             if "participants_count" not in cols:
                 conn.execute(text("ALTER TABLE tests ADD COLUMN participants_count INTEGER DEFAULT 0"))
+            if "access_code" not in cols:
+                conn.execute(text("ALTER TABLE tests ADD COLUMN access_code VARCHAR(10)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_tests_access_code ON tests (access_code)"))
 
         if "test_results" in tables:
             cols = _column_names(engine, "test_results")

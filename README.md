@@ -30,26 +30,46 @@
     git clone https://github.com/GiaThinh110605/AI_Research.git
 
 ## Setup environment variables
-Copy .env-example đến `.env` để chạy dự án.
+Copy `.env-example` đến `.env` để chạy dự án liên quan đến các biến môi trường.
+- Liên hệ Lâm Gia Thịnh để lấy các giá trị .env
 
+macOS / Linux:
 ```bash
 cp backend/.env-example backend/.env
 cp frontend/.env-example frontend/.env
 ```
 
-chỉnh sửa `backend/.env` and `frontend/.env` nếu bạn cần thay đổi những giá trị database, API, or secret .
+Windows (PowerShell):
+```powershell
+Copy-Item backend\.env-example backend\.env
+Copy-Item frontend\.env-example frontend\.env
+```
 
-- chạy script để chạy  Docker, create tables, and tạo seed the default admin student lecturer.
+chỉnh sửa `backend/.env` và `frontend/.env` nếu bạn cần thay đổi những giá trị database, API, hoặc secret.
 
+- chạy script để chạy Docker, tạo tables, và seed default admin/student/lecturer.
+
+macOS / Linux:
 ```bash
 chmod +x setup_and_run.sh
 ./setup_and_run.sh
 ```
 
+Windows (PowerShell):
+```powershell
+./setup_and_run.sh
+```
+
 import test data sau khi khởi tạo:
 
+macOS / Linux:
 ```bash
 chmod +x seed_full_data.sh
+./seed_full_data.sh
+```
+
+Windows (PowerShell):
+```powershell
 ./seed_full_data.sh
 ```
 

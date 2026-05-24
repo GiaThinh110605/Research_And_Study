@@ -75,12 +75,15 @@ def convert_10_to_4(score_10: float):
     if score_10 >= 4.0: return 1.0, "D", "Trung bình yếu", True
     return 0.0, "F", "Yếu", False
 
-def evaluate_subject_result(score_10: float, avg_practical: float, has_practical: bool, midterm_score: float, final_score: float):
-    fail_practical = has_practical and avg_practical < 3
-    fail_midterm = midterm_score == 0
-    fail_final = final_score < 3
+def evaluate_subject_result(score_10: float, avg_practical: float, credits_theory: int, credits_practical: int, midterm_score: float, final_score: float):
+    # Điểm thi giữa kỳ phải >= 1 (nếu có phần lý thuyết)
+    fail_theory_midterm = (credits_theory > 0) and (midterm_score < 1)
+    # Điểm thi cuối kỳ không dưới 3đ (nếu có phần lý thuyết)
+    fail_theory_final = (credits_theory > 0) and (final_score < 3)
+    # Điểm thực hành trung bình không dưới 3đ (nếu có phần thực hành)
+    fail_practical_avg = (credits_practical > 0) and (avg_practical < 3)
 
-    if fail_practical or fail_midterm or fail_final:
+    if fail_theory_midterm or fail_theory_final or fail_practical_avg:
         return 0.0, "F", "Không đạt", False
 
     return convert_10_to_4(score_10)
@@ -94,26 +97,45 @@ def get_classification_from_4(score_4: float):
 
 @router.post("/calculate/subject", response_model=SubjectCalculateResponse)
 async def calculate_subject(req: SubjectCalculateRequest):
-    # Avg Regular
+    # Avg Regular (TK)
     valid_regular = [s for s in req.regular_scores if s is not None and 0 <= s <= 10]
-    avg_regular = sum(valid_regular) / len(valid_regular) if valid_regular else 0
+    avg_regular = sum(valid_regular) / len(valid_regular) if valid_regular else 0.0
 
-    # Avg Practical: if the user entered any practical score, missing ones count as zero and average across 3 values.
-    practical_scores = [s if s is not None and 0 <= s <= 10 else 0 for s in req.practical_scores]
-    has_practical = len(practical_scores) > 0
-    practical_scores = practical_scores[:3] + [0] * max(0, 3 - len(practical_scores))
-    avg_practical = round(sum(practical_scores) / 3, 2) if has_practical else 0
+    # TBM Lý thuyết (TBM_LT)
+    tbm_lt = (avg_regular * 0.2) + (req.midterm_score * 0.3) + (req.final_score * 0.5)
+    tbm_lt = round(tbm_lt, 2)
+
+    # Avg Practical (TBM_TH): TBC các cột điểm thực hành thực tế đã nhập
+    valid_practical = [s for s in req.practical_scores if s is not None and 0 <= s <= 10]
+    avg_practical = sum(valid_practical) / len(valid_practical) if valid_practical else 0.0
+    avg_practical = round(avg_practical, 2)
     
-    # Formula: 0.2*Regular + 0.3*Midterm + 0.5*Final
-    score_10 = (avg_regular * 0.2) + (req.midterm_score * 0.3) + (req.final_score * 0.5)
+    # Calculate Final Subject Score (score_10 / TBM)
+    has_practical = len(valid_practical) > 0
+    if has_practical:
+        # Học phần tích hợp: Quy ước thực hành = 1 tín chỉ, lý thuyết = tổng - 1 tín chỉ
+        credits_practical = 1
+        credits_theory = max(0, req.credits - 1)
+        
+        if credits_theory + credits_practical > 0:
+            score_10 = (tbm_lt * credits_theory + avg_practical * credits_practical) / (credits_theory + credits_practical)
+        else:
+            score_10 = avg_practical
+    else:
+        # Chỉ có lý thuyết
+        credits_theory = req.credits
+        credits_practical = 0
+        score_10 = tbm_lt
+        
     score_10 = round(score_10, 2)
     
     score_4, grade_letter, classification, is_passed = evaluate_subject_result(
-        score_10,
-        avg_practical,
-        has_practical,
-        req.midterm_score,
-        req.final_score
+        score_10=score_10,
+        avg_practical=avg_practical,
+        credits_theory=credits_theory,
+        credits_practical=credits_practical,
+        midterm_score=req.midterm_score,
+        final_score=req.final_score
     )
     
     return {

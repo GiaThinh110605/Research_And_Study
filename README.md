@@ -26,6 +26,7 @@
 
 ## Cho lần đầu tiên chạy dự án 
 ## Vào google drive để lấy .env của hệ thống để chạy dự án
+## Bật ứng dụng docker
 
 
 - 1. Clone project: 

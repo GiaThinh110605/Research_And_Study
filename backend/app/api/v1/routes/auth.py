@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Any
 import secrets
 import httpx
@@ -42,19 +42,58 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)) -> Any:
     db.refresh(db_user)
     return db_user
 
+# Bộ nhớ tạm (In-memory) lưu số lần đăng nhập sai (Thực tế nên dùng Redis)
+login_attempts_db = {}
+MAX_ATTEMPTS = 5
+LOCKOUT_MINUTES = 5
+
 @router.post("/login", response_model=Token)
 def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()) -> Any:
+    username_key = form_data.username.lower()
+
+    # 1. Kiểm tra tài khoản có đang bị khóa tạm thời không
+    record = login_attempts_db.get(username_key)
+    if record:
+        if record.get("locked_until") and datetime.now() < record["locked_until"]:
+            time_left = (record["locked_until"] - datetime.now()).seconds // 60
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Tài khoản đã bị tạm khóa do nhập sai nhiều lần. Vui lòng thử lại sau {time_left + 1} phút.",
+            )
+        # Hết hạn khóa -> Reset
+        elif record.get("locked_until") and datetime.now() >= record["locked_until"]:
+            login_attempts_db[username_key] = {"attempts": 0, "locked_until": None}
+
     # Allow login with either email or username
     user = db.query(User).filter(
         (User.email == form_data.username) | (User.username == form_data.username)
     ).first()
     
     if not user or not verify_password(form_data.password, user.password_hash):
+        # 2. Ghi nhận đăng nhập sai
+        if username_key not in login_attempts_db:
+            login_attempts_db[username_key] = {"attempts": 1, "locked_until": None}
+        else:
+            login_attempts_db[username_key]["attempts"] += 1
+            
+        # Khóa nếu sai >= MAX_ATTEMPTS
+        attempts = login_attempts_db[username_key]["attempts"]
+        if attempts >= MAX_ATTEMPTS:
+            login_attempts_db[username_key]["locked_until"] = datetime.now() + timedelta(minutes=LOCKOUT_MINUTES)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Sai mật khẩu {attempts} lần. Tài khoản bị tạm khóa {LOCKOUT_MINUTES} phút để bảo mật.",
+            )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email/username or password",
+            detail=f"Sai mật khẩu. Bạn còn {MAX_ATTEMPTS - attempts} lần thử.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # 3. Đăng nhập thành công -> Xóa lịch sử sai
+    if username_key in login_attempts_db:
+        del login_attempts_db[username_key]
     
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")

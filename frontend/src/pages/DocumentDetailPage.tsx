@@ -140,7 +140,7 @@ const DocumentDetailPage: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [aiResult, setAiResult] = useState('Chọn một công cụ AI để tạo kết quả học tập nhanh.');
-  const [aiChat, setAiChat] = useState<{q: string, a: string}[]>([]);
+  const [aiChat, setAiChat] = useState<{ q: string, a: string }[]>([]);
   const [isAskingAi, setIsAskingAi] = useState(false);
   const [discussionInput, setDiscussionInput] = useState(''); // Used in right sidebar AI
 
@@ -389,15 +389,15 @@ const DocumentDetailPage: React.FC = () => {
   // Polling for questions if any question is still "analyzing"
   useEffect(() => {
     let qInterval: ReturnType<typeof setInterval> | null = null;
-    
+
     const hasUnanswered = questions.some(q => !q.answer);
-    
+
     if (activeTab === 'questions' && hasUnanswered && parsedId) {
       qInterval = setInterval(() => {
         fetchQuestions(parsedId);
       }, 5000);
     }
-    
+
     return () => {
       if (qInterval) clearInterval(qInterval);
     };
@@ -723,11 +723,11 @@ const DocumentDetailPage: React.FC = () => {
     if (!currentUserId) {
       alert('Vui lòng đăng nhập để hỏi AI.'); return;
     }
-    
+
     const question = discussionInput.trim();
     setIsAskingAi(true);
     setDiscussionInput('');
-    
+
     try {
       const res = await api.post(`/api/v1/ai/ask/${document.id}`, { question });
       setAiChat(prev => [...prev, { q: question, a: res.data.answer }]);
@@ -880,7 +880,6 @@ const DocumentDetailPage: React.FC = () => {
                   <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pipeline UC06</p>
                         <h4 className="text-sm font-bold text-slate-800">Tự động xử lý tài liệu</h4>
                       </div>
                       <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${ingestion?.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : ingestion?.status === 'failed' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
@@ -904,13 +903,13 @@ const DocumentDetailPage: React.FC = () => {
                           const isDone = currentStepIndex > idx || ingestion?.status === 'completed';
                           const isActive = currentStepIndex === idx && ingestion?.status !== 'failed' && ingestion?.status !== 'completed';
                           const isFailed = ingestion?.status === 'failed' && currentStepIndex <= idx;
-                          
+
                           // Allow clicking on Quiz step if it's already generated but pipeline is "stuck"
                           const isClickable = (idx === 4 && ingestion?.quiz_test_id);
 
                           return (
-                            <div 
-                              key={step.id} 
+                            <div
+                              key={step.id}
                               className={`flex flex-col items-center gap-2 ${isClickable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
                               onClick={() => isClickable && handleOpenQuiz()}
                             >
@@ -937,7 +936,7 @@ const DocumentDetailPage: React.FC = () => {
                       {retryError && (
                         <p className="mt-2 text-[11px] text-red-500">{retryError}</p>
                       )}
-                       {ingestion && (
+                      {ingestion && (
                         <button
                           onClick={handleRetryIngestion}
                           className="mt-3 inline-flex items-center justify-center w-full gap-2 rounded-xl border-2 border-[#3B66F5] bg-blue-50/50 px-4 py-3 text-[13px] font-black text-[#3B66F5] hover:bg-[#3B66F5] hover:text-white transition-all shadow-md"
@@ -972,7 +971,7 @@ const DocumentDetailPage: React.FC = () => {
                           ))}
                         </ul>
                         {quizAvailable && (
-                          <button 
+                          <button
                             onClick={handleOpenQuiz}
                             className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-3 text-sm font-bold shadow-sm transition-all"
                           >
@@ -1193,7 +1192,6 @@ const DocumentDetailPage: React.FC = () => {
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-sm font-bold text-gray-800">Hỏi đáp về tài liệu</h4>
-                    <span className="bg-indigo-50 text-indigo-600 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">UC10 - AI</span>
                   </div>
 
                   {/* Question Input */}
@@ -1227,7 +1225,7 @@ const DocumentDetailPage: React.FC = () => {
                     ) : questions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 text-center">
                         <svg className="w-14 h-14 text-slate-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <p className="text-sm text-slate-500 font-medium">Chưa có câu hỏi nào.<br/>Hãy đặt câu hỏi đầu tiên!</p>
+                        <p className="text-sm text-slate-500 font-medium">Chưa có câu hỏi nào.<br />Hãy đặt câu hỏi đầu tiên!</p>
                       </div>
                     ) : (
                       questions.map((q: QuestionItem) => (
@@ -1307,7 +1305,7 @@ const DocumentDetailPage: React.FC = () => {
                 <div className="flex flex-col h-full space-y-6">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-bold text-gray-800">Sơ đồ tư duy AI</h4>
-                    <button 
+                    <button
                       onClick={() => fetchMindmap(parsedId)}
                       className="text-[11px] font-bold text-[#3B66F5] hover:underline"
                     >
@@ -1325,7 +1323,7 @@ const DocumentDetailPage: React.FC = () => {
             {/* Bottom action */}
             {activeTab === 'info' && (
               <div className="p-6 border-t border-gray-100 bg-white">
-                <button 
+                <button
                   onClick={() => handleGenerateAi('flashcard')}
                   className="w-full flex items-center justify-center gap-2 border-2 border-gray-100 rounded-2xl py-3.5 text-sm font-bold text-[#3B66F5] hover:border-[#3B66F5] hover:bg-blue-50/50 transition-colors"
                 >

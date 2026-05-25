@@ -113,7 +113,7 @@ const AdminModeration: React.FC = () => {
         fetchComments();
       } catch (error) {
         console.error('Failed to delete comment', error);
-        setComments(comments.filter(c => c.id !== id));
+        alert('Có lỗi xảy ra khi xóa bình luận. Vui lòng thử lại.');
       }
     }
   };

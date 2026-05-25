@@ -333,7 +333,7 @@ def delete_discussion(
     discussion = db.query(Discussion).filter(Discussion.id == discussion_id).first()
     if not discussion:
         raise HTTPException(status_code=404, detail="Bình luận không tồn tại")
-    if discussion.user_id != current_user.id and current_user.role != "admin":
+    if discussion.user_id != current_user.id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Bạn không có quyền xóa bình luận này")
 
     # Xóa tất cả replies trước (tránh FK constraint)

@@ -115,7 +115,7 @@ const AdminDashboard: React.FC = () => {
               <div className="col-span-8 bg-white border border-slate-100 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.03)] p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-[16px] font-bold text-slate-800">Hoạt động gần đây</h3>
-                  <a href="#" className="text-[13px] font-semibold text-blue-600 hover:text-blue-700">Xem tất cả</a>
+                  <button onClick={() => navigate('/admin/activities')} className="text-[13px] font-semibold text-blue-600 hover:text-blue-700 cursor-pointer">Xem tất cả</button>
                 </div>
                 
                 <div className="space-y-6">
@@ -149,7 +149,7 @@ const AdminDashboard: React.FC = () => {
                     </p>
                  </div>
                  
-                 <button className="relative z-10 w-full mt-8 bg-white text-[#4F46E5] py-3 rounded-xl font-bold text-[13px] hover:bg-slate-50 transition-colors shadow-sm">
+                 <button onClick={() => navigate('/admin/reports')} className="relative z-10 w-full mt-8 bg-white text-[#4F46E5] py-3 rounded-xl font-bold text-[13px] hover:bg-slate-50 transition-colors shadow-sm cursor-pointer">
                    Xem chi tiết báo cáo
                  </button>
 

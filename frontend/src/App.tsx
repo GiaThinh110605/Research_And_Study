@@ -14,6 +14,8 @@ import AdminUserManagement from './pages/AdminUserManagement';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminModeration from './pages/AdminModeration';
 import AdminSettings from './pages/AdminSettings';
+import AdminActivitiesPage from './pages/AdminActivitiesPage';
+import AdminReportsPage from './pages/AdminReportsPage';
 
 import StudentDashboard from './pages/StudentDashboard';
 import LecturerDashboard from './pages/LecturerDashboard';
@@ -85,6 +87,8 @@ function App() {
           <Route path="/admin/users" element={<AdminUserManagement />} />
           <Route path="/admin/moderation" element={<AdminModeration />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/activities" element={<AdminActivitiesPage />} />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
         </Route>
       </Routes>

@@ -73,10 +73,10 @@ def upgrade() -> None:
     op.drop_index('idx_flashcard_progress_flashcard', table_name='flashcard_progress')
     op.drop_index('idx_flashcard_progress_user', table_name='flashcard_progress')
     op.drop_table('flashcard_progress')
-    op.drop_index('ix_quiz_results_id', table_name='quiz_results')
-    op.drop_table('quiz_results')
     op.drop_index('ix_plagiarism_reports_id', table_name='plagiarism_reports')
     op.drop_table('plagiarism_reports')
+    op.drop_index('ix_quiz_results_id', table_name='quiz_results')
+    op.drop_table('quiz_results')
     op.drop_index('ix_questions_id', table_name='questions')
     op.drop_table('questions')
     op.drop_index('ix_quizzes_id', table_name='quizzes')
@@ -225,22 +225,10 @@ def downgrade() -> None:
     sa.PrimaryKeyConstraint('id', name='questions_pkey')
     )
     op.create_index('ix_questions_id', 'questions', ['id'], unique=False)
-    op.create_table('plagiarism_reports',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('test_result_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('similarity_score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=False),
-    sa.Column('details', postgresql.JSON(astext_type=sa.Text()), autoincrement=False, nullable=True),
-    sa.Column('detected_by_user_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
-    sa.ForeignKeyConstraint(['detected_by_user_id'], ['users.id'], name='plagiarism_reports_detected_by_user_id_fkey'),
-    sa.ForeignKeyConstraint(['test_result_id'], ['quiz_results.id'], name='plagiarism_reports_test_result_id_fkey'),
-    sa.PrimaryKeyConstraint('id', name='plagiarism_reports_pkey')
-    )
-    op.create_index('ix_plagiarism_reports_id', 'plagiarism_reports', ['id'], unique=False)
     op.create_table('quiz_results',
-    sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
-    sa.Column('quiz_id', sa.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('user_id', sa.INTEGER(), autoincrement=False, nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('quiz_id', sa.Integer(), autoincrement=False, nullable=False),
+    sa.Column('user_id', sa.Integer(), autoincrement=False, nullable=False),
     sa.Column('score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=False),
     sa.Column('completed_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
     sa.Column('answers', postgresql.JSON(astext_type=sa.Text()), autoincrement=False, nullable=True),
@@ -249,6 +237,18 @@ def downgrade() -> None:
     sa.PrimaryKeyConstraint('id', name='quiz_results_pkey')
     )
     op.create_index('ix_quiz_results_id', 'quiz_results', ['id'], unique=False)
+    op.create_table('plagiarism_reports',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('test_result_id', sa.Integer(), autoincrement=False, nullable=False),
+    sa.Column('similarity_score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=False),
+    sa.Column('details', postgresql.JSON(astext_type=sa.Text()), autoincrement=False, nullable=True),
+    sa.Column('detected_by_user_id', sa.Integer(), autoincrement=False, nullable=False),
+    sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=True),
+    sa.ForeignKeyConstraint(['detected_by_user_id'], ['users.id'], name='plagiarism_reports_detected_by_user_id_fkey'),
+    sa.ForeignKeyConstraint(['test_result_id'], ['quiz_results.id'], name='plagiarism_reports_test_result_id_fkey'),
+    sa.PrimaryKeyConstraint('id', name='plagiarism_reports_pkey')
+    )
+    op.create_index('ix_plagiarism_reports_id', 'plagiarism_reports', ['id'], unique=False)
     op.create_table('flashcard_progress',
     sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.INTEGER(), autoincrement=False, nullable=False),

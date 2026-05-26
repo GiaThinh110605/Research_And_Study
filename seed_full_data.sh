@@ -113,18 +113,6 @@ VALUES (
 );
 EOF
 
-docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U postgres -d ai_research_db <<'EOF'
-INSERT INTO tests (title, subject, duration_minutes, creator_id, is_active, questions, created_at, updated_at)
-VALUES (
-    'Đề Thi Thử Giữa Kỳ - Toán Cao Cấp C1 - Mã đề 134',
-    'Toán Cao Cấp C1',
-    75,
-    1,
-    true,
-    '[]'::jsonb,
-    NOW(),
-    NOW()
-);
 EOF
 
 # Note: The large math exam JSON above was truncated for readability. If you want the full

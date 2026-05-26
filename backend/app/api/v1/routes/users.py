@@ -212,6 +212,8 @@ def delete_user(
         db.execute(text("DELETE FROM discussion_reactions WHERE user_id = :uid"), {"uid": user_id})
         db.execute(text("DELETE FROM test_results WHERE student_id = :uid"), {"uid": user_id})
         db.execute(text("DELETE FROM student_grades WHERE student_id = :uid"), {"uid": user_id})
+        # Delete individual flashcards belonging to this user's sets first to avoid FK violations
+        db.execute(text("DELETE FROM flashcards WHERE set_id IN (SELECT id FROM flashcard_sets WHERE owner_id = :uid)"), {"uid": user_id})
         db.execute(text("DELETE FROM flashcard_sets WHERE owner_id = :uid"), {"uid": user_id})
         db.execute(text("DELETE FROM questions WHERE user_id = :uid"), {"uid": user_id})
         # Xóa các bản ghi chia sẻ tài liệu liên quan đến user

@@ -24,6 +24,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             r"^/api/v1/auth/google",
             r"^/api/v1/auth/facebook",
             r"^/uploads/.*",
+            r".*\.hot-update\.(json|js)$",  # webpack HMR
+            r"^/static/.*",
+            r"^/favicon\.ico$",
         ]
         
         path = request.url.path

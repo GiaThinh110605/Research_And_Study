@@ -344,7 +344,7 @@ def get_test(
 			"creator_role": test.creator.role.value if test.creator else None,
 			"created_at": test.created_at,
 			"questions_count": len(test.questions),
-			"participants_count": test.participants_count,
+			"participants_count": test.participants_count or 0,
 			"is_locked": bool(test.access_code),
 			"questions": _strip_correct_answers(test.questions),
 			"access_code": None  # Hide code from students
@@ -354,6 +354,8 @@ def get_test(
 	# For lecturers/admins who are not the creator, also hide code if desired
 	# but for now let's just ensure students don't see it
 	res = TestOut.model_validate(test)
+	# Ensure participants_count is never None
+	res.participants_count = test.participants_count or 0
 	if current_user.role == UserRole.STUDENT:
 		res.access_code = None
 	return res

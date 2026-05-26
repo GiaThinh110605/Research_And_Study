@@ -42,7 +42,12 @@ const TakeTestPage: React.FC = () => {
         setIsAccessCodeError(false);
       } catch (error: any) {
         console.error("Lỗi khi tải đề thi", error);
-        if (error.response && error.response.status === 403) {
+        if (error.response && error.response.status === 401) {
+          // Token expired or missing – redirect to login
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        } else if (error.response && error.response.status === 403) {
           setIsAccessCodeRequired(true);
           if (code) setIsAccessCodeError(true);
         } else {

@@ -23,7 +23,7 @@ class Test(Base):
     creator = relationship("User", back_populates="created_tests")
     document = relationship("Document", back_populates="tests")
     test_questions = relationship("TestQuestion", back_populates="test", cascade="all, delete-orphan")  # Legacy - not used by current routes
-    test_results = relationship("TestResult", back_populates="test", cascade="all, delete-orphan")
+    test_results = relationship("TestResult", back_populates="test")
 
 class TestQuestion(Base):
     __tablename__ = "test_questions"

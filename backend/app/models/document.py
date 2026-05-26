@@ -21,12 +21,12 @@ class Document(Base):
     
     # Relationships
     uploader = relationship("User", back_populates="documents")
-    shares = relationship("DocumentShare", back_populates="document", cascade="all, delete-orphan")
-    comments = relationship("Discussion", back_populates="document", cascade="all, delete-orphan")
-    summary = relationship("Summary", back_populates="document", uselist=False, cascade="all, delete-orphan")
-    mindmap = relationship("Mindmap", back_populates="document", uselist=False, cascade="all, delete-orphan")
-    flashcard_sets = relationship("FlashcardSet", back_populates="document", cascade="all, delete-orphan")
-    tests = relationship("Test", back_populates="document", cascade="all, delete-orphan")
+    shares = relationship("DocumentShare", back_populates="document")
+    comments = relationship("Discussion", back_populates="document")
+    summary = relationship("Summary", back_populates="document", uselist=False)
+    mindmap = relationship("Mindmap", back_populates="document", uselist=False)
+    flashcard_sets = relationship("FlashcardSet", back_populates="document")
+    tests = relationship("Test", back_populates="document")
     ingestion = relationship("DocumentIngestion", back_populates="document", uselist=False, cascade="all, delete-orphan")
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
     concepts = relationship("DocumentConcept", back_populates="document", cascade="all, delete-orphan")

@@ -101,25 +101,6 @@ VALUES (
     NOW(),
     NOW()
 );
-
-INSERT INTO tests (title, subject, duration_minutes, creator_id, is_active, questions, created_at, updated_at)
-VALUES (
-    'Đề Thi Thử Giữa Kỳ - Toán Cao Cấp C1 - Mã đề 134',
-    'Toán Cao Cấp C1',
-    75,
-    1,
-    true,
-    '[
-      {
-        "id": 1,
-        "text": "1. Cho hai tập hợp A và B. Mệnh đề nào sau đây đúng?",
-        "options": ["A \\ B = A giao B", "A \\ B = {x in A và x không thuộc B}", "A \\ B = {x in B và x không thuộc A}", "A \\ B = A hợp B"],
-        "answer": 1
-      }
-    ]'::jsonb,
-    NOW(),
-    NOW()
-);
 "@
 
 $sql | docker compose -f docker-compose.dev.yml exec -T postgres psql -U postgres -d ai_research_db

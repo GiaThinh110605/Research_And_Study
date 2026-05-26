@@ -113,8 +113,6 @@ VALUES (
 );
 EOF
 
-EOF
-
 # Note: The large math exam JSON above was truncated for readability. If you want the full
 # JSON payload inserted as in the original request, replace the placeholder with the
 # exact JSON array (ensure proper escaping) or run the original SQL blocks directly.

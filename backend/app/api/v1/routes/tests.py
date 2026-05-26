@@ -353,11 +353,9 @@ def get_test(
 
 	# For lecturers/admins who are not the creator, also hide code if desired
 	# but for now let's just ensure students don't see it
-	res = TestOut.model_validate(test)
-	# Ensure participants_count is never None
-	res.participants_count = test.participants_count or 0
-	if current_user.role == UserRole.STUDENT:
-		res.access_code = None
+    if test.participants_count is None:
+        test.participants_count = 0
+    res = TestOut.model_validate(test)
 	return res
 
 

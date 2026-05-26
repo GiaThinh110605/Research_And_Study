@@ -144,7 +144,7 @@ const AdminUserManagement: React.FC = () => {
         fetchUsers();
       } catch (error) {
         console.error("Failed to delete user", error);
-        setUsers(users.filter(u => u.id !== userId));
+        alert('Có lỗi xảy ra khi xóa người dùng. Vui lòng thử lại.');
       }
     }
   };

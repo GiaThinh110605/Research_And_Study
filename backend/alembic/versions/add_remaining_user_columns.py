@@ -16,9 +16,16 @@ depends_on = None
 
 def upgrade():
     # Add missing columns to match the model
-    op.add_column('users', sa.Column('student_code', sa.String(length=20), nullable=True))
-    op.add_column('users', sa.Column('lecturer_code', sa.String(length=20), nullable=True))
-    op.add_column('users', sa.Column('is_active', sa.Boolean(), nullable=True, default=True))
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('users')]
+    
+    if 'student_code' not in columns:
+        op.add_column('users', sa.Column('student_code', sa.String(length=20), nullable=True))
+    if 'lecturer_code' not in columns:
+        op.add_column('users', sa.Column('lecturer_code', sa.String(length=20), nullable=True))
+    if 'is_active' not in columns:
+        op.add_column('users', sa.Column('is_active', sa.Boolean(), nullable=True, default=True))
 
 def downgrade():
     op.drop_column('users', 'is_active')

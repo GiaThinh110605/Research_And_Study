@@ -142,9 +142,9 @@ const AdminUserManagement: React.FC = () => {
       try {
         await userService.deleteUser(userId);
         fetchUsers();
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to delete user", error);
-        setUsers(users.filter(u => u.id !== userId));
+        alert(error.response?.data?.detail || "Lỗi: Không thể xóa người dùng này.");
       }
     }
   };

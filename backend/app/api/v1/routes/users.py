@@ -20,7 +20,8 @@ def search_users(
     Search users by email or username.
     """
     users = db.query(User).filter(
-        (User.email.ilike(f"%{q}%")) | (User.username.ilike(f"%{q}%"))
+        (~User.username.startswith("deleted_")) &
+        ((User.email.ilike(f"%{q}%")) | (User.username.ilike(f"%{q}%")))
     ).limit(10).all()
     return users
 
@@ -73,7 +74,7 @@ def read_users(
     """
     Retrieve users. (Admin only)
     """
-    users = db.query(User).offset(skip).limit(limit).all()
+    users = db.query(User).filter(~User.username.startswith("deleted_")).offset(skip).limit(limit).all()
     return users
 
 @router.get("/me", response_model=UserOut)
@@ -194,13 +195,57 @@ def delete_user(
 ) -> Any:
     """
     Delete a user. (Admin only)
+    Soft-delete: anonymize user data and deactivate account.
+    Removes all FK-constrained related records first to avoid constraint violations.
     """
+    from sqlalchemy import text
+    import uuid
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user.id == current_user.id:
-        raise HTTPException(status_code=400, detail="Users cannot delete themselves")
-        
-    db.delete(user)
-    db.commit()
-    return user
+        raise HTTPException(status_code=400, detail="Không thể xóa chính tài khoản đang đăng nhập")
+
+    try:
+        # Xóa tất cả dữ liệu liên quan để tránh FK constraint violations
+        db.execute(text("DELETE FROM notifications WHERE user_id = :uid"), {"uid": user_id})
+        db.execute(text("DELETE FROM discussion_reactions WHERE user_id = :uid"), {"uid": user_id})
+        db.execute(text("DELETE FROM test_results WHERE student_id = :uid"), {"uid": user_id})
+        db.execute(text("DELETE FROM student_grades WHERE student_id = :uid"), {"uid": user_id})
+        db.execute(text("DELETE FROM flashcard_sets WHERE owner_id = :uid"), {"uid": user_id})
+        db.execute(text("DELETE FROM questions WHERE user_id = :uid"), {"uid": user_id})
+        # Xóa các bản ghi chia sẻ tài liệu liên quan đến user
+        db.execute(text("DELETE FROM document_shares WHERE shared_by_id = :uid OR shared_to_id = :uid"), {"uid": user_id})
+        # Xóa reactions của các discussions thuộc user, rồi xóa chính discussions đó
+        db.execute(text("""
+            DELETE FROM discussion_reactions
+            WHERE discussion_id IN (
+                SELECT id FROM discussions WHERE user_id = :uid
+            )
+        """), {"uid": user_id})
+        db.execute(text("DELETE FROM discussions WHERE user_id = :uid"), {"uid": user_id})
+
+        # Soft-delete: ẩn danh hóa thông tin user bằng raw SQL (tránh SQLAlchemy cascade)
+        uid = uuid.uuid4().hex[:8]
+        db.execute(text("""
+            UPDATE users
+            SET email = :email,
+                username = :username,
+                full_name = :full_name,
+                is_active = false
+            WHERE id = :user_id
+        """), {
+            "email": f"deleted_{user_id}_{uid}@example.com",
+            "username": f"deleted_{user_id}_{uid}",
+            "full_name": "Tài khoản đã xóa",
+            "user_id": user_id,
+        })
+
+        db.commit()
+        db.refresh(user)
+        return user
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Không thể xóa người dùng: {str(e)}")

@@ -209,7 +209,6 @@ def delete_user(
 
     try:
         # Xóa tất cả dữ liệu liên quan để tránh FK constraint violations
-        db.execute(text("DELETE FROM notifications WHERE user_id = :uid"), {"uid": user_id})
         db.execute(text("DELETE FROM discussion_reactions WHERE user_id = :uid"), {"uid": user_id})
         db.execute(text("DELETE FROM test_results WHERE student_id = :uid"), {"uid": user_id})
         db.execute(text("DELETE FROM student_grades WHERE student_id = :uid"), {"uid": user_id})

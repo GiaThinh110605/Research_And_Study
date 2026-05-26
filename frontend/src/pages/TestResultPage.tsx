@@ -26,6 +26,14 @@ const TestResultPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'wrong'>('all');
 
+  const getCorrectAnswer = (question: any) => {
+    if (question?.answer !== undefined) return question.answer;
+    if (question?.correct_answer !== undefined) return question.correct_answer;
+    if (question?.correct_option !== undefined) return question.correct_option;
+    if (question?.correct !== undefined) return question.correct;
+    return undefined;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -36,7 +44,8 @@ const TestResultPage: React.FC = () => {
           const { questions, answers, timeTaken, testTitle, test_id, score: stateScore } = location.state;
           const correctCount = questions.reduce((acc: number, q: any) => {
             const userAns = answers[q.id.toString()];
-            return acc + (userAns !== undefined && String(userAns) === String(q.answer) ? 1 : 0);
+            const correctAns = getCorrectAnswer(q);
+            return acc + (userAns !== undefined && correctAns !== undefined && String(userAns) === String(correctAns) ? 1 : 0);
           }, 0);
           
           // Use score from backend if available, otherwise calculate
@@ -81,7 +90,8 @@ const TestResultPage: React.FC = () => {
   const totalQuestions = result.test_questions?.length ?? 20;
   const correctCount = result.test_questions?.reduce((acc, q) => {
     const userAns = result.answers[q.id.toString()];
-    return acc + (userAns !== undefined && String(userAns) === String(q.answer) ? 1 : 0);
+    const correctAns = getCorrectAnswer(q);
+    return acc + (userAns !== undefined && correctAns !== undefined && String(userAns) === String(correctAns) ? 1 : 0);
   }, 0) ?? 17;
   const incorrectCount = totalQuestions - correctCount;
 
@@ -219,11 +229,15 @@ const TestResultPage: React.FC = () => {
       <div className="space-y-4">
         
         {result.test_questions?.filter((q) => {
-          if (filter === 'wrong') return String(result.answers[q.id.toString()]) !== String(q.answer);
+          if (filter === 'wrong') {
+            const correctAns = getCorrectAnswer(q);
+            return String(result.answers[q.id.toString()]) !== String(correctAns);
+          }
           return true;
         }).map((q, idx) => {
           const userAns = result.answers[q.id.toString()];
-          const isCorrect = String(userAns) === String(q.answer);
+          const correctAns = getCorrectAnswer(q);
+          const isCorrect = correctAns !== undefined && String(userAns) === String(correctAns);
           
           return (
             <div key={q.id} className={`bg-white rounded-xl border ${isCorrect ? 'border-slate-200' : 'border-rose-100'} shadow-sm flex overflow-hidden`}>
@@ -240,8 +254,8 @@ const TestResultPage: React.FC = () => {
                 
                 <div className="grid grid-cols-2 gap-3">
                   {q.options.map((opt, oIdx) => {
-                    const isUserChoice = userAns === oIdx;
-                    const isCorrectOpt = String(q.answer) === String(oIdx);
+                    const isUserChoice = String(userAns) === String(oIdx);
+                    const isCorrectOpt = correctAns !== undefined && String(correctAns) === String(oIdx);
                     
                     let bgClass = "bg-white opacity-70";
                     let borderClass = "border-slate-200";

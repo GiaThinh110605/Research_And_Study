@@ -15,16 +15,26 @@ branch_labels = None
 depends_on = None
 
 def upgrade():
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('users')]
+    
     # Add username column to users table
-    op.add_column('users', sa.Column('username', sa.String(length=50), nullable=False))
+    if 'username' not in columns:
+        op.add_column('users', sa.Column('username', sa.String(length=50), nullable=False))
     
     # Add missing columns to match the model
-    op.add_column('users', sa.Column('student_code', sa.String(length=20), nullable=True))
-    op.add_column('users', sa.Column('lecturer_code', sa.String(length=20), nullable=True))
-    op.add_column('users', sa.Column('is_active', sa.Boolean(), nullable=True, default=True))
+    if 'student_code' not in columns:
+        op.add_column('users', sa.Column('student_code', sa.String(length=20), nullable=True))
+    if 'lecturer_code' not in columns:
+        op.add_column('users', sa.Column('lecturer_code', sa.String(length=20), nullable=True))
+    if 'is_active' not in columns:
+        op.add_column('users', sa.Column('is_active', sa.Boolean(), nullable=True, default=True))
     
-    # Create unique index on username
-    op.create_index('ix_users_username', 'users', ['username'], unique=True)
+    # Create unique index on username if index doesn't exist
+    indexes = [idx['name'] for idx in inspector.get_indexes('users')]
+    if 'ix_users_username' not in indexes:
+        op.create_index('ix_users_username', 'users', ['username'], unique=True)
 
 def downgrade():
     # Remove username column and index
